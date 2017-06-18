@@ -1,0 +1,23 @@
+osmesa-install:
+
+Script and patches to build and install variations of OSMesa http://www.mesa3d.org/osmesa.html:
+- choice of osmesa driver: swrast, softpipe, llvmpipe or swr (SWR is not yet supported on macOS)
+- possibility to also compile and install LLVM 4.0.0 or 3.4.2 for the llvmpipe driver
+- "mangled" or not (in mangled OSMesa, all functions start with mgl instead of gl)
+- debug or not
+
+Usage:
+
+- Download git repository from https://github.com/trevorsandy/mesa-install.git
+- edit variables / paths as the beginning of the osmesa-install.sh  script
+- compile and install:
+
+mkdir build
+cd build
+sh ../osmesa-install.sh
+
+- there is a test program on the osdemo directory, with a few checks
+
+Credit:
+
+Updated version of the original script by Fréderic Devernay (https://github.com/devernay/osmesa-install.git)
