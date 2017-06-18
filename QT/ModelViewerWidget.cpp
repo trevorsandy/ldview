@@ -1388,7 +1388,7 @@ void ModelViewerWidget::doHelpContents(void)
 	CFStringRef urlString;
 	bool macSuccess = false;
 
-	urlString = CFStringCreateWithCString(NULL, qUrl.utf8(),
+    urlString = CFStringCreateWithCString(NULL, qUrl.toUtf8().constData(), /* TDS fix error: no member named 'utf8' in QString' Old value: qUrl.utf8() */
 		kCFStringEncodingUTF8);
 	if (urlString && (url = CFURLCreateWithString(NULL, urlString, NULL)) !=
 		NULL)
@@ -1413,7 +1413,7 @@ void ModelViewerWidget::doHelpContents(void)
 	FSRef fsRef;
 	Boolean isDirectory;
 
-	if (FSPathMakeRef((const UInt8 *)(const char *)helpFilename, &fsRef,
+    if (FSPathMakeRef((const UInt8 *)helpFilename.toUtf8().constData(), &fsRef, /* TDS fix error: cannot cast from type 'QString' to pointer type 'const char*' Old value: (const char *)helpFilename */
 		&isDirectory) == 0 && !isDirectory)
 	{
 		if (LSOpenFSRef(&fsRef, NULL) == 0)

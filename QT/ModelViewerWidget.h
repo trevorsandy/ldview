@@ -342,6 +342,10 @@ protected:
 	int lightingSelection;
 	LDPreferences::SaveOp curSaveOp;
 	bool commandLineSnapshotSave;
+// TDS: address clang error: member initializer 'openRecentMenu' does not name a non-static data member or base class
+#ifdef __APPLE__
+    QMenu *openRecentMenu;
+#endif // __APPLE__
 };
 
 #endif // __MODELVIEWERWIDGET_H__
