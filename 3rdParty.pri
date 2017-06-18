@@ -20,7 +20,8 @@ CONFIG(debug, debug|release) {
 } else {
     BUILD = RELEASE
 }
-BUILD += $$upper($$system(uname))
+win32: BUILD += WINDOWS
+else:  BUILD += $$upper($$system(uname))
 
 INCLUDEPATH += $$PWD
 

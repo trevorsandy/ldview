@@ -179,4 +179,4 @@ QMAKE_CLEAN += LDViewMessages.ini LDViewMessages.h StudLogo.h
 SOURCES += ldview.cpp
 
 # Test
-include(LDViewCUITest.pri)
+RUN_CUI_TEST: include(LDViewCUITest.pri)

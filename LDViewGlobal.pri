@@ -237,7 +237,8 @@ _QT_GUI {
     POSTFIX  = -osmesa
     BUILD   += OSMESA
 }
-BUILD += $$upper($$system(uname))
+win32: BUILD += WINDOWS
+else:  BUILD += $$upper($$system(uname))
 
 DEPENDPATH  += .
 INCLUDEPATH += . .. ../include # zlib.h and zconf.h, glext and wglext headers
