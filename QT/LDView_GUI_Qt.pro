@@ -19,16 +19,12 @@ QT		+= printsupport
 QT		+= widgets
 }
 
-include(../LDViewGlobal.pri)
-
-MOC_DIR           = .moc$${POSTFIX}
-RCC_DIR           = .qrc$${POSTFIX}
-UI_DIR            = .ui$${POSTFIX}
-
 VERSION = 4.3.0
 
 contains(DEFINES,_OSMESA): DEFINES -= _OSMESA
 DEFINES         += _QT
+
+include(../LDViewGlobal.pri)
 
 message("~~~ LDVIEW ($$join(ARCH,,,bit)) $${BUILD} GUI EXECUTABLE VERSION $$VERSION ~~~")
 
@@ -51,6 +47,10 @@ isEmpty(SYSCONFDIR):SYSCONFDIR          = /etc
 QMAKE_CXXFLAGS	+= $(Q_CXXFLAGS)
 QMAKE_CFLAGS   	+= $(Q_CFLAGS)
 QMAKE_LFLAGS   	+= $(Q_LDFLAGS)
+
+MOC_DIR          = .moc$${POSTFIX}
+RCC_DIR          = .qrc$${POSTFIX}
+UI_DIR           = .ui$${POSTFIX}
 
 unix:!macx: TARGET = ldview
 else:       TARGET = LDView
