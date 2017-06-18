@@ -179,5 +179,4 @@ QMAKE_CLEAN += LDViewMessages.ini LDViewMessages.h StudLogo.h
 SOURCES += ldview.cpp
 
 # Test
-#./LDView ../8464.mpd -SaveSnapshot=/tmp/8464.png -SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0
 include(LDViewCUITest.pri)

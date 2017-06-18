@@ -23,6 +23,8 @@ unix {
 }
 
 #Old Test
+#./LDView ../8464.mpd -SaveSnapshot=/tmp/8464.png -SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0
+
 #unix {
 #    UNIX_DEF_LD_DIR = /usr/share/ldraw
 #    OSX_DEF_LD_DIR  = /Library/ldraw
