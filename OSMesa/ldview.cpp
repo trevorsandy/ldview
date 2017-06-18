@@ -13,6 +13,12 @@
 #include <TCFoundation/TCAlertManager.h>
 #include <TCFoundation/TCProgressAlert.h>
 #include <TCFoundation/TCLocalStrings.h>
+#if defined (__APPLE__)
+#include <GLUT/glut.h>
+#endif
+#ifndef GLAPIENTRY
+#define GLAPIENTRY
+#endif
 #include <GL/osmesa.h>
 #include <TRE/TREMainModel.h>
 #include "StudLogo.h"
@@ -51,7 +57,7 @@ protected:
 	}
 };
 
-void setupDefaults(char *argv[])
+int setupDefaults(char *argv[])
 {
 	TCUserDefaults::setCommandLine(argv);
 	// IniFile can be specified on the command line; if so, don't load a
@@ -82,9 +88,11 @@ void setupDefaults(char *argv[])
 		{
 			printf("HOME environment variable not defined: cannot use "
 				"~/.ldviewrc.\n");
+            return 1;
 		}
 	}
-	setDebugLevel(TCUserDefaults::longForKey("DebugLevel", 0, false));
+    setDebugLevel(TCUserDefaults::longForKey("DebugLevel", 0, false));
+    return 0;
 }
 
 void *setupContext(OSMesaContext &ctx)
@@ -188,7 +196,7 @@ bool fileCaseCallback(char *filename)
 		{
 			builtPath += components[i];
 
-			it = s_pathMap.find(builtPath);
+            it = s_pathMap.find(builtPath);
 			if (it != s_pathMap.end())
 			{
 				// Do nothing
@@ -231,7 +239,7 @@ bool fileCaseCallback(char *filename)
 		{
 			strcpy(filename, builtPath.c_str());
 		}
-		deleteStringArray(components, count);
+        deleteStringArray(components, count);
 		return ok;
 	}
 	return false;
@@ -247,7 +255,10 @@ int main(int argc, char *argv[])
 	memcpy(stringTable, LDViewMessages_bytes, stringTableSize);
 	stringTable[stringTableSize] = 0;
 	TCLocalStrings::setStringTable(stringTable);
-	setupDefaults(argv);
+    if (setupDefaults(argv) != 0) {
+        printf("Error creating setup defaults.\n");
+        return 1;
+    }
 	if ((buffer = setupContext(ctx)) != NULL)
 	{
 		//ProgressHandler *progressHandler = new ProgressHandler;

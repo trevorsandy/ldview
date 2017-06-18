@@ -17,16 +17,22 @@
 #endif // WIN32
 
 #ifdef __APPLE__
-#define GL_GLEXT_LEGACY
-#include <OpenGL/gl.h>
-#include "../include/GL/glext.h"
-#include <OpenGL/OpenGL.h>
-#include <GLUT/GLUT.h>
-#define APIENTRY
+#  define GL_GLEXT_LEGACY
+#  include <GLUT/GLUT.h>
+#  define APIENTRY
+#  ifdef _OSMESA
+#    include <GL/gl.h>
+#    include <GL/glext.h>
+#    include <GL/glu.h>
+#  else // _OSMESA
+#    include <OpenGL/gl.h>
+#    include "../include/GL/glext.h"
+#    include <OpenGL/OpenGL.h>
+#  endif // _OSMESA
 #else	// __APPLE__
-#include <GL/gl.h>
-#include <GL/glext.h>
-#include <GL/glu.h>
+#  include <GL/gl.h>
+#  include <GL/glext.h>
+#  include <GL/glu.h>
 #endif	// __APPLE__
 
 #include <TCFoundation/TCDefines.h>
