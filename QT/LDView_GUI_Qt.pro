@@ -19,6 +19,8 @@ QT		+= printsupport
 QT		+= widgets
 }
 
+include(../LDViewGlobal.pri)
+
 MOC_DIR           = .moc$${POSTFIX}
 RCC_DIR           = .qrc$${POSTFIX}
 UI_DIR            = .ui$${POSTFIX}
@@ -27,8 +29,6 @@ VERSION = 4.3.0
 
 contains(DEFINES,_OSMESA): DEFINES -= _OSMESA
 DEFINES         += _QT
-
-include(../LDViewGlobal.pri)
 
 message("~~~ LDVIEW ($$join(ARCH,,,bit)) $${BUILD} GUI EXECUTABLE VERSION $$VERSION ~~~")
 

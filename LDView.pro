@@ -250,4 +250,5 @@ CONFIG(debug, debug|release) {
     message("~~~ LDVIEW RELEASE BUILD ~~~")
 }
 
-OTHER_FILES += cleanup.sh
+OTHER_FILES += cleanup.sh \
+               .gitignore

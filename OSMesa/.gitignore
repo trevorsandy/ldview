@@ -3,3 +3,6 @@ LDViewMessages.h
 Headerize
 StudLogo.h
 .obj-osmesa
+LDViewMessages.ini
+Makefile.osmesa
+Makefile-head.osmesa

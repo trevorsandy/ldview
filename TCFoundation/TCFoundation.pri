@@ -18,8 +18,6 @@ message("~~~ libTCFoundation$$POSTFIX.a $$BUILD BUILD ~~~")
 
 TARGET = TCFoundation$$POSTFIX
 
-MOC_DIR             = .moc$${POSTFIX}
-
 INCLUDEPATH         += $${PNG_INC}
 USE_3RD_PARTY_LIBS: INCLUDEPATH     += $${JPEG_INC}
 
