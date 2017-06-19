@@ -7,6 +7,8 @@
 !contains(CONFIG, USE_SOFTPIPE):        #CONFIG+=USE_SOFTPIPE
 !contains(CONFIG, USE_SYSTEM_ZLIB):     #CONFIG+=USE_SYSTEM_ZLIB     # can also manually set/unset in LDView.pro
 !contains(CONFIG, USE_SYSTEM_LIB_DIR):  #CONFIG+=USE_SYSTEM_LIB_DIR
+!contains(CONFIG, RUN_CUI_INI_TEST):    #CONFIG += RUN_CUI_INI_TEST
+!contains(CONFIG, RUN_CUI_STD_TEST):    #CONFIG += RUN_CUI_STD_TEST
 
 # GUI/CUI switch
 contains(DEFINES, _QT):     CONFIG += _QT_GUI

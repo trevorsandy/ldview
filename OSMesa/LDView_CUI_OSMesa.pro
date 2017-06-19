@@ -164,19 +164,10 @@ studlogo.commands = ./Headerize ../Textures/StudLogo.png
 QMAKE_EXTRA_TARGETS += ini ldviewmessages studlogo
 PRE_TARGETDEPS += LDViewMessages.ini LDViewMessages.h StudLogo.h
 
-# just to test the different gallium drivers
-!USE_X11_SYSTEM_LIBS {
-    galliumdriver.target = osmesa
-    USE_SOFTPIPE: galliumdriver.commands = export GALLIUM_DRIVER=softpipe
-    else:         galliumdriver.commands = export GALLIUM_DRIVER=llvmpipe
-    QMAKE_EXTRA_TARGETS += galliumdriver
-    PRE_TARGETDEPS += osmesa
-}
-
 QMAKE_CLEAN += LDViewMessages.ini LDViewMessages.h StudLogo.h
 
 # Input
 SOURCES += ldview.cpp
 
 # Test
-RUN_CUI_TEST: include(LDViewCUITest.pri)
+include(LDViewCUITest.pri)
