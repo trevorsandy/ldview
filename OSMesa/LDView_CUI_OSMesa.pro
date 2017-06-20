@@ -172,10 +172,61 @@ studlogo.commands = ./Headerize ../Textures/StudLogo.png
 QMAKE_EXTRA_TARGETS += ini ldviewmessages studlogo
 PRE_TARGETDEPS += LDViewMessages.ini LDViewMessages.h StudLogo.h
 
+unix: !macx: exists(/usr/share/ldraw/parts/3001.dat) {
+    LDRAW_PATH = /usr/share/ldraw
+} else: macx: exists(/Library/ldraw/parts/3001.dat) {
+    LDRAW_PATH = /Library/ldraw
+} else: macx: exists($$(HOME)/Library/ldraw/parts/3001.dat) {
+    LDRAW_PATH = $$(HOME)/Library/ldraw
+} else: win32: exists(C:/LDraw/parts/3001.dat)  {
+    LDRAW_PATH = C:/LDraw
+}
+
+!isEmpty(LDRAW_PATH) {
+    message("~~~ LDRAW LIBRARY $${LDRAW_PATH} ~~~")
+
+    LDRAW_DIR = LDrawDir=$${LDRAW_PATH}
+
+    ldviewini.target = LDViewCustomIni
+    ldviewini.depends = ldviewiniMessage
+    ldviewini.commands = sed -i \'\' \'13s%.*%$${LDRAW_DIR}%\' LDViewCustomIni
+
+    ldviewiniMessage.commands = @echo Updating LDViewCustomIni entry $${LDRAW_DIR}
+
+    exists($${LDRAW_PATH}/lgeo/LGEO.xml) {
+        LGEO_DIR = XmlMapPath=$${LDRAW_PATH}/lgeo
+        message("~~~ LGEO LIBRARY $${LGEO_DIR} ~~~")
+
+        ldviewini.commands += ; sed -i \'\' \'57s%.*%$${LGEO_DIR}%\' LDViewCustomIni
+        ldviewiniMessage.commands += ; echo Updating LDViewCustomIni entry $${LGEO_DIR}
+    } else {
+        message("~~~ LGEO LIBRARY NOT FOUND ~~~")
+        REMOVE_ENTRY = " "
+        ldviewini.commands += ; sed -i \'\' \'57d\' LDViewCustomIni
+        ldviewiniMessage.commands += ; echo Removing LDViewCustomIni entry XmlMapPath
+    }
+
+    unix: exists(~/.ldviewrc) {
+        ldviewiniMessage.commands += ; echo "Found \.ldviewc at $$(HOME)"
+    } else: exists(~/.config/LDView/ldviewrc) {
+        ldviewiniMessage.commands += ; echo "Found ldviewc at ~/.config/LDView"
+    } else {
+        ldviewiniMessage.commands += ; echo "\.ldviewrc will be created at $$(HOME)"
+    }
+
+    QMAKE_EXTRA_TARGETS += ldviewini ldviewiniMessage
+    PRE_TARGETDEPS += LDViewCustomIni
+
+    # Test
+    include(LDViewCUITest.pri)
+
+} else {
+    message("WARNING: LDRAW LIBRARY NOT FOUND - LDView CUI cannot be tested")
+}
+
 QMAKE_CLEAN += LDViewMessages.ini LDViewMessages.h StudLogo.h
 
 # Input
-SOURCES += ldview.cpp
-
-# Test
-include(LDViewCUITest.pri)
+HEADERS += glinfo.h
+SOURCES += ldview.cpp \
+           glinfo.cpp
