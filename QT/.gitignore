@@ -20,6 +20,9 @@ Help.html
 images.tmp
 qrc_resources.cpp
 .obj-qt5
+.qrc-qt5
+.ui-qt5
+.moc-qt5
 AppImage
 *.AppImage
 .qmake.stash
