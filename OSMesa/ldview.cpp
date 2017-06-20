@@ -24,6 +24,16 @@
 #include "StudLogo.h"
 #include "LDViewMessages.h"
 
+#ifdef VERSION_INFO
+#ifdef ARCH
+char LDViewVersion[] = "Version " VERSION_INFO " (" ARCH ")      ";
+#else
+char LDViewVersion[] = "Version " VERSION_INFO "      ";
+#endif
+#else
+char LDViewVersion[] = "Version 4.3.0      ";
+#endif
+
 typedef std::map<std::string, std::string> StringMap;
 
 #define DEPTH_BPP 24

@@ -19,12 +19,20 @@ QT		+= printsupport
 QT		+= widgets
 }
 
-VERSION = 4.3.0
-
 contains(DEFINES,_OSMESA): DEFINES -= _OSMESA
 DEFINES         += _QT
 
 include(../LDViewGlobal.pri)
+
+# The ABI version.
+VER_MAJ = 4
+VER_MIN = 3
+VER_PAT = 0
+VER_BLD = 0
+win32: VERSION = $$VER_MAJ"."$$VER_MIN"."$$VER_PAT"."$$VER_BLD  # major.minor.patch.build
+else: VERSION  = $$VER_MAJ"."$$VER_MIN"."$$VER_PAT              # major.minor.patch
+DEFINES += VERSION_INFO=\\\"$$VERSION\\\"
+DEFINES += ARCH=\\\"$$join(ARCH,,,bit)\\\"
 
 message("~~~ LDVIEW ($$join(ARCH,,,bit)) $${BUILD} GUI EXECUTABLE VERSION $$VERSION ~~~")
 
@@ -63,22 +71,22 @@ unix {
     USE_BOOST {
         BOOSTLIB = -lboost_thread
         exists(/usr/lib/libboost_thread-mt.so*){
-        BOOSTLIB = -lboost_thread-mt
+            BOOSTLIB = -lboost_thread-mt
         }
         exists(/usr/local/lib/libboost_thread-mt.so*){
-        BOOSTLIB = -lboost_thread-mt
+            BOOSTLIB = -lboost_thread-mt
         }
         exists(/usr/lib64/libboost_thread-mt.so*){
-        BOOSTLIB = -lboost_thread-mt
+            BOOSTLIB = -lboost_thread-mt
         }
         exists(/usr/local/lib64/libboost_thread-mt.so*){
-        BOOSTLIB = -lboost_thread-mt
+            BOOSTLIB = -lboost_thread-mt
         }
         exists(/usr/lib/i386-linux-gnu/libboost_system.so*){
-        BOOSTLIB += -lboost_system
+            BOOSTLIB += -lboost_system
         }
         exists(/usr/lib/x86_64-linux-gnu/libboost_system.so*){
-        BOOSTLIB += -lboost_system
+            BOOSTLIB += -lboost_system
         }
     }
 

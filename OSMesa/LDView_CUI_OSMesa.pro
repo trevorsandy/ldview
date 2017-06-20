@@ -14,12 +14,20 @@ CONFIG		+= warn_on
 win32: CONFIG   += console
 macx:  CONFIG   -= app_bundle   # on OSX don't bundle - for now...
 
-VERSION = 4.3.0
-
 contains(DEFINES, _QT): DEFINES -= _QT
 DEFINES         += _OSMESA
 
 include(../LDViewGlobal.pri)
+
+# The ABI version.
+VER_MAJ = 4
+VER_MIN = 3
+VER_PAT = 0
+VER_BLD = 0
+win32: VERSION = $$VER_MAJ"."$$VER_MIN"."$$VER_PAT"."$$VER_BLD  # major.minor.patch.build
+else:  VERSION = $$VER_MAJ"."$$VER_MIN"."$$VER_PAT              # major.minor.patch
+DEFINES += VERSION_INFO=\\\"$$VERSION\\\"
+DEFINES += ARCH=\\\"$$join(ARCH,,,bit)\\\"
 
 message("~~~ LDVIEW ($$join(ARCH,,,bit)) $${BUILD} CUI EXECUTABLE VERSION $$VERSION ~~~")
 
