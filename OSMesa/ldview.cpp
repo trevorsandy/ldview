@@ -21,6 +21,7 @@
 #endif
 #include <GL/osmesa.h>
 #include <TRE/TREMainModel.h>
+#include <glInfo.h>
 #include "StudLogo.h"
 #include "LDViewMessages.h"
 
@@ -69,6 +70,7 @@ protected:
 
 int setupDefaults(char *argv[])
 {
+    int retVal = 0;
 	TCUserDefaults::setCommandLine(argv);
 	// IniFile can be specified on the command line; if so, don't load a
 	// different one.
@@ -85,12 +87,14 @@ int setupDefaults(char *argv[])
 			char *rcFilename2 = copyString(homeDir, 128);
 
 			strcat(rcFilename2, "/.config/LDView/ldviewrc");
-			if (!TCUserDefaults::setIniFile(rcFilename) &&
-				!TCUserDefaults::setIniFile(rcFilename2))
-			{
-				printf("Error setting INI File to %s or %s\n", rcFilename,
-				    rcFilename2);
-			}
+
+            if (!TCUserDefaults::setIniFile(rcFilename) &&
+                    !TCUserDefaults::setIniFile(rcFilename2))
+            {
+                printf("Error setting INI File to %s or %s\n", rcFilename,
+                       rcFilename2);
+                retVal = 1;
+            }
 			delete rcFilename;
 			delete rcFilename2;
 		}
@@ -98,11 +102,11 @@ int setupDefaults(char *argv[])
 		{
 			printf("HOME environment variable not defined: cannot use "
 				"~/.ldviewrc.\n");
-            return 1;
+            retVal = 1;
 		}
 	}
     setDebugLevel(TCUserDefaults::longForKey("DebugLevel", 0, false));
-    return 0;
+    return retVal;
 }
 
 void *setupContext(OSMesaContext &ctx)
@@ -252,33 +256,70 @@ bool fileCaseCallback(char *filename)
         deleteStringArray(components, count);
 		return ok;
 	}
-	return false;
+    return false;
 }
 
 int main(int argc, char *argv[])
 {
+    printf("\nLDView CUI (Offscreen Renderer) %s\n", LDViewVersion);
+    printf("==========================\n");
+
 	void *buffer;
 	OSMesaContext ctx;
 	int stringTableSize = sizeof(LDViewMessages_bytes);
 	char *stringTable = new char[sizeof(LDViewMessages_bytes) + 1];
+    bool defaultsKO = false;
 
 	memcpy(stringTable, LDViewMessages_bytes, stringTableSize);
 	stringTable[stringTableSize] = 0;
 	TCLocalStrings::setStringTable(stringTable);
-    if (setupDefaults(argv) != 0) {
-        printf("Error creating setup defaults.\n");
-        return 1;
+    if (setupDefaults(argv) != 0)
+    {
+        if (TCUserDefaults::boolForKey("Info"))
+        {
+            defaultsKO = true;
+        }
+        else
+        {
+            return 1;
+        }
     }
 	if ((buffer = setupContext(ctx)) != NULL)
 	{
 		//ProgressHandler *progressHandler = new ProgressHandler;
 
+        if (TCUserDefaults::boolForKey("Info"))
+        {
+            printf("Arguments = ");
+            int cnt;
+            int ppl = 3;
+            for (int i = 0; i < argc; i++)
+            {
+                cnt = i+1;
+                printf("%s ", argv[i]);
+                if (cnt % ppl == 0 )
+                    printf("\n");
+            }
+            if (cnt <= ppl)
+                printf("\n");
+            printf("\n");
+
+            //get OpenGL info
+            glInfo glinfo;
+            glinfo.getInfo();
+            glinfo.printSelf();
+        }
+        if (defaultsKO)
+        {
+            return 1;
+        }
 		TREMainModel::setStudTextureData(StudLogo_bytes,
 			sizeof(StudLogo_bytes));
 		LDLModel::setFileCaseCallback(fileCaseCallback);
 		LDSnapshotTaker::doCommandLine();
 		OSMesaDestroyContext(ctx);
 		free(buffer);
+
 		//TCObject::release(progressHandler);
 	}
 	TCAutoreleasePool::processReleases();

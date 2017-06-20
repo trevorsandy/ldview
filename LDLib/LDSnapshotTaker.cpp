@@ -1036,7 +1036,16 @@ bool LDSnapshotTaker::writeImage(
 			(TCByte)m_modelViewer->getBackgroundB());
 	}
 	retValue = image->saveFile(filename, staticImageProgressCallback, this);
+
+    if (TCUserDefaults::boolForKey("Info"))
+    {
+        printf("\nLDView Image Output\n");
+        printf("==========================\n");
+        printf("Write %s image %s\n\n", formatName, filename);
+    }
+
 	debugPrintf("Saved image: %s\n", filename);
+
 	image->release();
 	return retValue;
 }
