@@ -9,6 +9,7 @@
 //
 //  AUTHOR: Song Ho Ahn (song.ahn@gmail.com)
 // CREATED: 2005-10-04
+// UPDATED: 2013-03-06
 // UPDATED: 2017-06-20 by Trevor SANDY (add fbo support details, additional tracked parameters)
 //
 // Copyright (c) 2005-2013 Song Ho Ahn
@@ -37,7 +38,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <cstring>
-#include "glInfo.h"
+#include "glinfo.h"
 
 
 
@@ -282,7 +283,7 @@ void glInfo::getInfo(unsigned int param)
     {
         fboSupported = true;
         // get max color attachments and draw buffers
-        glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &this->maxColorAttachments);
+        glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS_EXT, &this->maxColorAttachments);
         glGetIntegerv(GL_MAX_DRAW_BUFFERS, &this->maxDrawBuffers);
     }
 
