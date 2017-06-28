@@ -311,17 +311,20 @@ QMAKE_CFLAGS_WARN_ON =  -Wall -W \
                         -Wno-unused-parameter \
                         -Wno-parentheses \
                         -Wno-unused-variable \
-                        -Wno-implicit-function-declaration \
-                        -Wno-int-conversion \
-                        -Wno-incompatible-pointer-types-discards-qualifiers \
-                        -Wno-incompatible-pointer-types \
-                        -Wno-invalid-source-encoding \
                         -Wno-deprecated-declarations \
                         -Wno-return-type \
-                        -Wno-undefined-bool-conversion \
-                        -Wno-reorder \
                         -Wno-sign-compare \
                         -Wno-uninitialized \
+                        -Wno-clobbered
+macx {
+QMAKE_CFLAGS_WARN_ON += -Wno-implicit-function-declaration \
+                        -Wno-incompatible-pointer-types-discards-qualifiers \
+                        -Wno-incompatible-pointer-types \
+                        -Wno-undefined-bool-conversion \
+                        -Wno-invalid-source-encoding \
+                        -Wno-mismatched-new-delete \
                         -Wno-for-loop-analysis \
-                        -Wno-mismatched-new-delete
+                        -Wno-int-conversion \
+                        -Wno-reorder
+}
 QMAKE_CXXFLAGS_WARN_ON = $${QMAKE_CFLAGS_WARN_ON}
