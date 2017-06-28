@@ -13,3 +13,4 @@ debian
 ipch
 LDView.pro.user
 Makefile
+.qmake.stash
