@@ -166,8 +166,8 @@ studlogo.commands = ./Headerize ../Textures/StudLogo.png
 QMAKE_EXTRA_TARGETS += ini ldviewmessages studlogo
 PRE_TARGETDEPS += LDViewMessages.ini LDViewMessages.h StudLogo.h
 
-unix: !macx: exists(/usr/share/ldraw/parts/3001.dat) {
-    LDRAW_PATH = /usr/share/ldraw
+unix: !macx: exists(/usr/local/ldraw/parts/3001.dat) {
+    LDRAW_PATH = /usr/local/ldraw
 } else: macx: exists(/Library/ldraw/parts/3001.dat) {
     LDRAW_PATH = /Library/ldraw
 } else: macx: exists($$(HOME)/Library/ldraw/parts/3001.dat) {
@@ -180,38 +180,43 @@ unix: !macx: exists(/usr/share/ldraw/parts/3001.dat) {
     message("~~~ LDRAW LIBRARY $${LDRAW_PATH} ~~~")
 
     LDRAW_DIR = LDrawDir=$${LDRAW_PATH}
-
+    DEV_DIR   = $${_PRO_FILE_PWD_}
+    LN_13=13
+    LN_57=57
     ldviewini.target = LDViewCustomIni
     ldviewini.depends = ldviewiniMessage
-    ldviewini.commands = sed -i \'\' \'13s%.*%$${LDRAW_DIR}%\' LDViewCustomIni
-
-    ldviewiniMessage.commands = @echo Updating LDViewCustomIni entry $${LDRAW_DIR}
+    unix: !macx: ldviewini.commands = sed -i      \'$${LN_13}s%.*%$${LDRAW_DIR}%\' $${DEV_DIR}/LDViewCustomIni
+    macx:        ldviewini.commands = sed -i \'\' \'$${LN_13}s%.*%$${LDRAW_DIR}%\' $${DEV_DIR}/LDViewCustomIni
+    ldviewiniMessage.commands = @echo Project MESSAGE: Updating LDViewCustomIni entry $${LDRAW_DIR}
 
     exists($${LDRAW_PATH}/lgeo/LGEO.xml) {
         LGEO_DIR = XmlMapPath=$${LDRAW_PATH}/lgeo
         message("~~~ LGEO LIBRARY $${LGEO_DIR} ~~~")
 
-        ldviewini.commands += ; sed -i \'\' \'57s%.*%$${LGEO_DIR}%\' LDViewCustomIni
-        ldviewiniMessage.commands += ; echo Updating LDViewCustomIni entry $${LGEO_DIR}
+        unix: !macx: ldviewini.commands += ; sed -i      \'$${LN_57}s%.*%$${LGEO_DIR}%\' $${DEV_DIR}/LDViewCustomIni
+        macx:        ldviewini.commands += ; sed -i \'\' \'$${LN_57}s%.*%$${LGEO_DIR}%\' $${DEV_DIR}/LDViewCustomIni
+        ldviewiniMessage.commands += ; echo Project MESSAGE: Updating LDViewCustomIni entry $${LGEO_DIR}
     } else {
         message("~~~ LGEO LIBRARY NOT FOUND ~~~")
-        REMOVE_ENTRY = " "
-        ldviewini.commands += ; sed -i \'\' \'57d\' LDViewCustomIni
-        ldviewiniMessage.commands += ; echo Removing LDViewCustomIni entry XmlMapPath
+
+        unix: !macx: ldviewini.commands += ; sed -i      \'$${LN_57}s\' $${DEV_DIR}/LDViewCustomIni
+        macx:        ldviewini.commands += ; sed -i \'\' \'$${LN_57}s\' $${DEV_DIR}/LDViewCustomIni
+        ldviewiniMessage.commands += ; echo Project MESSAGE: Removing LDViewCustomnIi entry XmlMapPath
     }
 
-    unix: exists(~/.ldviewrc) {
-        ldviewiniMessage.commands += ; echo "Found \.ldviewc at $$(HOME)"
-    } else: exists(~/.config/LDView/ldviewrc) {
-        ldviewiniMessage.commands += ; echo "Found ldviewc at ~/.config/LDView"
+    unix: exists($$(HOME)/.ldviewrc) {
+        ldviewiniMessage.commands += ; echo "Project MESSAGE: Found ldviewc at $$(HOME)/.ldviewrc"
+    } else: exists($$(HOME)/.config/LDView/ldviewrc) {
+        ldviewiniMessage.commands += ; echo "Project MESSAGE: Found ldviewc at $$(HOME)/.config/LDView"
     } else {
-        ldviewiniMessage.commands += ; echo "\.ldviewrc will be created at $$(HOME)"
+        ldviewiniMessage.commands += ; echo "Project MESSAGE: $$(HOME)/.ldviewrc will be created"
     }
 
     QMAKE_EXTRA_TARGETS += ldviewini ldviewiniMessage
     PRE_TARGETDEPS += LDViewCustomIni
 
     # Test
+    #./ldview ../8464.mpd -SaveSnapshot=/tmp/8464i.png -IniFile=/home/trevor/projects/ldview/OSMesa/LDViewCustomIni -SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0
     include(LDViewCUITest.pri)
 
 } else {
