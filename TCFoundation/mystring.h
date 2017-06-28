@@ -186,6 +186,8 @@ TCExport ucstring ftoucstr(double value, int precision = 6);
 TCExport std::string ltostr(long value);
 TCExport ucstring ltoucstr(long value);
 
+TCExport std::string formatString(const char *format, ...);
+
 #define COUNT_OF(ar) (sizeof(ar) / sizeof(ar[0]))
 
 #endif

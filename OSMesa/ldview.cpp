@@ -25,6 +25,11 @@
 #include "StudLogo.h"
 #include "LDViewMessages.h"
 
+#ifdef __USE_GNU
+#include <errno.h>
+#include <stdlib.h>
+#endif
+
 #ifdef VERSION_INFO
 #ifdef ARCH
 char LDViewVersion[] = "Version " VERSION_INFO " (" ARCH ")      ";
@@ -68,6 +73,26 @@ protected:
 	}
 };
 
+std::string iniFileStatus(const char *iniPath )
+{
+#ifdef __USE_GNU
+        errno = 0;
+#endif
+    FILE *iniFile = fopen(iniPath, "r+b");
+
+    if (!iniFile)
+    {
+#ifdef __USE_GNU
+            return formatString("%s: Could not open file %s; %s",
+                                program_invocation_short_name, iniPath, strerror(errno));
+#else
+            return formatString("LDView: Cound not open file %s", iniPath);
+#endif
+    }
+    // we should never get here, but if we do ...
+    return NULL;
+}
+
 int setupDefaults(char *argv[])
 {
     int retVal = 0;
@@ -76,32 +101,66 @@ int setupDefaults(char *argv[])
 	// different one.
 	if (!TCUserDefaults::isIniFileSet())
 	{
+        // Check if IniFile specified on command line ...
+        std::string iniFile = TCUserDefaults::commandLineStringForKey("IniFile");
+        if (iniFile.size() > 0 )
+        {
+            std::string fileMsg = iniFileStatus(iniFile.c_str());
+            printf("Could not set command line INI file. Returned message:\n"
+                   " - %s\n - ldview: Checking for user INI files...\n", fileMsg.c_str());
+        }
+
 		char *homeDir = getenv("HOME");
 
 		if (homeDir)
 		{
-			char *rcFilename = copyString(homeDir, 128);
+            bool iniFileSet = false;
 
-			strcat(rcFilename, "/.ldviewrc");
+            char *rcFile = copyString(homeDir, 128);
+            std::string file1Msg;
 
-			char *rcFilename2 = copyString(homeDir, 128);
+            strcat(rcFile, "/.ldviewrc");
 
-			strcat(rcFilename2, "/.config/LDView/ldviewrc");
-
-            if (!TCUserDefaults::setIniFile(rcFilename) &&
-                    !TCUserDefaults::setIniFile(rcFilename2))
+            if (!TCUserDefaults::setIniFile(rcFile))
             {
-                printf("Error setting INI File to %s or %s\n", rcFilename,
-                       rcFilename2);
+                file1Msg = iniFileStatus(rcFile);
+            }
+            else
+            {
+                iniFileSet = true;
+            }
+
+            char *rcFile2 = NULL;
+            std::string file2Msg;
+
+            if (!iniFileSet)
+            {
+                rcFile2 = copyString(homeDir, 128);
+                strcat(rcFile2, "/.config/LDView/ldviewrc");
+
+                if (!TCUserDefaults::setIniFile(rcFile2))
+                {
+                    file2Msg = iniFileStatus(rcFile2);
+                }
+                else
+                {
+                    iniFileSet = true;
+                }
+            }
+
+            if (!iniFileSet)
+            {
+                printf("Could not set user INI file Returned messages:\n"
+                       " - %s\n - %s\n", file1Msg.c_str(), file2Msg.c_str());
                 retVal = 1;
             }
-			delete rcFilename;
-			delete rcFilename2;
-		}
-		else
-		{
-			printf("HOME environment variable not defined: cannot use "
-				"~/.ldviewrc.\n");
+            delete rcFile;
+            delete rcFile2;
+        }
+        else
+        {
+            printf("HOME environment variable not defined: cannot use "
+                "~/.ldviewrc.\n");
             retVal = 1;
 		}
 	}
