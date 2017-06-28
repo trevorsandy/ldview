@@ -8,7 +8,8 @@ include(../../3rdParty.pri)
 message("~~~ lib3ds.a $$BUILD BUILD ~~~")
 
 # Input
-HEADERS += lib3ds.h
+HEADERS += lib3ds.h \
+           lib3ds_impl.h
 SOURCES += lib3ds_atmosphere.c \
            lib3ds_background.c \
            lib3ds_camera.c \

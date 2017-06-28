@@ -60,8 +60,7 @@ MOC_DIR          = .moc$${POSTFIX}
 RCC_DIR          = .qrc$${POSTFIX}
 UI_DIR           = .ui$${POSTFIX}
 
-unix:!macx: TARGET = ldview
-else:       TARGET = LDView
+TARGET = LDView
 
 INCLUDEPATH += ../LDLib ../TRE ../TCFoundation ../LDLoader ../LDExporter
 INCLUDEPATH += $${LIBS_INC}
@@ -218,19 +217,18 @@ QMAKE_CLEAN += *.qm
 
 LIBS	+= -lLDLoader$$POSTFIX -lTRE$$POSTFIX -lTCFoundation$$POSTFIX
 
-unix: LIBS += -lz -ljpeg -l$${LIB_PNG} -lGLU
+unix: LIBS += -ljpeg -l$${LIB_PNG} -lGLU
 
 win32: LIBS += -llibjpeg-vc2005
 
-LIBS	+= -lgl2ps -lLDExporter$$POSTFIX
+LIBS	+= -lgl2ps -lLDExporter$$POSTFIX -lz
 
 unix {
 # This has to be down here, because -ltinyxml has to come after -lLDExporter.
     LIBS += -ltinyxml
 
     contains(DEFINES, EXPORT_3DS) {
-        !macx: contains(ARCH, 64): LIBS += -l3ds-64
-         else:                     LIBS += -l3ds
+        LIBS += -l$${LIB_3DS}
     }
 
 # Use static boost library on Ubuntu and other systems that have it in

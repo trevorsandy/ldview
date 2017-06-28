@@ -104,18 +104,8 @@ LIBS_  = -lLDraw$${POSTFIX} \
          -ltinyxml
 
 # 3ds
-contains(DEFINES, EXPORT_3DS){
-    macx {
-        LIBS_ += -l3ds
-    } else {
-        equals (ARCH, 64) {
-            LIBDIRS += -L/usr/lib64
-            LIBS_   += -l3ds-64
-        } else {
-            LIBDIRS += -L/usr/lib32
-            LIBS_   += -l3ds
-        }
-    }
+contains(DEFINES, EXPORT_3DS) {
+    LIBS_ += -l$${LIB_3DS}
 }
 
 INCLUDEPATH += .. $${LIBS_INC}
@@ -145,17 +135,21 @@ exists (/usr/include/qt3) {
 }
 
 !USE_X11_SYSTEM_LIBS {
-    QMAKE_LFLAGS   += -Wl,-search_paths_first
+    macx:        QMAKE_LFLAGS += -Wl,-search_paths_first -Wl,-headerpad_max_install_names
+    unix: !macx: QMAKE_LFLAGS += -Wl,--no-as-needed
     LLVM_LIBS       = -lLLVMX86Disassembler -lLLVMX86AsmParser -lLLVMX86CodeGen -lLLVMGlobalISel -lLLVMSelectionDAG \
                       -lLLVMAsmPrinter -lLLVMDebugInfoCodeView -lLLVMDebugInfoMSF -lLLVMCodeGen -lLLVMScalarOpts \
                       -lLLVMInstCombine -lLLVMTransformUtils -lLLVMBitWriter -lLLVMX86Desc -lLLVMMCDisassembler \
                       -lLLVMX86Info -lLLVMX86AsmPrinter -lLLVMX86Utils -lLLVMMCJIT -lLLVMExecutionEngine \
                       -lLLVMTarget -lLLVMAnalysis -lLLVMProfileData -lLLVMRuntimeDyld -lLLVMObject \
-                      -lLLVMMCParser -lLLVMBitReader -lLLVMMC -lLLVMCore -lLLVMSupport -lLLVMDemangle -lm
+                      -lLLVMMCParser -lLLVMBitReader -lLLVMMC -lLLVMCore -lLLVMSupport -lLLVMDemangle
+    macx:        LLVM_LIBS += -lm
+    unix: !macx: LLVM_LIBS += -lrt -ldl -lm
+
     LIBS_          += $${LLVM_LIBS}
 }
 
-LIBS               += $${LDLIBS} $${LIBDIRS} $${LIBS_} $${LIBS_DIR}
+LIBS               += $${LDLIBS} $${LIBDIRS} $${LIBS_DIR} $${LIBS_}
 
 ini.target = LDViewMessages.ini
 ini.depends = ../LDViewMessages.ini ../LDExporter/LDExportMessages.ini
