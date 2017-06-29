@@ -1309,13 +1309,14 @@ std::string formatString(const char *format, ...)
     va_list argPtr;
 
     va_start(argPtr, format);
-    char buf[vsnprintf(nullptr, 0, format, argPtr) + 1]; // Extra space for '\0'
+    std::vector<char> buf;
+    buf.resize(vsnprintf(NULL, 0, format, argPtr) + 1); // Extra space for '\0'
     va_end(argPtr);
     va_start(argPtr, format);
-    vsnprintf(buf, sizeof buf, format, argPtr);
+    vsnprintf(&buf[0], buf.size(), format, argPtr);
     va_end(argPtr);
 
-    return std::string(buf);
+    return &buf[0];
 }
 
 void debugVLog(const char *udKey, const char *format, va_list argPtr)
