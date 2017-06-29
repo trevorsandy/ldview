@@ -43,15 +43,6 @@ LANGUAGE	= C++
 # I have no idea that this is ??
 DBFILE		= LDView.db
 
-macx: isEmpty(PREFIX):PREFIX            = $$_PRO_FILE_PWD_/../Build_OSX/usr
-else: isEmpty(PREFIX):PREFIX            = /usr
-isEmpty(BINDIR):BINDIR			= $$PREFIX/bin
-isEmpty(DATADIR):DATADIR		= $$PREFIX/share
-isEmpty(DOCDIR):DOCDIR			= $$DATADIR/doc
-isEmpty(MANDIR):MANDIR			= $$DATADIR/man
-isEmpty(MIMEICONDIR):MIMEICONDIR= $$DATADIR/icons/gnome/32x32/mimetypes
-isEmpty(SYSCONFDIR):SYSCONFDIR          = /etc
-
 QMAKE_CXXFLAGS	+= $(Q_CXXFLAGS)
 QMAKE_CFLAGS   	+= $(Q_CFLAGS)
 QMAKE_LFLAGS   	+= $(Q_LDFLAGS)
@@ -64,6 +55,13 @@ TARGET = LDView
 
 INCLUDEPATH += ../LDLib ../TRE ../TCFoundation ../LDLoader ../LDExporter
 INCLUDEPATH += $${LIBS_INC}
+
+exists($$[QT_INSTALL_BINS]/lrelease){
+    LRELEASE = $$[QT_INSTALL_BINS]/lrelease
+    message("~~~ lrelease found at $$[QT_INSTALL_BINS] ~~~")
+} else {
+    LRELEASE = lrelease
+}
 
 unix {
 
@@ -89,24 +87,27 @@ unix {
         }
     }
 
-    exists($$[QT_INSTALL_BINS]/lrelease){
-        LRELEASE = $$[QT_INSTALL_BINS]/lrelease
-        message("~~~ lrelease found at $$[QT_INSTALL_BINS] ~~~")
-    } else {
-        LRELEASE = lrelease
-    }
+    !macx: !3RD_PARTY_INSTALL {
 
-    documentation.depends += compiler_translations_make_all
-    documentation.path = $${DOCDIR}/ldview
-    documentation.files = ../Readme.txt ../Help.html ../license.txt \
-                            ../m6459.ldr \
-                            ../ChangeHistory.html ../8464.mpd todo.txt \
-                            ../Textures/SansSerif.fnt \
-                            ../LDExporter/LGEO.xml \
-                            ldview_de.qm ldview_cz.qm ldview_it.qm ldview_en.qm ldview_hu.qm
-    INSTALLS += documentation
+        isEmpty(PREFIX):PREFIX          = /usr
+        isEmpty(BINDIR):BINDIR          = $$PREFIX/bin
+        isEmpty(DATADIR):DATADIR        = $$PREFIX/share
+        isEmpty(DOCDIR):DOCDIR          = $$DATADIR/doc
+        isEmpty(MANDIR):MANDIR          = $$DATADIR/man
+        isEmpty(MIMEICONDIR):MIMEICONDIR= $$DATADIR/icons/gnome/32x32/mimetypes
+        isEmpty(SYSCONFDIR):SYSCONFDIR  = /etc
 
-    !macx {
+        documentation.depends += compiler_translations_make_all
+        documentation.path     = $${DOCDIR}/ldview
+        documentation.files    = ../Readme.txt ../Help.html ../license.txt \
+                                 ../m6459.ldr \
+                                 ../ChangeHistory.html ../8464.mpd todo.txt \
+                                 ../Textures/SansSerif.fnt \
+                                 ../LDExporter/LGEO.xml \
+                                 ldview_de.qm ldview_cz.qm ldview_it.qm \
+                                 ldview_en.qm ldview_hu.qm
+        INSTALLS += documentation
+
         target.path      = $${BINDIR}
         script.path      = $${BINDIR}
         script.extra     = $(INSTALL_PROGRAM) desktop/ldraw-thumbnailer $(INSTALL_ROOT)$${BINDIR}
@@ -134,8 +135,8 @@ unix {
         icon4.extra      = $(INSTALL_FILE) images/LDViewIcon128.png $(INSTALL_ROOT)$${DATADIR}/pixmaps/ldview.png
         kdeserv.path     = $${DATADIR}/kde4/services
         kdeserv.files    = kde/ldviewthumbnailcreator.desktop
-        INSTALLS += target man mimeinfo mimepack appreg \
-                          apps thumbnailer icon1 icon2 icon3 icon4 script schema kdeserv
+        INSTALLS        += target man mimeinfo mimepack appreg \
+                           apps thumbnailer icon1 icon2 icon3 icon4 script schema kdeserv
 
         initrans_hu.path  = $${DATADIR}/ldview
         initrans_hu.extra = $(INSTALL_FILE) ../Translations/Hungarian/LDViewMessages.ini \
@@ -168,6 +169,22 @@ unix {
     macx:LIBS += $${OSX_FRAMEWORKS_CORE}
 }
 
+3RD_PARTY_INSTALL {
+    isEmpty(3RD_PREFIX):3RD_PREFIX       = $$_PRO_FILE_PWD_/../3rdPartyInstall
+    isEmpty(3RD_BINDIR):3RD_BINDIR       = $$3RD_PREFIX/bin
+    isEmpty(3RD_DOCDIR):3RD_DOCDIR       = $$3RD_PREFIX/docs/$$TARGET-$$VER_MAJ"."$$VER_MIN
+    isEmpty(3RD_RESOURCES):3RD_RESOURCES = $$3RD_PREFIX/resources//$$TARGET-$$VER_MAJ"."$$VER_MIN
+
+    target.path                 = $${3RD_BINDIR}
+    documentation.path          = $${3RD_DOCDIR}
+    documentation.files         = ../Readme.txt ../Help.html ../license.txt \
+                                  ../ChangeHistory.html ldview.1
+    resources.path              = $${3RD_RESOURCES}
+    resources.files             = ../m6459.ldr ../8464.mpd LDViewCustomIni \
+                                  ldviewrc.sample
+    INSTALLS += target documentation resources
+}
+
 # Need to look at this more closely...
 win32 {
     QMAKE_CXXFLAGS_RELEASE += /FI winsock2.h /FI winsock.h
@@ -188,7 +205,7 @@ win32 {
     ini.commands = copy /y /a ..\LDViewMessages.ini+..\LDExporter\LDExportMessages.ini LDViewMessages.ini
     ini.target = LDViewMessages.ini
     ini.depends = ../LDViewMessages.ini ../LDExporter/LDExportMessages.ini
-    QMAKE_EXTRA_WIN_TARGETS += ini
+    QMAKE_EXTRA_TARGETS += ini
     PRE_TARGETDEPS += LDViewMessages.ini
 
     DEFINES 	+= _TC_STATIC

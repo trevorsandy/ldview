@@ -33,14 +33,6 @@ message("~~~ LDVIEW ($$join(ARCH,,,bit)) $${BUILD} CUI EXECUTABLE VERSION $$VERS
 
 DEFINES		+= QT_THREAD_SUPPORT
 
-macx: isEmpty(PREFIX):PREFIX    = $$_PRO_FILE_PWD_/../Build_OSX/usr
-else: isEmpty(PREFIX):PREFIX    = /usr
-isEmpty(BINDIR):BINDIR		= $$PREFIX/bin
-isEmpty(DATADIR):DATADIR	= $$PREFIX/share
-isEmpty(DOCDIR):DOCDIR		= $$DATADIR/doc
-isEmpty(MANDIR):MANDIR		= $$DATADIR/man
-isEmpty(SYSCONFDIR):SYSCONFDIR	= /etc
-
 QMAKE_CXXFLAGS	+= $(Q_CXXFLAGS)
 QMAKE_CFLAGS   	+= $(Q_CFLAGS)
 QMAKE_LFLAGS   	+= $(Q_LDFLAGS)
@@ -59,16 +51,42 @@ unix {
         message("CRITICAL: OSMesa libraries not detected!")
     }
 
-    documentation.depends += compiler_translations_make_all
-    documentation.path = $${DOCDIR}/ldview
-    documentation.files = ../Readme.txt ../Help.html ../license.txt \
-                            ../m6459.ldr \
-                            ../ChangeHistory.html ../8464.mpd todo.txt \
-                            ../Textures/SansSerif.fnt \
-                            ../LDExporter/LGEO.xml \
-                            ldview_de.qm ldview_cz.qm ldview_it.qm ldview_en.qm ldview_hu.qm
-    INSTALLS += documentation
+    !macx: !3RD_PARTY_INSTALL {
+
+        isEmpty(PREFIX):PREFIX          = /usr
+        isEmpty(BINDIR):BINDIR          = $$PREFIX/bin
+        isEmpty(DATADIR):DATADIR        = $$PREFIX/share
+        isEmpty(DOCDIR):DOCDIR          = $$DATADIR/doc
+        isEmpty(MANDIR):MANDIR          = $$DATADIR/man
+
+        target.path         = $${BINDIR}
+        documentation.path  = $${DOCDIR}/ldview
+        documentation.files = ../Readme.txt ../Help.html ../license.txt \
+                              ../m6459.ldr \
+                              ../ChangeHistory.html ../8464.mpd todo.txt \
+                              ../Textures/SansSerif.fnt \
+                              ../LDExporter/LGEO.xml
+        man.path            = $${MANDIR}/man1
+        man.extra           = $(INSTALL_FILE) LDView.1 desktop/ldraw-thumbnailer.1 $(INSTALL_ROOT)$${MANDIR}/man1 ; $(COMPRESS) $(INSTALL_ROOT)$${MANDIR}/man1/*.1
+        INSTALLS += target documentation
+    }
 } 
+
+3RD_PARTY_INSTALL {
+    isEmpty(3RD_PREFIX):3RD_PREFIX       = $$_PRO_FILE_PWD_/../3rdPartyInstall
+    isEmpty(3RD_BINDIR):3RD_BINDIR       = $$3RD_PREFIX/bin
+    isEmpty(3RD_DOCDIR):3RD_DOCDIR       = $$3RD_PREFIX/docs/$$TARGET-$$VER_MAJ"."$$VER_MIN
+    isEmpty(3RD_RESOURCES):3RD_RESOURCES = $$3RD_PREFIX/resources//$$TARGET-$$VER_MAJ"."$$VER_MIN
+
+    target.path                 = $${3RD_BINDIR}
+    documentation.path          = $${3RD_DOCDIR}
+    documentation.files         = ../Readme.txt ../Help.html ../license.txt \
+                                  ../ChangeHistory.html ldview.1
+    resources.path              = $${3RD_RESOURCES}
+    resources.files             = ../m6459.ldr ../8464.mpd LDViewCustomIni \
+                                  ldviewrc.sample
+    INSTALLS += target documentation resources
+}
 
 macx: LIBS += $${OSX_FRAMEWORKS_CORE}
 
@@ -111,27 +129,29 @@ contains(DEFINES, EXPORT_3DS) {
 INCLUDEPATH += .. $${LIBS_INC}
 
 # Platform-specific
-freebsd {
-    LIBDIRS 	 += -L/usr/local/lib
-}
+unix {
+    freebsd {
+        LIBDIRS 	 += -L/usr/local/lib
+    }
 
-# slurm is media.peeron.com
-OSTYPE = $$system(hostname)
-contains(OSTYPE, slurm) {
-    LIBDIRS      -= $${OSMESA_LIBDIR}
-    LIBDIRS	 += -L../../Mesa-7.0.2/lib
-    CONFIG 	 -= static	# reverse static directive - not sure about this ?
-}
+    # slurm is media.peeron.com
+    OSTYPE = $$system(hostname)
+    contains(OSTYPE, slurm) {
+        LIBDIRS      -= $${OSMESA_LIBDIR}
+        LIBDIRS	 += -L../../Mesa-7.0.2/lib
+        CONFIG 	 -= static	# reverse static directive - not sure about this ?
+    }
 
-OSTYPE = $$system(hostname | cut -d. -f2-)
-contains(OSTYPE, pair.com) {
-    LIBDIRS      -= $${OSMESA_LIBDIR}
-    LIBDIRS	 += -L../../Mesa-7.11/lib -L/usr/local/lib/pth -L/usr/local/lib
-    LIBS_	 += -lpth
-}
+    OSTYPE = $$system(hostname | cut -d. -f2-)
+    contains(OSTYPE, pair.com) {
+        LIBDIRS      -= $${OSMESA_LIBDIR}
+        LIBDIRS	 += -L../../Mesa-7.11/lib -L/usr/local/lib/pth -L/usr/local/lib
+        LIBS_	 += -lpth
+    }
 
-exists (/usr/include/qt3) {
-    INCLUDEPATH  += /usr/include/qt3
+    exists (/usr/include/qt3) {
+        INCLUDEPATH  += /usr/include/qt3
+    }
 }
 
 !USE_X11_SYSTEM_LIBS {
@@ -172,55 +192,58 @@ unix: !macx: exists(/usr/local/ldraw/parts/3001.dat) {
     LDRAW_PATH = /Library/ldraw
 } else: macx: exists($$(HOME)/Library/ldraw/parts/3001.dat) {
     LDRAW_PATH = $$(HOME)/Library/ldraw
-} else: win32: exists(C:/LDraw/parts/3001.dat)  {
-    LDRAW_PATH = C:/LDraw
+} else: win32: exists($$(USERPROFILE)\\LDraw\\parts\\3001.dat)  {
+    LDRAW_PATH = $$(USERPROFILE)\\LDraw
 }
 
-!isEmpty(LDRAW_PATH) {
-    message("~~~ LDRAW LIBRARY $${LDRAW_PATH} ~~~")
+# tests on unix (linux OSX)
+unix {
+    !isEmpty(LDRAW_PATH) {
+        message("~~~ LDRAW LIBRARY $${LDRAW_PATH} ~~~")
 
-    LDRAW_DIR = LDrawDir=$${LDRAW_PATH}
-    DEV_DIR   = $${_PRO_FILE_PWD_}
-    LN_13=13
-    LN_57=57
-    ldviewini.target = LDViewCustomIni
-    ldviewini.depends = ldviewiniMessage
-    unix: !macx: ldviewini.commands = sed -i      \'$${LN_13}s%.*%$${LDRAW_DIR}%\' $${DEV_DIR}/LDViewCustomIni
-    macx:        ldviewini.commands = sed -i \'\' \'$${LN_13}s%.*%$${LDRAW_DIR}%\' $${DEV_DIR}/LDViewCustomIni
-    ldviewiniMessage.commands = @echo Project MESSAGE: Updating LDViewCustomIni entry $${LDRAW_DIR}
+        LDRAW_DIR = LDrawDir=$${LDRAW_PATH}
+        DEV_DIR   = $${_PRO_FILE_PWD_}
+        LN_13=13
+        LN_57=57
+        ldviewini.target = LDViewCustomIni
+        ldviewini.depends = ldviewiniMessage
+        !macx: ldviewini.commands = sed -i      \'$${LN_13}s%.*%$${LDRAW_DIR}%\' $${DEV_DIR}/LDViewCustomIni
+        else:  ldviewini.commands = sed -i \'\' \'$${LN_13}s%.*%$${LDRAW_DIR}%\' $${DEV_DIR}/LDViewCustomIni
+        ldviewiniMessage.commands = @echo Project MESSAGE: Updating LDViewCustomIni entry $${LDRAW_DIR}
 
-    exists($${LDRAW_PATH}/lgeo/LGEO.xml) {
-        LGEO_DIR = XmlMapPath=$${LDRAW_PATH}/lgeo
-        message("~~~ LGEO LIBRARY $${LGEO_DIR} ~~~")
+        exists($${LDRAW_PATH}/lgeo/LGEO.xml) {
+            LGEO_DIR = XmlMapPath=$${LDRAW_PATH}/lgeo
+            message("~~~ LGEO LIBRARY $${LGEO_DIR} ~~~")
 
-        unix: !macx: ldviewini.commands += ; sed -i      \'$${LN_57}s%.*%$${LGEO_DIR}%\' $${DEV_DIR}/LDViewCustomIni
-        macx:        ldviewini.commands += ; sed -i \'\' \'$${LN_57}s%.*%$${LGEO_DIR}%\' $${DEV_DIR}/LDViewCustomIni
-        ldviewiniMessage.commands += ; echo Project MESSAGE: Updating LDViewCustomIni entry $${LGEO_DIR}
+            !macx: ldviewini.commands += ; sed -i      \'$${LN_57}s%.*%$${LGEO_DIR}%\' $${DEV_DIR}/LDViewCustomIni
+            else:  ldviewini.commands += ; sed -i \'\' \'$${LN_57}s%.*%$${LGEO_DIR}%\' $${DEV_DIR}/LDViewCustomIni
+            ldviewiniMessage.commands += ; echo Project MESSAGE: Updating LDViewCustomIni entry $${LGEO_DIR}
+        } else {
+            message("~~~ LGEO LIBRARY NOT FOUND ~~~")
+
+            !macx: ldviewini.commands += ; sed -i      \'$${LN_57}s\' $${DEV_DIR}/LDViewCustomIni
+            else:  ldviewini.commands += ; sed -i \'\' \'$${LN_57}s\' $${DEV_DIR}/LDViewCustomIni
+            ldviewiniMessage.commands += ; echo Project MESSAGE: Removing LDViewCustomnIi entry XmlMapPath
+        }
+
+        exists($$(HOME)/.ldviewrc) {
+            ldviewiniMessage.commands += ; echo "Project MESSAGE: Found ldviewc at $$(HOME)/.ldviewrc"
+        } else: exists($$(HOME)/.config/LDView/ldviewrc) {
+            ldviewiniMessage.commands += ; echo "Project MESSAGE: Found ldviewc at $$(HOME)/.config/LDView"
+        } else {
+            ldviewiniMessage.commands += ; echo "Project MESSAGE: $$(HOME)/.ldviewrc will be created"
+        }
+
+        QMAKE_EXTRA_TARGETS += ldviewini ldviewiniMessage
+        PRE_TARGETDEPS += LDViewCustomIni
+
+        # Test
+        #./ldview ../8464.mpd -SaveSnapshot=/tmp/8464i.png -IniFile=/home/trevor/projects/ldview/OSMesa/LDViewCustomIni -SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0
+        !3RD_PARTY_INSTALL: include(LDViewCUITest.pri)
+
     } else {
-        message("~~~ LGEO LIBRARY NOT FOUND ~~~")
-
-        unix: !macx: ldviewini.commands += ; sed -i      \'$${LN_57}s\' $${DEV_DIR}/LDViewCustomIni
-        macx:        ldviewini.commands += ; sed -i \'\' \'$${LN_57}s\' $${DEV_DIR}/LDViewCustomIni
-        ldviewiniMessage.commands += ; echo Project MESSAGE: Removing LDViewCustomnIi entry XmlMapPath
+        message("WARNING: LDRAW LIBRARY NOT FOUND - LDView CUI cannot be tested")
     }
-
-    unix: exists($$(HOME)/.ldviewrc) {
-        ldviewiniMessage.commands += ; echo "Project MESSAGE: Found ldviewc at $$(HOME)/.ldviewrc"
-    } else: exists($$(HOME)/.config/LDView/ldviewrc) {
-        ldviewiniMessage.commands += ; echo "Project MESSAGE: Found ldviewc at $$(HOME)/.config/LDView"
-    } else {
-        ldviewiniMessage.commands += ; echo "Project MESSAGE: $$(HOME)/.ldviewrc will be created"
-    }
-
-    QMAKE_EXTRA_TARGETS += ldviewini ldviewiniMessage
-    PRE_TARGETDEPS += LDViewCustomIni
-
-    # Test
-    #./ldview ../8464.mpd -SaveSnapshot=/tmp/8464i.png -IniFile=/home/trevor/projects/ldview/OSMesa/LDViewCustomIni -SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0
-    include(LDViewCUITest.pri)
-
-} else {
-    message("WARNING: LDRAW LIBRARY NOT FOUND - LDView CUI cannot be tested")
 }
 
 QMAKE_CLEAN += LDViewMessages.ini LDViewMessages.h StudLogo.h
