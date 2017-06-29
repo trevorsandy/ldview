@@ -2,10 +2,10 @@
 # LDView global directives 
 
 #Uncomment right side of directive to manually enable
-!contains(CONFIG, USE_3RD_PARTY_LIBS):  #CONFIG+=USE_3RD_PARTY_LIBS  # can also manually set/unset in LDView.pro
+!contains(CONFIG, USE_3RD_PARTY_LIBS):  #CONFIG+=USE_3RD_PARTY_LIBS  # must also manually set/unset in LDView.pro
+!contains(CONFIG, USE_SYSTEM_ZLIB):     #CONFIG+=USE_SYSTEM_ZLIB     # must also manually set/unset in LDView.pro
 !contains(CONFIG, USE_X11_SYSTEM_LIBS): #CONFIG+=USE_X11_SYSTEM_LIBS
 !contains(CONFIG, USE_SOFTPIPE):        #CONFIG+=USE_SOFTPIPE
-!contains(CONFIG, USE_SYSTEM_ZLIB):     #CONFIG+=USE_SYSTEM_ZLIB     # can also manually set/unset in LDView.pro
 !contains(CONFIG, USE_SYSTEM_LIB_DIR):  #CONFIG+=USE_SYSTEM_LIB_DIR
 !contains(CONFIG, RUN_CUI_INI_TEST):    #CONFIG += RUN_CUI_INI_TEST
 !contains(CONFIG, RUN_CUI_STD_TEST):    #CONFIG += RUN_CUI_STD_TEST
@@ -13,6 +13,10 @@
 # GUI/CUI switch
 contains(DEFINES, _QT):     CONFIG += _QT_GUI
 contains(DEFINES, _OSMESA): CONFIG += _OSM_CUI
+
+# platform switch
+contains(QT_ARCH, x86_64): ARCH = 64
+else:                      ARCH = 32
 
 # Basically, this project include file is set up to allow some options for selecting your LDView libraries.
 # The default is to select the pre-defined libraries in ../lib and headers in ../include.
@@ -52,20 +56,23 @@ unix {
         OSX_FRAMEWORKS_CORE = -framework CoreFoundation -framework CoreServices
 
         # base names
+        LIB_3DS     = 3ds
         LIB_PNG     = png16
         LIB_OSMESA  = OSMesa32
         LIB_GLU     = GLU
 
     } else {
         # pre-compiled libraries location
-        LIBDIR_     = ../lib
+        equals(ARCH, 64): LIBDIR_ = ../lib/Linux/x86_64
+        else:             LIBDIR_ = ../lib/Linux/i386
 
         # dynamic library extension
         EXT_        = so
 
         # base names
+        LIB_3DS     = 3ds
         LIB_PNG     = png
-        LIB_OSMESA  = OSMesa
+        LIB_OSMESA  = OSMesa32
         LIB_GLU     = GLU
     }
 
@@ -76,6 +83,12 @@ unix {
     EXT_            = dll
     # static library extensions
     S_EXT_          = a
+
+    # base names
+    LIB_3DS     = 3ds
+    LIB_PNG     = png
+    LIB_OSMESA  = OSMesa32
+    LIB_GLU     = GLU
 }
 
 # use this option if the required pre-compiled libs are in /usr/local/ or some other location
@@ -219,12 +232,6 @@ unix {
     }
 }
 
-contains(QT_ARCH, x86_64) {
-    ARCH = 64
-} else {
-    ARCH = 32
-}
-
 CONFIG(debug, debug|release) {
     BUILD = DEBUG
 } else {
@@ -311,17 +318,20 @@ QMAKE_CFLAGS_WARN_ON =  -Wall -W \
                         -Wno-unused-parameter \
                         -Wno-parentheses \
                         -Wno-unused-variable \
-                        -Wno-implicit-function-declaration \
-                        -Wno-int-conversion \
-                        -Wno-incompatible-pointer-types-discards-qualifiers \
-                        -Wno-incompatible-pointer-types \
-                        -Wno-invalid-source-encoding \
                         -Wno-deprecated-declarations \
                         -Wno-return-type \
-                        -Wno-undefined-bool-conversion \
-                        -Wno-reorder \
                         -Wno-sign-compare \
                         -Wno-uninitialized \
+                        -Wno-clobbered
+macx {
+QMAKE_CFLAGS_WARN_ON += -Wno-implicit-function-declaration \
+                        -Wno-incompatible-pointer-types-discards-qualifiers \
+                        -Wno-incompatible-pointer-types \
+                        -Wno-undefined-bool-conversion \
+                        -Wno-invalid-source-encoding \
+                        -Wno-mismatched-new-delete \
                         -Wno-for-loop-analysis \
-                        -Wno-mismatched-new-delete
+                        -Wno-int-conversion \
+                        -Wno-reorder
+}
 QMAKE_CXXFLAGS_WARN_ON = $${QMAKE_CFLAGS_WARN_ON}

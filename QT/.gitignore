@@ -27,3 +27,7 @@ AppImage
 *.AppImage
 .qmake.stash
 ldview_plugin_import.cpp
+.moc*
+.obj*
+.qrc*
+.ui*

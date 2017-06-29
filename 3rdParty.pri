@@ -52,24 +52,29 @@ win32 {
     QMAKE_EXT_OBJ = .obj
 }
 
+# suppress warnings
 QMAKE_CFLAGS_WARN_ON =  -Wall -W \
                         -Wno-unused-parameter \
                         -Wno-parentheses \
                         -Wno-unused-variable \
-                        -Wno-implicit-function-declaration \
-                        -Wno-int-conversion \
-                        -Wno-incompatible-pointer-types-discards-qualifiers \
-                        -Wno-incompatible-pointer-types \
-                        -Wno-invalid-source-encoding \
                         -Wno-deprecated-declarations \
                         -Wno-return-type \
-                        -Wno-undefined-bool-conversion \
-                        -Wno-reorder \
                         -Wno-sign-compare \
                         -Wno-uninitialized \
-                        -Wno-for-loop-analysis \
                         -Wno-format \
                         -Wno-switch \
                         -Wno-comment \
-                        -Wno-mismatched-new-delete
+                        -Wno-unused-result \
+                        -Wno-unused-but-set-variable
+macx {
+QMAKE_CFLAGS_WARN_ON += -Wno-implicit-function-declaration \
+                        -Wno-incompatible-pointer-types-discards-qualifiers \
+                        -Wno-incompatible-pointer-types \
+                        -Wno-undefined-bool-conversion \
+                        -Wno-invalid-source-encoding \
+                        -Wno-mismatched-new-delete \
+                        -Wno-for-loop-analysis \
+                        -Wno-int-conversion \
+                        -Wno-reorder
+}
 QMAKE_CXXFLAGS_WARN_ON = $${QMAKE_CFLAGS_WARN_ON}

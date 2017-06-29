@@ -39,4 +39,5 @@ SOURCES += $$PWD/LD3dsExporter.cpp \
            $$PWD/LDLdrExporter.cpp \
            $$PWD/LDPovExporter.cpp \
            $$PWD/LDStlExporter.cpp
-OTHER_FILES += $$PWD/LGEO.xml
+OTHER_FILES += $$PWD/LDExportMessages.ini \
+               $$PWD/LGEO.xml

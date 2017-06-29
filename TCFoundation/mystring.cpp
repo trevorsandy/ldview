@@ -1300,6 +1300,24 @@ void consolePrintf(const wchar_t *format, ...)
 	va_end(argPtr);
 }
 
+#ifdef WIN32
+#pragma warning(disable : 4996) // suppress MS deprecated warning for vsnprintf
+#endif
+
+std::string formatString(const char *format, ...)
+{
+    va_list argPtr;
+
+    va_start(argPtr, format);
+    char buf[vsnprintf(nullptr, 0, format, argPtr) + 1]; // Extra space for '\0'
+    va_end(argPtr);
+    va_start(argPtr, format);
+    vsnprintf(buf, sizeof buf, format, argPtr);
+    va_end(argPtr);
+
+    return std::string(buf);
+}
+
 void debugVLog(const char *udKey, const char *format, va_list argPtr)
 {
 	char *logFilename = TCUserDefaults::pathForKey(udKey);
