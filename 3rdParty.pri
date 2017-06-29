@@ -29,9 +29,7 @@ INCLUDEPATH += $$PWD
 unix:!macx: DEFINES += _GNU_SOURCE
 
 # USE CPP 11
-DEFINES -= USE_CPP11
-macx: freebsd: DEFINES += USE_CPP11
-else: lessThan(QT_MAJOR_VERSION, 5): DEFINES += USE_CPP11
+DEFINES += USE_CPP11
 contains(DEFINES, USE_CPP11) {
     unix:!freebsd:!macx {
         GCC_VERSION = $$system(g++ -dumpversion)
@@ -41,7 +39,7 @@ contains(DEFINES, USE_CPP11) {
             QMAKE_CXXFLAGS += -std=c++0x
         }
     } else {
-        QMAKE_CXXFLAGS += -std=c++11
+        CONFIG += c++11
     }
 }
 

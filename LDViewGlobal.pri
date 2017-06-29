@@ -2,13 +2,12 @@
 # LDView global directives 
 
 #Uncomment right side of directive to manually enable
-!contains(CONFIG, USE_3RD_PARTY_LIBS):  #CONFIG+=USE_3RD_PARTY_LIBS  # must also manually set/unset in LDView.pro
-!contains(CONFIG, USE_SYSTEM_ZLIB):     #CONFIG+=USE_SYSTEM_ZLIB     # must also manually set/unset in LDView.pro
-!contains(CONFIG, USE_X11_SYSTEM_LIBS): #CONFIG+=USE_X11_SYSTEM_LIBS
-!contains(CONFIG, USE_SOFTPIPE):        #CONFIG+=USE_SOFTPIPE
-!contains(CONFIG, USE_SYSTEM_LIB_DIR):  #CONFIG+=USE_SYSTEM_LIB_DIR
-!contains(CONFIG, RUN_CUI_INI_TEST):    #CONFIG += RUN_CUI_INI_TEST
-!contains(CONFIG, RUN_CUI_STD_TEST):    #CONFIG += RUN_CUI_STD_TEST
+!contains(CONFIG, 3RD_PARTY_INSTALL):   # CONFIG+=3RD_PARTY_INSTALL
+!contains(CONFIG, USE_3RD_PARTY_LIBS):  # CONFIG+=USE_3RD_PARTY_LIBS  # must also manually set/unset in LDView.pro
+!contains(CONFIG, USE_SYSTEM_ZLIB):     # CONFIG+=USE_SYSTEM_ZLIB     # must also manually set/unset in LDView.pro
+!contains(CONFIG, USE_X11_SYSTEM_LIBS): # CONFIG+=USE_X11_SYSTEM_LIBS
+!contains(CONFIG, USE_SOFTPIPE):        # CONFIG+=USE_SOFTPIPE
+!contains(CONFIG, USE_SYSTEM_LIB_DIR):  # CONFIG+=USE_SYSTEM_LIB_DIR
 
 # GUI/CUI switch
 contains(DEFINES, _QT):     CONFIG += _QT_GUI
@@ -256,9 +255,7 @@ INCLUDEPATH += . .. ../include # zlib.h and zconf.h, glext and wglext headers
 unix:!macx: DEFINES += _GNU_SOURCE
 
 # USE CPP 11
-DEFINES -= USE_CPP11
-macx: freebsd: DEFINES += USE_CPP11
-else: lessThan(QT_MAJOR_VERSION, 5): DEFINES += USE_CPP11
+DEFINES += USE_CPP11
 contains(DEFINES, USE_CPP11) {
     unix:!freebsd:!macx {
         GCC_VERSION = $$system(g++ -dumpversion)
@@ -268,7 +265,7 @@ contains(DEFINES, USE_CPP11) {
             QMAKE_CXXFLAGS += -std=c++0x
         }
     } else {
-        QMAKE_CXXFLAGS += -std=c++11
+        CONFIG += c++11
     }
 }
 
@@ -292,25 +289,27 @@ win32 {
 }
 
 # Platform-specific
-freebsd {
-    LIBS_INC  +=  /usr/local/include
-}
+unix {
+    freebsd {
+        LIBS_INC  +=  /usr/local/include
+    }
 
-# slurm is media.peeron.com
-OSTYPE = $$system(hostname)
-contains(OSTYPE, slurm) {
-    OSMESA_INC  += ../../Mesa-7.0.2/include
-}
+    # slurm is media.peeron.com
+    OSTYPE = $$system(hostname)
+    contains(OSTYPE, slurm) {
+        OSMESA_INC  += ../../Mesa-7.0.2/include
+    }
 
-OSTYPE = $$system(hostname | cut -d. -f2-)
-contains(OSTYPE, pair.com) {
-    LIBS_INC    +=  /usr/local/include
-    OSMESA_INC  += ../../Mesa-7.11/include
-    DEFINES	+= _GL_POPCOLOR_BROKEN
-}
+    OSTYPE = $$system(hostname | cut -d. -f2-)
+    contains(OSTYPE, pair.com) {
+        LIBS_INC    +=  /usr/local/include
+        OSMESA_INC  += ../../Mesa-7.11/include
+        DEFINES	+= _GL_POPCOLOR_BROKEN
+    }
 
-exists (/usr/include/qt3) {
-    LIBS_INC    +=    += /usr/include/qt3
+    exists (/usr/include/qt3) {
+        LIBS_INC    +=    += /usr/include/qt3
+    }
 }
 
 # suppress warnings
@@ -322,7 +321,7 @@ QMAKE_CFLAGS_WARN_ON =  -Wall -W \
                         -Wno-return-type \
                         -Wno-sign-compare \
                         -Wno-uninitialized \
-                        -Wno-clobbered
+                        -Wno-unused-result
 macx {
 QMAKE_CFLAGS_WARN_ON += -Wno-implicit-function-declaration \
                         -Wno-incompatible-pointer-types-discards-qualifiers \
@@ -333,5 +332,7 @@ QMAKE_CFLAGS_WARN_ON += -Wno-implicit-function-declaration \
                         -Wno-for-loop-analysis \
                         -Wno-int-conversion \
                         -Wno-reorder
+} else {
+QMAKE_CFLAGS_WARN_ON += -Wno-clobbered
 }
 QMAKE_CXXFLAGS_WARN_ON = $${QMAKE_CFLAGS_WARN_ON}

@@ -66,10 +66,10 @@
 #
 
 #Uncomment right side of directive to manually enable
-!contains(CONFIG, USE_3RD_PARTY_LIBS):  #CONFIG += USE_3RD_PARTY_LIBS   # must also manually set/unset in LDViewGlobal.pri
-!contains(CONFIG, USE_SYSTEM_ZLIB):     #CONFIG += USE_SYSTEM_ZLIB     # must also manually set/unset in LDViewGlobal.pri
-!contains(CONFIG, BUILD_GUI_ONLY):      #CONFIG += BUILD_GUI_ONLY
-!contains(CONFIG, BUILD_CUI_ONLY):      #CONFIG += BUILD_CUI_ONLY
+!contains(CONFIG, USE_3RD_PARTY_LIBS):  # CONFIG+=USE_3RD_PARTY_LIBS   # must also manually set/unset in LDViewGlobal.pri
+!contains(CONFIG, USE_SYSTEM_ZLIB):     # CONFIG+=USE_SYSTEM_ZLIB      # must also manually set/unset in LDViewGlobal.pri
+!contains(CONFIG, BUILD_GUI_ONLY):      # CONFIG+=BUILD_GUI_ONLY
+!contains(CONFIG, BUILD_CUI_ONLY):      # CONFIG+=BUILD_CUI_ONLY
 
 BUILD_GUI = YES
 BUILD_CUI = YES
