@@ -2,7 +2,7 @@
 # LDView global directives 
 
 #Uncomment right side of directive to manually enable
-!contains(CONFIG, 3RD_PARTY_INSTALL):   # CONFIG+=3RD_PARTY_INSTALL
+!contains(CONFIG, 3RD_PARTY_INSTALL):   # CONFIG+=3RD_PARTY_INSTALL[=../../<external location>]
 !contains(CONFIG, USE_3RD_PARTY_LIBS):  # CONFIG+=USE_3RD_PARTY_LIBS  # must also manually set/unset in LDView.pro
 !contains(CONFIG, USE_SYSTEM_ZLIB):     # CONFIG+=USE_SYSTEM_ZLIB     # must also manually set/unset in LDView.pro
 !contains(CONFIG, USE_X11_SYSTEM_LIBS): # CONFIG+=USE_X11_SYSTEM_LIBS
