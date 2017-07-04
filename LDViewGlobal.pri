@@ -2,9 +2,8 @@
 # LDView global directives 
 
 #Uncomment right side of directive to manually enable
-!contains(CONFIG, 3RD_PARTY_INSTALL):       # CONFIG+=3RD_PARTY_INSTALL[=../../<external location>]
 !contains(CONFIG, USE_3RD_PARTY_LIBS):      # CONFIG+=USE_3RD_PARTY_LIBS  # must also manually set/unset in LDView.pro
-!contains(CONFIG, USE_SYSTEM_LIBS):         # CONFIG+=USE_SYSTEM_LIBS
+!contains(CONFIG, USE_SYSTEM_LIBS):         # CONFIG+=USE_SYSTEM_LIBS     # must also manually set/unset in LDView.pro
 
 # GUI/CUI switch
 contains(DEFINES, _QT):     CONFIG += _QT_GUI
