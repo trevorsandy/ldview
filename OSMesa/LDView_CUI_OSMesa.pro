@@ -41,14 +41,14 @@ unix:!macx: TARGET = ldview
 else:       TARGET = LDView
 
 unix {
-    exists($${OSMESA_INC}/GL/osmesa.h):!USE_X11_SYSTEM_LIBS {
+    exists($${OSMESA_INC}/GL/osmesa.h): !USE_SYSTEM_LIBS {
         message("~~~ Using LOCAL OSMESA library ~~~")
-    } else: exists($${SYSTEM_PREFIX_}/X11/include/GL/osmesa.h): USE_X11_SYSTEM_LIBS {
+    } else: exists($${SYSTEM_PREFIX_}/X11/include/GL/osmesa.h): contains(USE_SYSTEM_OSMESA_LIB, YES) {
         message("~~~ NOTICE: Using X11 SYSTEM OSMESA library ~~~")
-    } else: exists($${SYSTEM_PREFIX_}/include/GL/osmesa.h) {
+    } else: exists($${SYSTEM_PREFIX_}/include/GL/osmesa.h): contains(USE_SYSTEM_OSMESA_LIB, YES) {
         message("~~~ NOTICE: Using SYSTEM OSMESA library ~~~")
     } else {
-        message("CRITICAL: OSMesa libraries not detected!")
+        message("CRITICAL: OSMESA LIBRARIES NOT FOUND!")
     }
 
     !macx: !3RD_PARTY_INSTALL {
@@ -73,6 +73,7 @@ unix {
 } 
 
 # some funky processing to get the prefix passed in on the command line
+# CONFIG+=3RD_PARTY_INSTALL=../../lpub3d-linux-3rdparty
 3RD_ARG = $$find(CONFIG, 3RD_PARTY_INSTALL.*)
 !isEmpty(3RD_ARG): CONFIG -= $$3RD_ARG
 CONFIG += $$section(3RD_ARG, =, 0, 0)
@@ -108,7 +109,11 @@ LDLIBS = ../TCFoundation/libTCFoundation$${POSTFIX}.a \
 
 LDLIBS += $${OSMESA_LDLIBS}
 
-USE_SYSTEM_ZLIB:     LDLIBS += $${ZLIB_LDLIBS}
+USE_SYSTEM_LIBS {
+    LDLIBS +=   $${PNG_LDLIBS} \
+                $${JPEG_LDLIBS} \
+                $${ZLIB_LDLIBS}
+}
 
 LDLIBDIRS = -L../TCFoundation \
             -L../TRE \
@@ -125,7 +130,7 @@ LIBS_  = -lLDraw$${POSTFIX} \
          -lLDExporter$${POSTFIX} \
          -lgl2ps \
          -l$${LIB_PNG} \
-         -ljpeg \
+         -l$${LIB_JPEG} \
          -l$${LIB_OSMESA} \
          -l$${LIB_GLU} \
          -lz \
@@ -164,7 +169,7 @@ unix {
     }
 }
 
-!USE_X11_SYSTEM_LIBS {
+!contains(USE_SYSTEM_OSMESA_LIB, YES) {
     macx:        QMAKE_LFLAGS += -Wl,-search_paths_first -Wl,-headerpad_max_install_names
     unix: !macx: QMAKE_LFLAGS += -Wl,--no-as-needed
     LLVM_LIBS       = -lLLVMX86Disassembler -lLLVMX86AsmParser -lLLVMX86CodeGen -lLLVMGlobalISel -lLLVMSelectionDAG \
@@ -249,6 +254,8 @@ unix {
 
         # Test
         #./ldview ../8464.mpd -SaveSnapshot=/tmp/8464i.png -IniFile=/home/trevor/projects/ldview/OSMesa/LDViewCustomIni -SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0
+        # Set CONFIG+=USE_SOFTPIPE to test LLVM softpipe driver
+        contains(USE_SYSTEM_OSMESA_LIB, YES): CONFIG+=USE_SWRAST
         !3RD_PARTY_INSTALL: include(LDViewCUITest.pri)
 
     } else {

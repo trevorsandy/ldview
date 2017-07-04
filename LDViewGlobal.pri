@@ -2,12 +2,9 @@
 # LDView global directives 
 
 #Uncomment right side of directive to manually enable
-!contains(CONFIG, 3RD_PARTY_INSTALL):   # CONFIG+=3RD_PARTY_INSTALL[=../../<external location>]
-!contains(CONFIG, USE_3RD_PARTY_LIBS):  # CONFIG+=USE_3RD_PARTY_LIBS  # must also manually set/unset in LDView.pro
-!contains(CONFIG, USE_SYSTEM_ZLIB):     # CONFIG+=USE_SYSTEM_ZLIB     # must also manually set/unset in LDView.pro
-!contains(CONFIG, USE_X11_SYSTEM_LIBS): # CONFIG+=USE_X11_SYSTEM_LIBS
-!contains(CONFIG, USE_SOFTPIPE):        # CONFIG+=USE_SOFTPIPE
-!contains(CONFIG, USE_SYSTEM_LIB_DIR):  # CONFIG+=USE_SYSTEM_LIB_DIR
+!contains(CONFIG, 3RD_PARTY_INSTALL):       # CONFIG+=3RD_PARTY_INSTALL[=../../<external location>]
+!contains(CONFIG, USE_3RD_PARTY_LIBS):      # CONFIG+=USE_3RD_PARTY_LIBS  # must also manually set/unset in LDView.pro
+!contains(CONFIG, USE_SYSTEM_LIBS):         # CONFIG+=USE_SYSTEM_LIBS
 
 # GUI/CUI switch
 contains(DEFINES, _QT):     CONFIG += _QT_GUI
@@ -20,13 +17,13 @@ else:                      ARCH = 32
 # Basically, this project include file is set up to allow some options for selecting your LDView libraries.
 # The default is to select the pre-defined libraries in ../lib and headers in ../include.
 # The is an option to build all the libraries dynamically as you compile the solution.
-# This option is enabled by setting the directive CONFIG+=USE_3RD_PARTY_LIBS. You can
+# This option is enabled by setting the directive CONFIG+=USE_3RD_PARTY_LIBS. On MacOSX, you can
 # choose to use the navive X11 OSMesa and GL drivers at /usr/X11 by selecting the directive
-# CONFIG+=USE_X11_SYSTEM_LIBS. Note that these 2 options are mutually exclusive.
+# CONFIG+=USE_SYSTEM_OSMESA_LIBS. On Note that these options USE_3RD_PARTY_LIBS and  USE_SYSTEM_OSMESA_LIBS
+# are mutually exclusive.
 # Additionally, you have the option to use system library path(s) to access libraries
-# you may already have on your system e.g. usr/local or usr/opt. To enable this
-# option, be sure to set the correct path below along with the directive
-# CONFIG+=USE_SYSTEM_LIB_DIR
+# you may already have on your system e.g. usr/include and usr/lib. To enable this
+# option, be sure to set SYSTEM_PREFIX_ below along with the directive CONFIG+=USE_SYSTEM_LIBS
 
 # 3rdParty libraries - compiled from source during build (some, not all)
 3RD_PARTY_PREFIX_       = ../3rdParty
@@ -43,7 +40,7 @@ unix {
     S_EXT_          = a
 
     # pre-compiled libraries heaers location
-    LIBINC_     = ../include
+    LIBINC_         = ../include       # zlib.h and zconf.h, glext and wglext headers
 
     macx {
         # pre-compiled libraries location
@@ -57,6 +54,7 @@ unix {
         # base names
         LIB_3DS     = 3ds
         LIB_PNG     = png16
+        LIB_JPEG    = jpeg
         LIB_OSMESA  = OSMesa32
         LIB_GLU     = GLU
 
@@ -70,7 +68,8 @@ unix {
 
         # base names
         LIB_3DS     = 3ds
-        LIB_PNG     = png
+        LIB_PNG     = png16
+        LIB_JPEG    = jpeg
         LIB_OSMESA  = OSMesa32
         LIB_GLU     = GLU
     }
@@ -85,16 +84,10 @@ unix {
 
     # base names
     LIB_3DS     = 3ds
-    LIB_PNG     = png
+    LIB_PNG     = png16
+    LIB_JPEG    = jpeg
     LIB_OSMESA  = OSMesa32
     LIB_GLU     = GLU
-}
-
-# use this option if the required pre-compiled libs are in /usr/local/ or some other location
-unix: USE_SYSTEM_LIB_DIR {
-    # Be careful not to move this chunk. moving it will affect to overall logic flow.
-    LIBINC_         = $${SYSTEM_PREFIX_}/include
-    LIBDIR_         = $${SYSTEM_PREFIX_}/lib
 }
 
 # pre-compiled libraries
@@ -103,6 +96,8 @@ unix: USE_SYSTEM_LIB_DIR {
 
 LIBS_INC            = $${LIBINC_}
 LIBS_DIR            = -L$${LIBDIR_}
+# -------------------------------
+WHICH_LIBS = PRE-COMPILED
 
 GL2PS_INC           = $${LIBINC_}
 GL2PS_LIBDIR        = -L$${LIBDIR_}
@@ -127,12 +122,13 @@ ZLIB_LIBDIR         = -L$${LIBDIR_}
 
 OSMESA_INC          = $${LIBINC_}
 OSMESA_LIBDIR       = -L$${LIBDIR_}
-OSMESA_LDLIBS       = $${LIBDIR_}/lib$${LIB_OSMESA}.$${S_EXT_}
-OSMESA_LDLIBS      += $${LIBDIR_}/lib$${LIB_GLU}.$${S_EXT_}
+OSMESA_LDLIBS       = $${LIBDIR_}/lib$${LIB_OSMESA}.$${S_EXT_} \
+                      $${LIBDIR_}/lib$${LIB_GLU}.$${S_EXT_}
 
 # 3rd party libreries - compiled from source
 # Be careful not to move this chunk. moving it will affect to overall logic flow.
 USE_3RD_PARTY_LIBS {
+    WHICH_LIBS = 3RD PARTY
 
     # headers and static compiled libs
     GL2PS_INC       = $${3RD_PARTY_PREFIX_}/gl2ps
@@ -141,18 +137,17 @@ USE_3RD_PARTY_LIBS {
     MINIZIP_INC     = $${3RD_PARTY_PREFIX_}/minizip
     MINIZIP_LIBDIR  = -L$${3RD_PARTY_PREFIX_}/minizip
 
-    PNG_INC         = $${3RD_PARTY_PREFIX_}/libpng
-    PNG_LIBDIR      = -L$${3RD_PARTY_PREFIX_}/libpng
-    LIB_PNG         = png
-
-    JPEG_INC        = $${3RD_PARTY_PREFIX_}/libjpeg
-    JPEG_LIBDIR     = -L$${3RD_PARTY_PREFIX_}/libjpeg
-
     TINYXML_INC     = $${3RD_PARTY_PREFIX_}/tinyxml
     TINYXML_LIBDIR  = -L$${3RD_PARTY_PREFIX_}/tinyxml
 
     3DS_INC         = $${3RD_PARTY_PREFIX_}/lib3ds
     3DS_LIBDIR      = -L$${3RD_PARTY_PREFIX_}/lib3ds
+
+    PNG_INC         = $${3RD_PARTY_PREFIX_}/libpng
+    PNG_LIBDIR      = -L$${3RD_PARTY_PREFIX_}/libpng
+
+    JPEG_INC        = $${3RD_PARTY_PREFIX_}/libjpeg
+    JPEG_LIBDIR     = -L$${3RD_PARTY_PREFIX_}/libjpeg
 
     ZLIB_INC        = $${3RD_PARTY_PREFIX_}/zlib
     ZLIB_LIBDIR     = -L$${3RD_PARTY_PREFIX_}/zlib
@@ -181,55 +176,101 @@ USE_3RD_PARTY_LIBS {
 }
 
 unix {
-    # Be careful not to move this chunk. moving it will affect to overall logic flow.
-    USE_SYSTEM_ZLIB {
-        # remove pre-compiled/3rdParty lib reference
-        LIBS_DIR   -= $${ZLIB_LIBDIR}
+    # Be careful not to move these chunks. moving it will affect to overall logic flow.
+    USE_SYSTEM_LIBS {
+        WHICH_LIBS = SYSTEM
+        # base names
+        LIB_PNG     = png16
+        LIB_JPEG    = jpeg
+        LIB_OSMESA  = OSMesa
+        LIB_GLU     = GLU
 
-        ZLIB_INC    = $${SYSTEM_PREFIX_}/include
-        ZLIB_LIBDIR = -L$${SYSTEM_PREFIX_}/lib
-        ZLIB_LDLIBS = $${SYSTEM_PREFIX_}/lib/libz.$${EXT_}
+        # detect libraries paths
+        SYS_LIBINC_         = $${SYSTEM_PREFIX_}/include
+        macx {                                                           # OSX
+            SYS_LIBINC_    += $${SYSTEM_PREFIX_}/X11/include
+            SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/X11/lib
+        } else: exists($${SYSTEM_PREFIX_}/lib/$$QT_ARCH-linux-gnu) {     # Debian
+            SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/lib/$$QT_ARCH-linux-gnu
+        } else: exists($${SYSTEM_PREFIX_}/lib$$ARCH/) {                  # RedHat (64bit)
+            SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/lib$$ARCH
+        } else {                                                         # Arch, RedHat (32bit)
+            SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/lib
+        }
+        # detect libraries
+        exists($${SYS_LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_}): _OSM_CUI: USE_SYSTEM_OSMESA_LIB=YES
+        exists($${SYS_LIBDIR_}/lib$${LIB_PNG}.$${EXT_}): USE_SYSTEM_PNG_LIB=YES
+        exists($${SYS_LIBDIR_}/lib$${LIB_JPEG}.$${EXT_}): USE_SYSTEM_JPEG_LIB=YES
+        exists($${SYS_LIBDIR_}/libz.$${EXT_}): USE_SYSTEM_Z_LIB=YES
+        # remove these for now, we'll append them at the end
+        !USE_3RD_PARTY_LIBS {
+            LIBS_INC -= -L$${LIBINC_}
+            LIBS_DIR -= -L$${LIBDIR_}
+        }
         # append...
-        # ===============================
-        LIBS_INC    += $${ZLIB_INC}
-        LIBS_DIR    += $${ZLIB_LIBDIR}
+        # ===============================}
+        LIBS_INC     += $${SYS_LIBINC_}
+        LIBS_DIR     += -L$${SYS_LIBDIR_}
     }
 
-    # Be careful not to move this chunk. moving it will affect to overall logic flow. /X11R6
-    USE_X11_SYSTEM_LIBS: _OSM_CUI {
-        # remove conflicting pre-compiled/3rdParty lib references
-        LIBS_INC           -= $${OSMESA_INC}
-        LIBS_DIR           -= $${OSMESA_LIBDIR}
-        LIBS_INC           -= $${PNG_INC}
-        LIBS_DIR           -= $${PNG_LIBDIR}
-        LIBS_DIR           -= -L$${LIBDIR_}                 # will add back for pre-compiled libs
-
-        LIB_PNG             = png
-        LIB_OSMESA          = OSMesa
-        LIB_GLU             = GLU
-
-        X11_PNG_LDLIBS_     = $${SYSTEM_PREFIX_}/X11/lib/libpng.$${EXT_}
-        X11_OSMESA_LDLIBS_  = $${SYSTEM_PREFIX_}/X11/lib/libOSMesa.$${EXT_}
-        X11_GLU_LDLIBS_     = $${SYSTEM_PREFIX_}/X11/lib/libGLU.$${EXT_}
-
-        X11_INC             = $${SYSTEM_PREFIX_}/X11/include
-        X11_LIBDIR          = -L$${SYSTEM_PREFIX_}/X11/lib
-        !USE_3RD_PARTY_LIBS: X11_LIBDIR += -L$${LIBDIR_}    #add back in case usng pre-compiled libs
-
-        # overwrite (reset)
-        # ===============================
-        PNG_LIBDIR          = -L$${SYSTEM_PREFIX_}/X11/lib
-        OSMESA_LIBDIR       = -L$${SYSTEM_PREFIX_}/X11/lib
-        OSMESA_LDLIBS       = $${X11_PNG_LDLIBS_} \
-                              $${X11_OSMESA_LDLIBS_} \
-                              $${X11_GLU_LDLIBS_}
-        # append...
-        # ===============================
-        LIBS_INC    += $${X11_INC}
-        LIBS_DIR    += $${X11_LIBDIR}
-
+    contains(USE_SYSTEM_PNG_LIB, YES) {
+        # remove 3rdParty lib reference
+        USE_3RD_PARTY_LIBS {
+            LIBS_INC -= $${PNG_INC}
+            LIBS_DIR -= $${PNG_LIBDIR}
+        }
+        # reset individual library entry
+        PNG_INC      = $${SYS_LIBINC_}
+        PNG_LIBDIR   = -L$${SYS_LIBDIR_}
+        PNG_LDLIBS   = $${SYS_LIBDIR_}/lib$${LIB_PNG}.$${EXT_}
     }
+
+    contains(USE_SYSTEM_JPEG_LIB, YES) {
+        # remove 3rdParty lib reference
+        USE_3RD_PARTY_LIBS {
+            LIBS_INC -= $${JPEG_INC}
+            LIBS_DIR -= $${JPEG_LIBDIR}
+        }
+        # reset individual library entry
+        JPEG_INC      = $${SYS_LIBINC_}
+        JPEG_LIBDIR   = -L$${SYS_LIBDIR_}
+        JPEG_LDLIBS   = $${SYS_LIBDIR_}/lib$${LIB_JPEG}.$${EXT_}
+    }
+
+    contains(USE_SYSTEM_Z_LIB, YES) {
+        # remove 3rdParty lib reference
+        USE_3RD_PARTY_LIBS {
+            LIBS_INC -= $${ZLIB_INC}
+            LIBS_DIR -= $${ZLIB_LIBDIR}
+        }
+        # reset individual library entry
+        ZLIB_INC      = $${SYS_LIBINC_}
+        ZLIB_LIBDIR   = -L$${SYS_LIBDIR_}
+        ZLIB_LDLIBS   = $${SYS_LIBDIR_}/libz.$${EXT_}
+    }
+
+    contains(USE_SYSTEM_OSMESA_LIB, YES): _OSM_CUI {
+        # remove 3rdParty lib reference
+        USE_3RD_PARTY_LIBS {
+            LIBS_INC       -= $${OSMESA_INC}
+            LIBS_DIR       -= $${OSMESA_LIBDIR}
+        }
+        # reset individual library entry
+        OSMESA_INC          = $${SYS_LIBINC_}
+        OSMESA_LIBDIR       = -L$${SYS_LIBDIR_}
+        OSMESA_LDLIBS       = $${SYS_LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_} \
+                              $${SYS_LIBDIR_}/lib$${LIB_GLU}.$${EXT_}
+    }
+
+    # append these the end to include missing system headers and libs
+    USE_SYSTEM_LIBS: !USE_3RD_PARTY_LIBS {
+        LIBS_INC += -L$${LIBINC_}
+        LIBS_DIR += -L$${LIBDIR_}
+    }
+
 }
+
+message("~~~ USING $${WHICH_LIBS} LIBS ~~~")
 
 CONFIG(debug, debug|release) {
     BUILD = DEBUG
@@ -249,7 +290,7 @@ win32: BUILD += WINDOWS
 else:  BUILD += $$upper($$system(uname))
 
 DEPENDPATH  += .
-INCLUDEPATH += . .. ../include # zlib.h and zconf.h, glext and wglext headers
+INCLUDEPATH += . ..
 
 # USE GNU_SOURCE
 unix:!macx: DEFINES += _GNU_SOURCE

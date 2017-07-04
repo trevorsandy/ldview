@@ -1,6 +1,7 @@
 
 unix {
 
+    USE_SWRAST:   GAL_DRIVER = swrast
     USE_SOFTPIPE: GAL_DRIVER = softpipe
     else: macx:   GAL_DRIVER = llvmpipe
     else:         GAL_DRIVER = swr

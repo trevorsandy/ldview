@@ -67,7 +67,7 @@
 
 #Uncomment right side of directive to manually enable
 !contains(CONFIG, USE_3RD_PARTY_LIBS):  # CONFIG+=USE_3RD_PARTY_LIBS   # must also manually set/unset in LDViewGlobal.pri
-!contains(CONFIG, USE_SYSTEM_ZLIB):     # CONFIG+=USE_SYSTEM_ZLIB      # must also manually set/unset in LDViewGlobal.pri
+!contains(CONFIG, USE_SYSTEM_LIBS):     # CONFIG+=USE_SYSTEM_LIBS      # must also manually set/unset in LDViewGlobal.pri
 !contains(CONFIG, BUILD_GUI_ONLY):      # CONFIG+=BUILD_GUI_ONLY
 !contains(CONFIG, BUILD_CUI_ONLY):      # CONFIG+=BUILD_CUI_ONLY
 
@@ -97,7 +97,7 @@ USE_3RD_PARTY_LIBS {
     3rdParty_minizip.file     = $$PWD/3rdParty/minizip/3rdParty_minizip.pro
     3rdParty_minizip.makefile = $${MAKEFILE_3RDPARTY}
     3rdParty_minizip.target   = sub-3rdParty_minizip
-    !USE_SYSTEM_ZLIB: 3rdParty_minizip.depends  = 3rdParty_zlib
+    !USE_SYSTEM_LIBS: 3rdParty_minizip.depends = 3rdParty_zlib
 
     SUBDIRS += 3rdParty_gl2ps
     3rdParty_gl2ps.file       = $$PWD/3rdParty/gl2ps/3rdParty_gl2ps.pro
@@ -177,7 +177,7 @@ contains(BUILD_GUI, YES) {
     LDView_GUI_Qt.depends  += LDExporter_GUI_Qt
     USE_3RD_PARTY_LIBS: LDView_GUI_Qt.depends += 3rdParty_minizip
     USE_3RD_PARTY_LIBS: LDView_GUI_Qt.depends += 3rdParty_gl2ps
-    USE_3RD_PARTY_LIBS:!USE_SYSTEM_ZLIB: LDView_GUI_Qt.depends += 3rdParty_zlib
+    USE_3RD_PARTY_LIBS:!USE_SYSTEM_LIBS: LDView_GUI_Qt.depends += 3rdParty_zlib
 }
 
 # Build OSMesa Console User Interface (CUI)
@@ -222,7 +222,7 @@ contains(BUILD_CUI, YES) {
     Headerize_CUI_OSMesa.makefile = Makefile-head.osmesa
     Headerize_CUI_OSMesa.target   = sub-Headerize_CUI_OSMesa
     Headerize_CUI_OSMesa.depends  = TCFoundation_CUI_OSMesa
-    USE_3RD_PARTY_LIBS:!USE_SYSTEM_ZLIB: Headerize_CUI_OSMesa.depends += 3rdParty_zlib
+    USE_3RD_PARTY_LIBS:!USE_SYSTEM_LIBS: Headerize_CUI_OSMesa.depends += 3rdParty_zlib
 
     LGEOTables_CUI_OSMesa.file     = $$PWD/LGEOTables/LGEOTables_CUI_OSMesa.pro
     LGEOTables_CUI_OSMesa.makefile = $$MAKEFILE_CUI_OSMESA
@@ -241,7 +241,7 @@ contains(BUILD_CUI, YES) {
     LDView_CUI_OSMesa.depends  += Headerize_CUI_OSMesa
     USE_3RD_PARTY_LIBS: LDView_CUI_OSMesa.depends += 3rdParty_tinyxml
     USE_3RD_PARTY_LIBS: LDView_CUI_OSMesa.depends += 3rdParty_gl2ps
-    USE_3RD_PARTY_LIBS:!USE_SYSTEM_ZLIB: LDView_CUI_OSMesa.depends += 3rdParty_zlib
+    USE_3RD_PARTY_LIBS:!USE_SYSTEM_LIBS: LDView_CUI_OSMesa.depends += 3rdParty_zlib
 }
 
 CONFIG(debug, debug|release) {
