@@ -1,4 +1,4 @@
-@echo off
+@ECHO off
 
 Title LDView Windows auto build script
 
@@ -15,12 +15,15 @@ Title LDView Windows auto build script
 :: but WITHOUT ANY WARRANTY; without even the implied warranty of
 :: MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
+SET PWD=%~dp0
+
 :: Variables
 SET APPNAME=LDView
 SET VERSION=4.3
+SET LDRAW_DIR=%USERPROFILE%\LDraw
 SET DIST_DIR_ROOT=..\lpub3d-windows-3rdparty
+SET INI_FILE="%PWD%\OSMesa\LDViewCustomIni"
 SET CONFIGURATION=Release
-
 SET PLATFORM=unknown
 SET THIRD_INSTALL=unknown
 
@@ -61,12 +64,9 @@ GOTO :COMMAND_ERROR
 :SET_CONFIGURATION
 :: Only build release configuraion
 IF NOT [%2]==[] (
-  IF NOT "%2"=="-ins" GOTO :CONFIGURATION_ERROR
-)
-
-IF /I "%2"=="-ins" (
-  SET THIRD_INSTALL=1
-  GOTO :BUILD
+  IF NOT "%2"=="-ins" (
+  	IF NOT "%2"=="-chk" GOTO :CONFIGURATION_ERROR
+  )
 )
 
 :: Parse configuration input flag
@@ -74,10 +74,24 @@ IF [%2]==[] (
   GOTO :BUILD
 )
 
+IF /I "%2"=="-ins" (
+  SET THIRD_INSTALL=1
+  GOTO :BUILD
+)
+
+:: Perform quick check
+IF /I "%2"=="-chk" (
+	SET CHECK=1
+	GOTO :BUILD
+)
+
 :BUILD
 :: Initialize the Visual Studio command line development environment
 :: Note you can change this line to your specific environment - I am using VS2017 here.
 CALL "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
+
+:: If check specified, update inifile with ldraw directory path
+IF %CHECK%==1 CALL :UPDATE_INI_FILE
 
 :: Check if build all platforms
 IF /I "%PLATFORM%"=="-all" (
@@ -91,21 +105,27 @@ ECHO.
 
 :: Launch msbuild
 msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%PLATFORM% LDView.vcxproj
+:: Perform build check if specified
+IF %CHECK%==1 CALL :CHECK_BUILD %PLATFORM%
 :: Package 3rd party install
 IF %THIRD_INSTALL%==1 GOTO :3RD_PARTY_INSTALL
-GOTO :END
+:: Finish
+EXIT /b
 
 :BUILD_ALL
 :: Launch msbuild across all platform builds
 FOR %%P IN ( Win32, x64 ) DO (
-  :: Display the platform setting
   ECHO.
   ECHO -All Platforms: Building %%P Platform...
   ECHO.
   msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%%P LDView.vcxproj
+  :: Perform build check if specified
+  IF %CHECK%==1 CALL :CHECK_BUILD %%P
 )
+:: Perform 3rd party install if specified
 IF %THIRD_INSTALL%==1 GOTO :3RD_PARTY_INSTALL
-GOTO :END
+:: Finish
+EXIT /b
 
 :3RD_PARTY_INSTALL
 ECHO.
@@ -142,8 +162,58 @@ COPY /V /Y "m6459.ldr" "%DIST_DIR%" /A
 COPY /V /Y "8464.mpd" "%DIST_DIR%" /A
 COPY /V /Y "OSMesa\LDViewCustomIni" "%DIST_DIR%" /A
 COPY /V /Y "OSMesa\LDViewCustomIni" "%DIST_DIR%" /A
+:: Finish
+EXIT /b
+
+:CHECK_BUILD
+SET PWD=%~dp0
+IF %1==Win32 SET PL=
+IF %1==x64 SET PL=64
 ECHO.
-GOTO :END
+ECHO -Check %CONFIGURATION% Configuration, %1 Platform...
+ECHO.
+ECHO -Command: %APPNAME%%PL%.exe "8464.mpd" -SaveSnapshot="8464.TestResult.%1.png" -IniFile=%INI_FILE% -SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0
+IF EXIST "8464.TestResult.%1.png" (
+	DEL /Q "8464.TestResult.%1.png"
+)
+Build\release%PL%\%APPNAME%%PL%.exe "8464.mpd" -SaveSnapshot="8464.TestResult.%1.png" -IniFile=%INI_FILE% -SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0
+EXIT /b
+
+:UPDATE_INI_FILE
+IF NOT EXIST %LDRAW_DIR% (
+	SET CHECK=0
+	ECHO.
+	ECHO -LDraw directory %LDRAW_DIR% does not exist.
+	ECHO -Check aborted.
+	ECHO.
+	EXIT /b
+)
+ECHO.
+ECHO -Check requested.
+SET /a LineToReplace=31
+SET "Replacement=LDrawDir=%LDRAW_DIR%"
+ECHO - Upating %INI_FILE% at line %LineToReplace% with %Replacement%
+(FOR /f "tokens=1*delims=:" %%a IN ('findstr /n "^" "%INI_FILE%"') DO (
+  SET "Line=%%b"
+  IF %%a equ %LineToReplace% SET "Line=%Replacement%"
+    SETLOCAL ENABLEDELAYEDEXPANSION
+    ECHO(!Line!
+    ENDLOCAL
+))>"%INI_FILE%.new"
+MOVE /Y %INI_FILE%.new %INI_FILE% >nul 2>&1
+SET /a LineToReplace=57
+SET "Replacement=XmlMapPath=%LDRAW_DIR%\lgeo"
+ECHO - Upating %INI_FILE% at line %LineToReplace% with %Replacement%
+(FOR /f "tokens=1*delims=:" %%a IN ('findstr /n "^" "%INI_FILE%"') DO (
+  SET "Line=%%b"
+  IF %%a equ %LineToReplace% SET "Line=%Replacement%"
+    SETLOCAL ENABLEDELAYEDEXPANSION
+    ECHO(!Line!
+    ENDLOCAL
+))>"%INI_FILE%.new"
+MOVE /Y %INI_FILE%.new %INI_FILE% >nul 2>&1
+ECHO.
+EXIT /b
 
 :PLATFORM_ERROR
 ECHO.
@@ -166,14 +236,16 @@ ECHO LDView Windows auto build script.
 ECHO.
 ECHO Usage:
 ECHO  build [ -help]
-ECHO  build [ x86 ^| x86_64 ^| -build_all ] [-rel ^| -3rd ]
+ECHO  build [ x86 ^| x86_64 ^| -all ] [ -ins ^| -chk ]
 ECHO.
 ECHO  -help....1.Useage flag - Display useage.
 ECHO  x86......1.Platform flag - Build 32bit architecture.
 ECHO  x86_64...1.Platform flag - Build 64bit architecture.
 ECHO  -all.....1.Configuraiton flag - [Default] Build both  32bit and 64bit architectures
-EChO  -rel.....2.Configuration flag - [Default] Release, no extensions (must be preceded by platform flag).
 ECHO  -ins.....2.Project flag - Install distribution as LPub3D 3rd party installation
+ECHO  -chk.....2.Project flag - Perform a quick image redering check using command line ini file
+ECHO.
+ECHO Be sure the set your LDraw directory in the variables section above if you expect to use the '-chk' option.
 ECHO.
 ECHO Flags are case sensitive, use lowere case.
 ECHO.

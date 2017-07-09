@@ -1,24 +1,7 @@
 [General]
-; === LDView Global
+Ambient=0.4
 AutoCrop=1
 BackgroundColor3=00a2b6ce
-ExamineMode=0
-FullscreenDepth=20
-FullscreenHeight=0
-FullscreenWidth=0
-IgnorePBuffer=0
-JPGProgressive=0
-JPGQuality=55
-JPGSubSampling=2
-LDrawDir=/usr/local/ldraw
-SaveActualSize=1
-SaveAlpha=1
-SaveDigits=1
-SaveImageType=1
-SaveSeries=1
-SaveSteps=0
-; === PovExporter
-Ambient=0.4
 BottomInclude=
 ChromeBril=5
 ChromeRefl=0.85
@@ -29,12 +12,23 @@ CustomAspectRatio=1.5
 Diffuse=0.4
 EdgeRadius=0.15
 Edges=0
+ExamineMode=0
 FileVersion=3.6
 FindReplacements=0
 Floor=0
 FloorAxis=1
+FullscreenDepth=20
+FullscreenHeight=0
+FullscreenWidth=0
 HideStuds=0
+IgnorePBuffer=0
 InlinePov=1
+InstallPath=C:\\Users\\Trevor\\Projects\\ldview\\Build\\release64
+InstallPath 4.1=C:\\Users\\Trevor\\Projects\\ldview\\Build\\release64
+JPGProgressive=0
+JPGQuality=55
+JPGSubSampling=2
+LDrawDir=C:\\Users\\Trevor\\LDraw
 Phong=0.5
 PhongSize=40
 PrimitiveSubstitution=1
@@ -44,6 +38,12 @@ Reflections=1
 RubberPhong=0.1
 RubberPhongSize=10
 RubberRefl=0
+SaveActualSize=1
+SaveAlpha=1
+SaveDigits=1
+SaveImageType=1
+SaveSeries=1
+SaveSteps=0
 SeamWidth=0.5
 SelectedAspectRatio=ffffffff
 Shadows=1
@@ -54,4 +54,11 @@ TransIoR=1.25
 TransRefl=0.2
 UnmirrorStuds=1
 XmlMap=1
-XmlMapPath=/usr/local/ldraw/lgeo
+XmlMapPath=C:\\Users\\Trevor\\LDraw\\lgeo
+
+[CustomColors]
+
+[ExtraSearchDirs]
+
+[RecentFiles]
+
