@@ -2,7 +2,6 @@
 # LDView global directives 
 
 #Uncomment right side of directive to manually enable
-!contains(CONFIG, 3RD_PARTY_INSTALL):       # CONFIG+=3RD_PARTY_INSTALL=[../../lpub3d-linux-3rdparty]
 !contains(CONFIG, USE_3RD_PARTY_LIBS):      # CONFIG+=USE_3RD_PARTY_LIBS  # must also manually set/unset in LDView.pro
 !contains(CONFIG, USE_SYSTEM_LIBS):         # CONFIG+=USE_SYSTEM_LIBS     # must also manually set/unset in LDView.pro
 
