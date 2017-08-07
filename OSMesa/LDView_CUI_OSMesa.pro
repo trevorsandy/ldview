@@ -81,12 +81,12 @@ unix {
 CONFIG += $$section(3RD_ARG, =, 0, 0)
 
 3RD_PARTY_INSTALL {
-    3RD_PREFIX                           = $$_PRO_FILE_PWD_/$$section(3RD_ARG, =, 1, 1)
-    isEmpty(3RD_PREFIX):3RD_PREFIX       = $$_PRO_FILE_PWD_/../3rdPartyInstall
-    isEmpty(3RD_DESTDIR):3RD_DESTDIR     = $$TARGET-$$VER_MAJ"."$$VER_MIN
-    isEmpty(3RD_BINDIR):3RD_BINDIR       = $$3RD_PREFIX/bin/$$3RD_DESTDIR/$$QT_ARCH
-    isEmpty(3RD_DOCDIR):3RD_DOCDIR       = $$3RD_PREFIX/docs/$$3RD_DESTDIR
-    isEmpty(3RD_RESOURCES):3RD_RESOURCES = $$3RD_PREFIX/resources/$$3RD_DESTDIR
+    3RD_PREFIX                               = $$_PRO_FILE_PWD_/$$section(3RD_ARG, =, 1, 1)
+    isEmpty(3RD_PREFIX):3RD_PREFIX           = $$_PRO_FILE_PWD_/../3rdPartyInstall
+    isEmpty(3RD_PACKAGE_VER):3RD_PACKAGE_VER = $$TARGET-$$VER_MAJ"."$$VER_MIN
+    isEmpty(3RD_BINDIR):3RD_BINDIR           = $$3RD_PREFIX/$$3RD_PACKAGE_VER/bin/$$QT_ARCH
+    isEmpty(3RD_DOCDIR):3RD_DOCDIR           = $$3RD_PREFIX/$$3RD_PACKAGE_VER/docs
+    isEmpty(3RD_RESOURCES):3RD_RESOURCES     = $$3RD_PREFIX/$$3RD_PACKAGE_VER/resources
 
     message("~~~ CUI 3RD INSTALL PREFIX $${3RD_PREFIX} ~~~")
 
@@ -95,9 +95,10 @@ CONFIG += $$section(3RD_ARG, =, 0, 0)
     documentation.files         = ../Readme.txt ../Help.html ../license.txt \
                                   ../ChangeHistory.html ldview.1
     resources.path              = $${3RD_RESOURCES}
-    resources.files             = ../m6459.ldr ../8464.mpd LDViewCustomIni \
-                                  ldviewrc.sample
-    INSTALLS += target documentation resources
+    resources.files             = ../m6459.ldr ../8464.mpd ldviewrc.sample
+    resources_config.path       = $${3RD_RESOURCES}/config
+    resources_config.files      = ldview.ini ldviewPOV.ini LDViewCustomIni
+    INSTALLS += target documentation resources resources_config
 }
 
 
