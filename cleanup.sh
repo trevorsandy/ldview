@@ -45,6 +45,7 @@ if [[ $result == 'ldview' ]]; then
         find ./3rdParty/tinyxml -name "libtinyxml.a" -type f -delete
         find ./3rdParty/gl2ps -name "libgl2ps.a" -type f -delete
         find ./3rdParty/libpng -name "libpng.a" -type f -delete
+				find ./3rdParty/libpng -name "libpng16.a" -type f -delete
         find ./3rdParty/zlib -name "libz.a" -type f -delete
         find ./3rdParty/libjpeg -name "libjpeg.a" -type f -delete
         find ./3rdParty/lib3ds -name "lib3ds.a" -type f -delete

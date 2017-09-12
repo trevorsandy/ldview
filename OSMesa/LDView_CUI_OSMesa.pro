@@ -104,11 +104,11 @@ CONFIG += $$section(3RD_ARG, =, 0, 0)
 
 macx: LIBS += $${OSX_FRAMEWORKS_CORE}
 
-LDLIBS = ../TCFoundation/libTCFoundation$${POSTFIX}.a \
-         ../LDLoader/libLDLoader$${POSTFIX}.a \
-         ../TRE/libTRE$${POSTFIX}.a \
-         ../LDLib/libLDraw$${POSTFIX}.a \
-         ../LDExporter/libLDExporter$${POSTFIX}.a
+LDLIBS = ../TCFoundation/$$DESTDIR/libTCFoundation$${POSTFIX}.a \
+         ../LDLoader/$$DESTDIR/libLDLoader$${POSTFIX}.a \
+         ../TRE/$$DESTDIR/libTRE$${POSTFIX}.a \
+         ../LDLib/$$DESTDIR/libLDraw$${POSTFIX}.a \
+         ../LDExporter/$$DESTDIR/libLDExporter$${POSTFIX}.a
 
 LDLIBS += $${OSMESA_LDLIBS}
 
@@ -118,11 +118,11 @@ USE_SYSTEM_LIBS {
                 $${ZLIB_LDLIBS}
 }
 
-LDLIBDIRS = -L../TCFoundation \
-            -L../TRE \
-            -L../LDLoader \
-            -L../LDLib \
-            -L../LDExporter
+LDLIBDIRS = -L../TCFoundation/$$DESTDIR \
+            -L../TRE/$$DESTDIR \
+            -L../LDLoader/$$DESTDIR \
+            -L../LDLib/$$DESTDIR \
+            -L../LDExporter/$$DESTDIR
 
 LIBDIRS += $${LDLIBDIRS}
 
@@ -131,11 +131,11 @@ LIBS_  = -lLDraw$${POSTFIX} \
          -lLDLoader$${POSTFIX} \
          -lTCFoundation$${POSTFIX} \
          -lLDExporter$${POSTFIX} \
-         -lgl2ps \
          -l$${LIB_PNG} \
          -l$${LIB_JPEG} \
          -l$${LIB_OSMESA} \
          -l$${LIB_GLU} \
+         -lgl2ps \
          -lz \
          -ltinyxml
 
@@ -190,16 +190,16 @@ unix {
 LIBS               += $${LDLIBS} $${LIBDIRS} $${LIBS_DIR} $${LIBS_}
 
 ini.target = LDViewMessages.ini
-ini.depends = ../LDViewMessages.ini ../LDExporter/LDExportMessages.ini
-ini.commands = cat ../LDViewMessages.ini ../LDExporter/LDExportMessages.ini > LDViewMessages.ini
+ini.depends = $$_PRO_FILE_PWD_/../LDViewMessages.ini $$_PRO_FILE_PWD_/../LDExporter/LDExportMessages.ini
+ini.commands = cat $$_PRO_FILE_PWD_/../LDViewMessages.ini $$_PRO_FILE_PWD_/../LDExporter/LDExportMessages.ini > $$_PRO_FILE_PWD_/LDViewMessages.ini
 
 ldviewmessages.target = LDViewMessages.h
-ldviewmessages.depends = Headerize LDViewMessages.ini
-ldviewmessages.commands = ./Headerize LDViewMessages.ini
+ldviewmessages.depends = $$DESTDIR/Headerize $$_PRO_FILE_PWD_/LDViewMessages.ini
+ldviewmessages.commands = ./$$DESTDIR/Headerize $$_PRO_FILE_PWD_/LDViewMessages.ini; mv LDViewMessages.h $$_PRO_FILE_PWD_/LDViewMessages.h
 
 studlogo.target = StudLogo.h
-studlogo.depends = Headerize ../Textures/StudLogo.png
-studlogo.commands = ./Headerize ../Textures/StudLogo.png
+studlogo.depends = $$DESTDIR/Headerize $$_PRO_FILE_PWD_/../Textures/StudLogo.png
+studlogo.commands = ./$$DESTDIR/Headerize $$_PRO_FILE_PWD_/../Textures/StudLogo.png; mv StudLogo.h $$_PRO_FILE_PWD_/StudLogo.h
 
 QMAKE_EXTRA_TARGETS += ini ldviewmessages studlogo
 PRE_TARGETDEPS += LDViewMessages.ini LDViewMessages.h StudLogo.h

@@ -2,8 +2,9 @@
 # LDView global directives 
 
 #Uncomment right side of directive to manually enable
-!contains(CONFIG, USE_3RD_PARTY_LIBS):      # CONFIG+=USE_3RD_PARTY_LIBS  # must also manually set/unset in LDView.pro
-!contains(CONFIG, USE_SYSTEM_LIBS):         # CONFIG+=USE_SYSTEM_LIBS     # must also manually set/unset in LDView.pro
+!contains(CONFIG, USE_3RD_PARTY_LIBS):      # CONFIG+=USE_3RD_PARTY_LIBS        # must also manually set/unset in LDView.pro
+!contains(CONFIG, USE_SYSTEM_LIBS):         # CONFIG+=USE_SYSTEM_LIBS           # must also manually set/unset in LDView.pro
+!contains(CONFIG, USE_SYSTEM_OSMESA):       # CONFIG+=USE_SYSTEM_OSMESA         # override USE_3RD_PARTY_LIBS for OSMesa libs
 
 # GUI/CUI switch
 contains(DEFINES, _QT):     CONFIG += _QT_GUI
@@ -12,6 +13,15 @@ contains(DEFINES, _OSMESA): CONFIG += _OSM_CUI
 # platform switch
 contains(QT_ARCH, x86_64): ARCH = 64
 else:                      ARCH = 32
+
+# build type
+CONFIG(debug, debug|release) {
+    BUILD = DEBUG
+    DESTDIR = debug
+} else {
+    BUILD = RELEASE
+    DESTDIR = release
+}
 
 # Basically, this project include file is set up to allow some options for selecting your LDView libraries.
 # The default is to select the pre-defined libraries in ../lib and headers in ../include.
@@ -39,38 +49,31 @@ unix {
     S_EXT_          = a
 
     # pre-compiled libraries heaers location
-    LIBINC_         = ../include       # zlib.h and zconf.h, glext and wglext headers
+    LIBINC_         = $$_PRO_FILE_PWD_/../include       # zlib.h and zconf.h, glext and wglext headers
+
+    # base names
+    LIB_3DS     = 3ds
+    LIB_PNG     = png16
+    LIB_JPEG    = jpeg
+    LIB_OSMESA  = OSMesa32
+    LIB_GLU     = GLU
 
     macx {
         # pre-compiled libraries location
-        LIBDIR_     = ../lib/MacOSX
+        LIBDIR_     = $$_PRO_FILE_PWD_/../lib/MacOSX
         # dynamic library extension
         EXT_        = dylib
 
         # frameworks
         OSX_FRAMEWORKS_CORE = -framework CoreFoundation -framework CoreServices
 
-        # base names
-        LIB_3DS     = 3ds
-        LIB_PNG     = png16
-        LIB_JPEG    = jpeg
-        LIB_OSMESA  = OSMesa32
-        LIB_GLU     = GLU
-
     } else {
         # pre-compiled libraries location
-        equals(ARCH, 64): LIBDIR_ = ../lib/Linux/x86_64
-        else:             LIBDIR_ = ../lib/Linux/i386
+        equals(ARCH, 64): LIBDIR_ = $$_PRO_FILE_PWD_/../lib/Linux/x86_64
+        else:             LIBDIR_ = $$_PRO_FILE_PWD_/../lib/Linux/i386
 
         # dynamic library extension
         EXT_        = so
-
-        # base names
-        LIB_3DS     = 3ds
-        LIB_PNG     = png16
-        LIB_JPEG    = jpeg
-        LIB_OSMESA  = OSMesa32
-        LIB_GLU     = GLU
     }
 
 } else {
@@ -130,45 +133,45 @@ USE_3RD_PARTY_LIBS {
     WHICH_LIBS = 3RD PARTY
 
     # headers and static compiled libs
-    GL2PS_INC       = $${3RD_PARTY_PREFIX_}/gl2ps
-    GL2PS_LIBDIR    = -L$${3RD_PARTY_PREFIX_}/gl2ps
+    GL2PS_INC       = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/gl2ps
+    GL2PS_LIBDIR    = -L$${3RD_PARTY_PREFIX_}/gl2ps/$$DESTDIR
 
-    MINIZIP_INC     = $${3RD_PARTY_PREFIX_}/minizip
-    MINIZIP_LIBDIR  = -L$${3RD_PARTY_PREFIX_}/minizip
+    MINIZIP_INC     = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/minizip
+    MINIZIP_LIBDIR  = -L$${3RD_PARTY_PREFIX_}/minizip/$$DESTDIR
 
-    TINYXML_INC     = $${3RD_PARTY_PREFIX_}/tinyxml
-    TINYXML_LIBDIR  = -L$${3RD_PARTY_PREFIX_}/tinyxml
+    TINYXML_INC     = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/tinyxml
+    TINYXML_LIBDIR  = -L$${3RD_PARTY_PREFIX_}/tinyxml/$$DESTDIR
 
-    3DS_INC         = $${3RD_PARTY_PREFIX_}/lib3ds
-    3DS_LIBDIR      = -L$${3RD_PARTY_PREFIX_}/lib3ds
+    3DS_INC         = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/lib3ds
+    3DS_LIBDIR      = -L$${3RD_PARTY_PREFIX_}/lib3ds/$$DESTDIR
 
-    PNG_INC         = $${3RD_PARTY_PREFIX_}/libpng
-    PNG_LIBDIR      = -L$${3RD_PARTY_PREFIX_}/libpng
+    JPEG_INC        = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/libjpeg
+    JPEG_LIBDIR     = -L$${3RD_PARTY_PREFIX_}/libjpeg/$$DESTDIR
 
-    JPEG_INC        = $${3RD_PARTY_PREFIX_}/libjpeg
-    JPEG_LIBDIR     = -L$${3RD_PARTY_PREFIX_}/libjpeg
+    PNG_INC         = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/libpng
+    PNG_LIBDIR      = -L$${3RD_PARTY_PREFIX_}/libpng/$$DESTDIR
 
-    ZLIB_INC        = $${3RD_PARTY_PREFIX_}/zlib
-    ZLIB_LIBDIR     = -L$${3RD_PARTY_PREFIX_}/zlib
+    ZLIB_INC        = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/zlib
+    ZLIB_LIBDIR     = -L$${3RD_PARTY_PREFIX_}/zlib/$$DESTDIR
 
     # overwrite (reset)
     # ===============================
-    LIBS_INC =  $${GL2PS_INC} \
-                $${MINIZIP_INC} \
-                $${PNG_INC} \
+    LIBS_INC =  $${PNG_INC} \
                 $${JPEG_INC} \
                 $${TINYXML_INC} \
                 $${3DS_INC} \
+                $${MINIZIP_INC} \
+                $${GL2PS_INC} \
                 $${ZLIB_INC}
 
     _OSM_CUI: LIBS_INC += $${OSMESA_INC}
 
-    LIBS_DIR =  $${GL2PS_LIBDIR} \
-                $${MINIZIP_LIBDIR} \
-                $${PNG_LIBDIR} \
+    LIBS_DIR =  $${PNG_LIBDIR} \
                 $${JPEG_LIBDIR} \
                 $${TINYXML_LIBDIR} \
                 $${3DS_LIBDIR} \
+                $${MINIZIP_LIBDIR} \
+                $${GL2PS_LIBDIR} \
                 $${ZLIB_LIBDIR}
 
     _OSM_CUI: LIBS_DIR += $${OSMESA_LIBDIR}
@@ -176,31 +179,39 @@ USE_3RD_PARTY_LIBS {
 
 unix {
     # Be careful not to move these chunks. moving it will affect to overall logic flow.
+
+    # detect libraries paths
+    SYS_LIBINC_         = $${SYSTEM_PREFIX_}/include
+    macx {                                                           # OSX
+        SYS_LIBINC_    += $${SYSTEM_PREFIX_}/X11/include
+        SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/X11/lib
+    } else: exists($${SYSTEM_PREFIX_}/lib/$$QT_ARCH-linux-gnu) {     # Debian
+        SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/lib/$$QT_ARCH-linux-gnu
+    } else: exists($${SYSTEM_PREFIX_}/lib$$ARCH/) {                  # RedHat (64bit)
+        SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/lib$$ARCH
+    } else {                                                         # Arch, RedHat (32bit)
+        SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/lib
+    }
+
+    # detect libraries
+    USE_SYSTEM_OSMESA {
+        _LIB_OSMESA  = OSMesa
+        exists($${SYS_LIBDIR_}/lib$${_LIB_OSMESA}.$${EXT_}): _OSM_CUI: USE_SYSTEM_OSMESA_LIB=YES
+    }
+
     USE_SYSTEM_LIBS {
         WHICH_LIBS = SYSTEM
-        # base names
-        LIB_PNG     = png16
-        LIB_JPEG    = jpeg
-        LIB_OSMESA  = OSMesa
-        LIB_GLU     = GLU
-
-        # detect libraries paths
-        SYS_LIBINC_         = $${SYSTEM_PREFIX_}/include
-        macx {                                                           # OSX
-            SYS_LIBINC_    += $${SYSTEM_PREFIX_}/X11/include
-            SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/X11/lib
-        } else: exists($${SYSTEM_PREFIX_}/lib/$$QT_ARCH-linux-gnu) {     # Debian
-            SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/lib/$$QT_ARCH-linux-gnu
-        } else: exists($${SYSTEM_PREFIX_}/lib$$ARCH/) {                  # RedHat (64bit)
-            SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/lib$$ARCH
-        } else {                                                         # Arch, RedHat (32bit)
-            SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/lib
-        }
-        # detect libraries
-        exists($${SYS_LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_}): _OSM_CUI: USE_SYSTEM_OSMESA_LIB=YES
-        exists($${SYS_LIBDIR_}/lib$${LIB_PNG}.$${EXT_}): USE_SYSTEM_PNG_LIB=YES
+        # detect system libraries
+        _LIB_OSMESA  = OSMesa
+        exists($${SYS_LIBDIR_}/lib$${_LIB_OSMESA}.$${EXT_}): _OSM_CUI: USE_SYSTEM_OSMESA_LIB=YES
         exists($${SYS_LIBDIR_}/lib$${LIB_JPEG}.$${EXT_}): USE_SYSTEM_JPEG_LIB=YES
         exists($${SYS_LIBDIR_}/libz.$${EXT_}): USE_SYSTEM_Z_LIB=YES
+        macx {
+            # use system png on macos only - version of libpng on Ubuntu is too low
+            _LIB_PNG = png
+            exists($${SYS_LIBDIR_}/lib$${_LIB_PNG}.$${EXT_}): USE_SYSTEM_PNG_LIB=YES
+        }
+
         # remove these for now, we'll append them at the end
         !USE_3RD_PARTY_LIBS {
             LIBS_INC -= -L$${LIBINC_}
@@ -213,6 +224,8 @@ unix {
     }
 
     contains(USE_SYSTEM_PNG_LIB, YES) {
+        # use sytem lib name
+        LIB_PNG = png
         # remove 3rdParty lib reference
         USE_3RD_PARTY_LIBS {
             LIBS_INC -= $${PNG_INC}
@@ -249,6 +262,8 @@ unix {
     }
 
     contains(USE_SYSTEM_OSMESA_LIB, YES): _OSM_CUI {
+        # use sytem lib name
+        LIB_OSMESA  = OSMesa
         # remove 3rdParty lib reference
         USE_3RD_PARTY_LIBS {
             LIBS_INC       -= $${OSMESA_INC}
@@ -270,12 +285,6 @@ unix {
 }
 
 message("~~~ USING $${WHICH_LIBS} LIBS ~~~")
-
-CONFIG(debug, debug|release) {
-    BUILD = DEBUG
-} else {
-    BUILD = RELEASE
-}
 
 # GUI/CUI environment identifiers
 _QT_GUI {
@@ -317,12 +326,12 @@ else:     DEFINES	-= EXPORT_3DS
 !contains(CONFIG, USE_BOOST): {
     DEFINES		+= _NO_BOOST
 } else {
-    INCLUDEPATH         += $$PWD/boost/include
-    LIBS 		+= -L$$PWD/boost/lib
+    INCLUDEPATH         += $$_PRO_FILE_PWD_/../boost/include
+    LIBS 		+= -L$$_PRO_FILE_PWD_/../boost/lib
 }
 
 # dirs
-OBJECTS_DIR       = .obj$${POSTFIX}
+OBJECTS_DIR       = $$DESTDIR/.obj$${POSTFIX}
 win32 {
     CONFIG       += windows
     QMAKE_EXT__OBJ = .obj
@@ -343,7 +352,7 @@ unix {
     OSTYPE = $$system(hostname | cut -d. -f2-)
     contains(OSTYPE, pair.com) {
         LIBS_INC    +=  /usr/local/include
-        OSMESA_INC  += ../../Mesa-7.11/include
+        OSMESA_INC  += $$_PRO_FILE_PWD_/../../Mesa-7.11/include
         DEFINES	+= _GL_POPCOLOR_BROKEN
     }
 

@@ -93,6 +93,30 @@ USE_3RD_PARTY_LIBS {
     3rdParty_zlib.target      = sub-3rdParty_zlib
     3rdParty_zlib.depends     =
 
+    SUBDIRS += 3rdParty_png
+    3rdParty_png.file        = $$PWD/3rdParty/libpng/3rdParty_png.pro
+    3rdParty_png.makefile    = $${MAKEFILE_3RDPARTY}
+    3rdParty_png.target      = sub-3rdParty_png
+    3rdParty_png.depends     =
+
+    SUBDIRS += 3rdParty_jpeg
+    3rdParty_jpeg.file       = $$PWD/3rdParty/libjpeg/3rdParty_jpeg.pro
+    3rdParty_jpeg.makefile   = $${MAKEFILE_3RDPARTY}
+    3rdParty_jpeg.target     = sub-3rdParty_jpeg
+    3rdParty_jpeg.depends    =
+
+    SUBDIRS += 3rdParty_tinyxml
+    3rdParty_tinyxml.file     = $$PWD/3rdParty/tinyxml/3rdParty_tinyxml.pro
+    3rdParty_tinyxml.makefile = $${MAKEFILE_3RDPARTY}
+    3rdParty_tinyxml.target   = sub-3rdParty_tinyxml
+    3rdParty_tinyxml.depends  =
+	
+    SUBDIRS += 3rdParty_3ds
+    3rdParty_3ds.file        = $$PWD/3rdParty/lib3ds/3rdParty_3ds.pro
+    3rdParty_3ds.makefile    = $${MAKEFILE_3RDPARTY}
+    3rdParty_3ds.target      = sub-3rdParty_3ds
+    3rdParty_3ds.depends     =
+
     SUBDIRS += 3rdParty_minizip
     3rdParty_minizip.file     = $$PWD/3rdParty/minizip/3rdParty_minizip.pro
     3rdParty_minizip.makefile = $${MAKEFILE_3RDPARTY}
@@ -104,30 +128,6 @@ USE_3RD_PARTY_LIBS {
     3rdParty_gl2ps.makefile   = $${MAKEFILE_3RDPARTY}
     3rdParty_gl2ps.target     = sub-3rdParty_gl2ps
     3rdParty_gl2ps.depends    =
-
-    SUBDIRS += 3rdParty_tinyxml
-    3rdParty_tinyxml.file     = $$PWD/3rdParty/tinyxml/3rdParty_tinyxml.pro
-    3rdParty_tinyxml.makefile = $${MAKEFILE_3RDPARTY}
-    3rdParty_tinyxml.target   = sub-3rdParty_tinyxml
-    3rdParty_tinyxml.depends  =
-	
-    SUBDIRS += 3rdParty_png
-    3rdParty_png.file        = $$PWD/3rdParty/libpng/3rdParty_png.pro
-    3rdParty_png.makefile    = $${MAKEFILE_3RDPARTY}
-    3rdParty_png.target      = sub-3rdParty_png
-    3rdParty_png.depends     =	
-
-    SUBDIRS += 3rdParty_3ds
-    3rdParty_3ds.file        = $$PWD/3rdParty/lib3ds/3rdParty_3ds.pro
-    3rdParty_3ds.makefile    = $${MAKEFILE_3RDPARTY}
-    3rdParty_3ds.target      = sub-3rdParty_3ds
-    3rdParty_3ds.depends     =
-
-    SUBDIRS += 3rdParty_jpeg
-    3rdParty_jpeg.file       = $$PWD/3rdParty/libjpeg/3rdParty_jpeg.pro
-    3rdParty_jpeg.makefile   = $${MAKEFILE_3RDPARTY}
-    3rdParty_jpeg.target     = sub-3rdParty_jpeg
-    3rdParty_jpeg.depends    =
 }
 
 # Build Qt Graphic User Interface (GUI)

@@ -21,9 +21,9 @@ message("~~~ Headerize $$BUILD BUILD ~~~")
 
 TARGET          = Headerize
 
-LIBDIRS         = -L../TCFoundation
+LIBDIRS         = -L../TCFoundation/$$DESTDIR
 
-LDLIBS          = ../TCFoundation/libTCFoundation$${POSTFIX}.a
+LDLIBS          = ../TCFoundation/$$DESTDIR/libTCFoundation$${POSTFIX}.a
 
 LIBDIRS        += $${LIBS_DIR}
 

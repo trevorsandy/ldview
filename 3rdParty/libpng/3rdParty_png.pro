@@ -7,6 +7,11 @@ include(../../3rdParty.pri)
 
 message("~~~ libpng.a $$BUILD BUILD ~~~")
 
+# link libpng to libpng16
+#PNG_COMMAND = ln -s $$DESTDIR/libpng16.a $$DESTDIR/libpng.a
+#QMAKE_POST_LINK +=  $$escape_expand(\n\t) \
+#                    $$PNG_COMMAND
+
 # Input
 HEADERS += png.h \
            pngconf.h \

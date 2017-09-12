@@ -5,7 +5,7 @@
 TEMPLATE = lib
 TARGET   =
 QT 	+= core
-QT 	-= opengl
+QT 	+= opengl
 QT 	-= gui
 CONFIG 	+= qt
 CONFIG 	+= opengl
