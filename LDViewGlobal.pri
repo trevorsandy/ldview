@@ -17,10 +17,10 @@ else:                      ARCH = 32
 # build type
 CONFIG(debug, debug|release) {
     BUILD = DEBUG
-    DESTDIR = debug
+    DESTDIR = $$join(ARCH,,,bit_debug)
 } else {
     BUILD = RELEASE
-    DESTDIR = release
+    DESTDIR = $$join(ARCH,,,bit_release)
 }
 
 # Basically, this project include file is set up to allow some options for selecting your LDView libraries.

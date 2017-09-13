@@ -11,18 +11,18 @@ CONFIG 	+= warn_on
 
 # platform switch
 contains(QT_ARCH, x86_64) {
-    ARCH = 64
+    ARCH  = 64
 } else {
-    ARCH = 32
+    ARCH  = 32
 }
 
 # build type
 CONFIG(debug, debug|release) {
     BUILD = DEBUG
-    DESTDIR = debug
+    DESTDIR = $$join(ARCH,,,bit_debug)
 } else {
     BUILD = RELEASE
-    DESTDIR = release
+    DESTDIR = $$join(ARCH,,,bit_release)
 }
 win32: BUILD += WINDOWS
 else:  BUILD += $$upper($$system(uname))
