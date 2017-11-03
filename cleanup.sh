@@ -26,7 +26,7 @@ if [[ $result == 'ldview' ]]; then
     find . -name "*.o" -not -path "./3rdParty*" -type f -delete
     find . -name "ui_*" -type f -delete
     find . -name "moc_*" -type f -delete
-    find . -name "qrc_resources.cpp" -type f -delete		
+    find . -name "qrc_resources.cpp" -type f -delete
     if [[ $1 == '-a' ]]; then
         echo " "
         echo "  also removing these occurences in 3rd party libraries:"

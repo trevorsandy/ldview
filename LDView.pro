@@ -65,7 +65,11 @@
 #        |
 #
 
-#Uncomment right side of directive to manually enable
+# Configuration settings
+# CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_linux_3rdparty
+# CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_macos_3rdparty
+# CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_windows_3rdparty
+# Uncomment right side of directive to manually enable
 !contains(CONFIG, USE_3RD_PARTY_LIBS):  # CONFIG+=USE_3RD_PARTY_LIBS   # must also manually set/unset in LDViewGlobal.pri
 !contains(CONFIG, USE_SYSTEM_LIBS):     # CONFIG+=USE_SYSTEM_LIBS      # must also manually set/unset in LDViewGlobal.pri
 !contains(CONFIG, BUILD_GUI_ONLY):      # CONFIG+=BUILD_GUI_ONLY
@@ -79,7 +83,7 @@ BUILD_CUI_ONLY: BUILD_GUI = NO
 TEMPLATE=subdirs
 
 # This tells Qt to compile the following SUBDIRS in order
-CONFIG 	+= ordered 	
+CONFIG 	+= ordered
 
 MAKEFILE_3RDPARTY = Makefile.ldview
 
@@ -110,7 +114,7 @@ USE_3RD_PARTY_LIBS {
     3rdParty_tinyxml.makefile = $${MAKEFILE_3RDPARTY}
     3rdParty_tinyxml.target   = sub-3rdParty_tinyxml
     3rdParty_tinyxml.depends  =
-	
+
     SUBDIRS += 3rdParty_3ds
     3rdParty_3ds.file        = $$PWD/3rdParty/lib3ds/3rdParty_3ds.pro
     3rdParty_3ds.makefile    = $${MAKEFILE_3RDPARTY}

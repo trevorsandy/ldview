@@ -1,5 +1,5 @@
 
-# LDView global directives 
+# LDView global directives
 
 #Uncomment right side of directive to manually enable
 !contains(CONFIG, USE_3RD_PARTY_LIBS):      # CONFIG+=USE_3RD_PARTY_LIBS        # must also manually set/unset in LDView.pro
@@ -206,9 +206,11 @@ unix {
         exists($${SYS_LIBDIR_}/lib$${_LIB_OSMESA}.$${EXT_}): _OSM_CUI: USE_SYSTEM_OSMESA_LIB=YES
         exists($${SYS_LIBDIR_}/lib$${LIB_JPEG}.$${EXT_}): USE_SYSTEM_JPEG_LIB=YES
         exists($${SYS_LIBDIR_}/libz.$${EXT_}): USE_SYSTEM_Z_LIB=YES
+
+        # special situation for libpng
         macx {
-            # use system png on macos only - version of libpng on Ubuntu is too low
             _LIB_PNG = png
+            # use system png on macos only - version of libpng on Ubuntu is too low
             exists($${SYS_LIBDIR_}/lib$${_LIB_PNG}.$${EXT_}): USE_SYSTEM_PNG_LIB=YES
         }
 
@@ -224,7 +226,7 @@ unix {
     }
 
     contains(USE_SYSTEM_PNG_LIB, YES) {
-        # use sytem lib name
+        # use sytem lib name - only macos will trigger this logic
         LIB_PNG = png
         # remove 3rdParty lib reference
         USE_3RD_PARTY_LIBS {
