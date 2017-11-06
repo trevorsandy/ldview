@@ -7,7 +7,7 @@ git:
   depth: 200
 
 branches:
-  only:${LDV_REPO_NAME}.tar.gz
+  only:
   - qmake-build
 
 addons:
