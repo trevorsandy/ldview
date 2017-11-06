@@ -14,7 +14,7 @@ CONFIG 	+= warn_on
 
 include(../LDViewGlobal.pri)
 
-message("~~~ libLDExporter$$POSTFIX.a $$BUILD BUILD ~~~")
+message("~~~ libLDExporter$$POSTFIX.a MODULE $$BUILD ~~~")
 
 TARGET =  LDExporter$$POSTFIX
 
@@ -22,9 +22,9 @@ DEFINES 	+= TIXML_USE_STL
 
 INCLUDEPATH     += $${TINYXML_INC}
 
-contains(DEFINES, EXPORT_3DS): USE_3RD_PARTY_LIBS: INCLUDEPATH += $${3DS_INC}
+contains(DEFINES, EXPORT_3DS): INCLUDEPATH += $${3DS_INC}
 
-contains(DEFINES, _OSMESA): USE_3RD_PARTY_LIBS: INCLUDEPATH += $${OSMESA_INC}
+contains(DEFINES, _OSMESA): INCLUDEPATH += $${OSMESA_INC}
 
 # Input
 HEADERS += $$PWD/LD3dsExporter.h \

@@ -5,13 +5,13 @@
 TARGET = jpeg
 include(../../3rdParty.pri)
 
-message("~~~ libjpeg.a $$BUILD BUILD ~~~")
+message("~~~ libjpeg.a LIBRARY $${BUILD} ~~~")
 
 # Input
 HEADERS +=  jerror.h jmorecfg.h jpeglib.h cderror.h \
             cdjpeg.h jdct.h jinclude.h jmemsys.h \
             jpegint.h jversion.h transupp.h
-		   
+
 SOURCES +=  jaricom.c jcapimin.c jcapistd.c jcarith.c \
             jccoefct.c jccolor.c jcdctmgr.c jchuff.c \
             jcinit.c jcmainct.c jcmarker.c jcmaster.c \
@@ -66,7 +66,7 @@ SOURCES += jmemnobs.c
 # you plan to process, so a lot of systems don't meet this criterion.
 # If yours doesn't, try jmemansi.c first.  If that doesn't compile, you'll have
 # to use jmemname.c; be sure to adjust select_file_name() for local conditions.
-# You may also need to change unlink() to remove() in close_backing_store().	   
+# You may also need to change unlink() to remove() in close_backing_store().
 
 # Except with jmemnobs.c or jmemmac.c, you need to adjust the DEFAULT_MAX_MEM
 # setting to a reasonable value for your system (either by adding a #define for

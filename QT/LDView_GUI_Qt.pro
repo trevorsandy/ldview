@@ -34,7 +34,7 @@ else: VERSION  = $$VER_MAJ"."$$VER_MIN"."$$VER_PAT              # major.minor.pa
 DEFINES += VERSION_INFO=\\\"$$VERSION\\\"
 DEFINES += ARCH=\\\"$$join(ARCH,,,bit)\\\"
 
-message("~~~ LDVIEW ($$join(ARCH,,,bit)) $${BUILD} GUI EXECUTABLE VERSION $$VERSION ~~~")
+message("~~~ LDVIEW ($$join(ARCH,,,bit)) VERSION $$VERSION GUI EXECUTABLE $${BUILD} ~~~")
 
 DEFINES		+= QT_THREAD_SUPPORT
 
@@ -304,7 +304,7 @@ macx {
 }
 
 # Input
-HEADERS += $$PWD/About.h \					
+HEADERS += $$PWD/About.h \
            $$PWD/AlertHandler.h \
            $$PWD/Help.h \
            $$PWD/LDViewBoundingBox.h \
@@ -322,7 +322,7 @@ HEADERS += $$PWD/About.h \
            $$PWD/misc.h \
            $$PWD/ModelViewerWidget.h \
            $$PWD/OpenGLExtensions.h \
-           $$PWD/Preferences.h   
+           $$PWD/Preferences.h
 FORMS += $$PWD/AboutPanel.ui \
          $$PWD/BoundingBoxPanel.ui \
          $$PWD/CustomizeToolbar.ui \
@@ -339,7 +339,7 @@ FORMS += $$PWD/AboutPanel.ui \
          $$PWD/PartList.ui \
          $$PWD/PreferencesPanel.ui \
          $$PWD/SnapshotSettingsPanel.ui
-SOURCES += $$PWD/AlertHandler.cpp \					
+SOURCES += $$PWD/AlertHandler.cpp \
            $$PWD/LDViewBoundingBox.cpp \
            $$PWD/LDViewCustomizeToolbar.cpp \
            $$PWD/LDViewErrors.cpp \

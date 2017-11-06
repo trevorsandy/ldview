@@ -7,16 +7,20 @@ echo "Validating working directory: ${result}..."
 if [[ $result == 'ldview' ]]; then
     echo " "
     echo "This script will remove the follwing occurrences recursively:"
-    echo "  LDView       - CUI and GUI - in LDView.app/Contents/MacOS/"
-    echo "  Headerize    - Headerze utility application"
-    echo "  *.osmesa     - OSMesa Makefile"
-    echo "  *.qt5        - GUI Makefile"
-    echo "  *-qt5.a      - GUI static library"
-    echo "  *-osmesa.a   - CUI static library"
-    echo "  ui_*         - GUI forms"
-    echo "  moc_*        - Meta object compiler"
-    echo "  *.o          - compiled object"
-    echo "  qrc_resource - resource file"
+    echo "  LDView            - CUI and GUI - in LDView.app/Contents/MacOS/"
+    echo "  Headerize         - Headerze utility application"
+    echo "  *.osmesa          - OSMesa Makefile"
+    echo "  *.qt5             - GUI Makefile"
+    echo "  *-qt5.a           - GUI static library"
+    echo "  *-osmesa.a        - CUI static library"
+    echo "  ui_*              - GUI forms"
+    echo "  moc_*             - Meta object compiler"
+    echo "  *.o               - compiled object"
+    echo "  qrc_resource      - resource file"
+	echo "  StudLogo.h        - generated file"
+	echo "  LDViewMessages.h  - generated file"
+	echo 
+	echo "Use -a to include 3rd party libraries - e.g. cleanup.sh -a"
     find . -name "Headerize" -type f -delete
     find . -name "LDView" -type f -delete
     find . -name "*.osmesa" -type f -delete
@@ -27,6 +31,8 @@ if [[ $result == 'ldview' ]]; then
     find . -name "ui_*" -type f -delete
     find . -name "moc_*" -type f -delete
     find . -name "qrc_resources.cpp" -type f -delete
+	find . -name "StudLogo.h" -type f -delete
+	find . -name "LDViewMessages.h" -type f -delete
     if [[ $1 == '-a' ]]; then
         echo " "
         echo "  also removing these occurences in 3rd party libraries:"
@@ -45,7 +51,7 @@ if [[ $result == 'ldview' ]]; then
         find ./3rdParty/tinyxml -name "libtinyxml.a" -type f -delete
         find ./3rdParty/gl2ps -name "libgl2ps.a" -type f -delete
         find ./3rdParty/libpng -name "libpng.a" -type f -delete
-				find ./3rdParty/libpng -name "libpng16.a" -type f -delete
+		find ./3rdParty/libpng -name "libpng16.a" -type f -delete
         find ./3rdParty/zlib -name "libz.a" -type f -delete
         find ./3rdParty/libjpeg -name "libjpeg.a" -type f -delete
         find ./3rdParty/lib3ds -name "lib3ds.a" -type f -delete

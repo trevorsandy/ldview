@@ -17,17 +17,16 @@ DEFINES         += _OSMESA
 
 include(../LDViewGlobal.pri)
 
-message("~~~ LGEOTables $$BUILD BUILD ~~~")
+message("~~~ LGEOTables MODULE $$BUILD ~~~")
 
-TARGET          = LGEOTables
+TARGET      = LGEOTables
 
-INCLUDEPATH 	= $${TINYXML_INC}
+INCLUDEPATH = $${TINYXML_INC}
 
-LIBDIRS         = $${TINYXML_LIBDIR}
+DEFINES 	  += TIXML_USE_STL
 
-DEFINES 	+= TIXML_USE_STL
-
-LIBS 	        += $${LIBDIRS} -ltinyxml
+USE_SYSTEM_LIBS: LIBS += -ltinyxml
+else:            LIBS += $${TINYXML_LIBDIR} -ltinyxml
 
 # Input
-SOURCES         += LGEOTables.cpp
+SOURCES     += LGEOTables.cpp

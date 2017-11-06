@@ -5,7 +5,7 @@
 TARGET = png16
 include(../../3rdParty.pri)
 
-message("~~~ libpng.a $$BUILD BUILD ~~~")
+message("~~~ libpng.a LIBRARY $${BUILD} ~~~")
 
 # link libpng to libpng16
 #PNG_COMMAND = ln -s $$DESTDIR/libpng16.a $$DESTDIR/libpng.a
@@ -19,7 +19,7 @@ HEADERS += png.h \
            pnginfo.h \
            pnglibconf.h \
            pngpriv.h \
-           pngstruct.h 
+           pngstruct.h
 SOURCES += png.c \
            pngerror.c \
            pngget.c \
@@ -34,4 +34,4 @@ SOURCES += png.c \
            pngwio.c \
            pngwrite.c \
            pngwtran.c \
-           pngwutil.c 
+           pngwutil.c

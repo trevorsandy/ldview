@@ -14,7 +14,7 @@ CONFIG 	+= warn_on
 
 include(../LDViewGlobal.pri)
 
-message("~~~ libLDLoader$$POSTFIX.a $$BUILD BUILD ~~~")
+message("~~~ libLDLoader$$POSTFIX.a MODULE $$BUILD ~~~")
 
 TARGET = LDLoader$$POSTFIX
 

@@ -5,7 +5,7 @@
 TARGET = z
 include(../../3rdParty.pri)
 
-message("~~~ libz.a $$BUILD BUILD ~~~")
+message("~~~ libz.a LIBRARY $${BUILD} ~~~")
 
 # Input
 HEADERS += crc32.h \

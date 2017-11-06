@@ -14,7 +14,7 @@ CONFIG 	+= warn_on
 
 include(../LDViewGlobal.pri)
 
-message("~~~ libTCFoundation$$POSTFIX.a $$BUILD BUILD ~~~")
+message("~~~ libTCFoundation$$POSTFIX.a MODULE $$BUILD ~~~")
 
 TARGET = TCFoundation$$POSTFIX
 

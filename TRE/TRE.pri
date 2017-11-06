@@ -15,7 +15,7 @@ CONFIG 	+= warn_on
 
 include(../LDViewGlobal.pri)
 
-message("~~~ libTRE$$POSTFIX.a $$BUILD BUILD ~~~")
+message("~~~ libTRE$$POSTFIX.a MODULE $$BUILD ~~~")
 
 TARGET = TRE$$POSTFIX
 

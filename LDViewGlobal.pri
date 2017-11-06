@@ -1,10 +1,28 @@
+# qmake Configuration settings
+# CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_linux_3rdparty
+# CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_macos_3rdparty
+# CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_windows_3rdparty
+# CONFIG+=USE_3RD_PARTY_LIBS
+# CONFIG+=USE_SYSTEM_LIBS
+# CONFIG+=BUILD_GUI_ONLY
+# CONFIG+=BUILD_CUI_ONLY
+# CONFIG+=USE_SYSTEM_PNG     # override USE_3RD_PARTY_LIBS for libPng
+# CONFIG+=USE_SYSTEM_JPEG    # override USE_3RD_PARTY_LIBS for libJpeg
+# CONFIG+=USE_SYSTEM_Z       # override USE_3RD_PARTY_LIBS for libz
+# CONFIG+=USE_SYSTEM_OSMESA  # override USE_3RD_PARTY_LIBS for OSMesa
 
 # LDView global directives
 
-#Uncomment right side of directive to manually enable
-!contains(CONFIG, USE_3RD_PARTY_LIBS):      # CONFIG+=USE_3RD_PARTY_LIBS        # must also manually set/unset in LDView.pro
-!contains(CONFIG, USE_SYSTEM_LIBS):         # CONFIG+=USE_SYSTEM_LIBS           # must also manually set/unset in LDView.pro
-!contains(CONFIG, USE_SYSTEM_OSMESA):       # CONFIG+=USE_SYSTEM_OSMESA         # override USE_3RD_PARTY_LIBS for OSMesa libs
+# Get fine-grained host identification
+win32:HOST = $$system(systeminfo | findstr /B /C:"OS Name")
+unix:HOST = $$system(. /etc/os-release && if test \"$PRETTY_NAME\" != \"\"; then echo \"$PRETTY_NAME\"; else echo `uname`; fi)
+
+# Ubuntu Trusty does have the correct versions for libpng and lib3ds so use the 3rd party
+# version if 'use system libs' selected.
+contains(HOST, Ubuntu):contains(HOST, 14.04.5):USE_SYSTEM_LIBS {
+    USE_3RD_PARTY_PNG = YES
+    USE_3RD_PARTY_3DS = YES
+}
 
 # GUI/CUI switch
 contains(DEFINES, _QT):     CONFIG += _QT_GUI
@@ -22,6 +40,20 @@ CONFIG(debug, debug|release) {
     BUILD = RELEASE
     DESTDIR = $$join(ARCH,,,bit_release)
 }
+
+# GUI/CUI environment identifiers
+_QT_GUI {
+    POSTFIX  = -qt$${QT_MAJOR_VERSION}
+    BUILD   += QT
+} else: _OSM_CUI {
+    POSTFIX  = -osmesa
+    BUILD   += OSMESA
+}
+BUILD += BUILD ON $$upper($$HOST)
+
+# 3ds
+!freebsd: DEFINES   += EXPORT_3DS
+else:     DEFINES   -= EXPORT_3DS
 
 # Basically, this project include file is set up to allow some options for selecting your LDView libraries.
 # The default is to select the pre-defined libraries in ../lib and headers in ../include.
@@ -52,11 +84,14 @@ unix {
     LIBINC_         = $$_PRO_FILE_PWD_/../include       # zlib.h and zconf.h, glext and wglext headers
 
     # base names
-    LIB_3DS     = 3ds
-    LIB_PNG     = png16
-    LIB_JPEG    = jpeg
-    LIB_OSMESA  = OSMesa32
-    LIB_GLU     = GLU
+    LIB_PNG       = png16
+    LIB_JPEG      = jpeg
+    LIB_OSMESA    = OSMesa32
+    LIB_GLU       = GLU
+    LIB_GL2PS     = gl2ps
+    LIB_Z         = z
+    LIB_TINYXML   = tinyxml
+    LIB_3DS       = 3ds
 
     macx {
         # pre-compiled libraries location
@@ -85,11 +120,14 @@ unix {
     S_EXT_          = a
 
     # base names
-    LIB_3DS     = 3ds
-    LIB_PNG     = png16
-    LIB_JPEG    = jpeg
-    LIB_OSMESA  = OSMesa32
-    LIB_GLU     = GLU
+    LIB_PNG       = png16
+    LIB_JPEG      = jpeg
+    LIB_OSMESA    = OSMesa32
+    LIB_GLU       = GLU
+    LIB_GL2PS     = gl2ps
+    LIB_Z         = z
+    LIB_TINYXML   = tinyxml
+    LIB_3DS       = 3ds
 }
 
 # pre-compiled libraries
@@ -101,23 +139,20 @@ LIBS_DIR            = -L$${LIBDIR_}
 # -------------------------------
 WHICH_LIBS = PRE-COMPILED
 
+PNG_INC             = $${LIBINC_}
+PNG_LIBDIR          = -L$${LIBDIR_}
+
+JPEG_INC            = $${LIBINC_}
+JPEG_LIBDIR         = -L$${LIBDIR_}
+
 GL2PS_INC           = $${LIBINC_}
 GL2PS_LIBDIR        = -L$${LIBDIR_}
 
 TINYXML_INC         = $${LIBINC_}
 TINYXML_LIBDIR      = -L$${LIBDIR_}
 
-MINIZIP_INC         = $${LIBINC_}
-MINIZIP_LIBDIR      = -L$${LIBDIR_}
-
 3DS_INC             = $${LIBINC_}
 3DS_LIBDIR          = -L$${LIBDIR_}
-
-PNG_INC             = $${LIBINC_}
-PNG_LIBDIR          = -L$${LIBDIR_}
-
-JPEG_INC            = $${LIBINC_}
-JPEG_LIBDIR         = -L$${LIBDIR_}
 
 ZLIB_INC            = $${LIBINC_}
 ZLIB_LIBDIR         = -L$${LIBDIR_}
@@ -127,10 +162,25 @@ OSMESA_LIBDIR       = -L$${LIBDIR_}
 OSMESA_LDLIBS       = $${LIBDIR_}/lib$${LIB_OSMESA}.$${S_EXT_} \
                       $${LIBDIR_}/lib$${LIB_GLU}.$${S_EXT_}
 
+MINIZIP_INC         = $${LIBINC_}
+MINIZIP_LIBDIR      = -L$${LIBDIR_}
+
+# Update Libraries
+# ===============================
+LIBS_PRI            = -l$${LIB_PNG} \
+                      -l$${LIB_JPEG} \
+                      -l$${LIB_GL2PS} \
+                      -l$${LIB_TINYXML} \
+                      -l$${LIB_Z}
+
+contains(DEFINES, EXPORT_3DS) {
+   LIBS_PRI += -l$${LIB_3DS}
+}
+
 # 3rd party libreries - compiled from source
 # Be careful not to move this chunk. moving it will affect to overall logic flow.
 USE_3RD_PARTY_LIBS {
-    WHICH_LIBS = 3RD PARTY
+    WHICH_LIBS      = 3RD PARTY
 
     # headers and static compiled libs
     GL2PS_INC       = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/gl2ps
@@ -154,7 +204,7 @@ USE_3RD_PARTY_LIBS {
     ZLIB_INC        = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/zlib
     ZLIB_LIBDIR     = -L$${3RD_PARTY_PREFIX_}/zlib/$$DESTDIR
 
-    # overwrite (reset)
+    # overwrite pre-compiled path (reset) with 3rd party path
     # ===============================
     LIBS_INC =  $${PNG_INC} \
                 $${JPEG_INC} \
@@ -180,7 +230,7 @@ USE_3RD_PARTY_LIBS {
 unix {
     # Be careful not to move these chunks. moving it will affect to overall logic flow.
 
-    # detect libraries paths
+    # detect system libraries paths
     SYS_LIBINC_         = $${SYSTEM_PREFIX_}/include
     macx {                                                           # OSX
         SYS_LIBINC_    += $${SYSTEM_PREFIX_}/X11/include
@@ -193,111 +243,161 @@ unix {
         SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/lib
     }
 
-    # detect libraries
-    USE_SYSTEM_OSMESA {
-        _LIB_OSMESA  = OSMesa
-        exists($${SYS_LIBDIR_}/lib$${_LIB_OSMESA}.$${EXT_}): _OSM_CUI: USE_SYSTEM_OSMESA_LIB=YES
+    USE_3RD_PARTY_LIBS {
+        # detect system libraries
+        _LIB_OSMESA = OSMesa
+        _LIB_PNG    = png
+        USE_SYSTEM_OSMESA:exists($${SYS_LIBDIR_}/lib$${_LIB_OSMESA}.$${EXT_}):_OSM_CUI: USE_SYSTEM_OSMESA_LIB = YES
+        USE_SYSTEM_PNG:!USE_3RD_PARTY_PNG:exists($${SYS_LIBDIR_}/lib$${_LIB_PNG}.$${EXT_}): USE_SYSTEM_PNG_LIB = YES
+        USE_SYSTEM_JPEG:exists($${SYS_LIBDIR_}/lib$${LIB_JPEG}.$${EXT_}): USE_SYSTEM_JPEG_LIB = YES
+        USE_SYSTEM_Z:exists($${SYS_LIBDIR_}/libz.$${EXT_}): USE_SYSTEM_Z_LIB = YES
+
+        # override 3rd party library paths
+        contains(USE_SYSTEM_OSMESA_LIB, YES): _OSM_CUI {
+            # use sytem lib name
+            LIB_OSMESA          = OSMesa
+            # remove 3rdParty lib reference
+            USE_3RD_PARTY_LIBS {
+                LIBS_INC       -= $${OSMESA_INC}
+                LIBS_DIR       -= $${OSMESA_LIBDIR}
+            }
+            # reset individual library entry
+            OSMESA_INC          = $${SYS_LIBINC_}
+            OSMESA_LIBDIR       = -L$${SYS_LIBDIR_}
+            OSMESA_LDLIBS       = $${SYS_LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_} \
+                                  $${SYS_LIBDIR_}/lib$${LIB_GLU}.$${EXT_}
+        }
+
+        contains(USE_SYSTEM_PNG_LIB, YES) {
+            # remove lib reference
+            LIBS_PRI     -= -l$${LIB_PNG}
+            # use sytem lib name - only macos will trigger this logic
+            LIB_PNG       = png
+            # remove 3rdParty lib reference
+            USE_3RD_PARTY_LIBS {
+                LIBS_INC -= $${PNG_INC}
+                LIBS_DIR -= $${PNG_LIBDIR}
+            }
+            # reset individual library entry
+            PNG_INC       = $${SYS_LIBINC_}
+            PNG_LIBDIR    = -L$${SYS_LIBDIR_}
+            PNG_LDLIBS    = $${SYS_LIBDIR_}/lib$${LIB_PNG}.$${EXT_}
+        }
+
+        contains(USE_SYSTEM_JPEG_LIB, YES) {
+            # remove lib reference
+            LIBS_PRI     -= -l$${LIB_JPEG}
+            # remove 3rdParty lib reference
+            USE_3RD_PARTY_LIBS {
+                LIBS_INC -= $${JPEG_INC}
+                LIBS_DIR -= $${JPEG_LIBDIR}
+            }
+            # reset individual library entry
+            JPEG_INC      = $${SYS_LIBINC_}
+            JPEG_LIBDIR   = -L$${SYS_LIBDIR_}
+            JPEG_LDLIBS   = $${SYS_LIBDIR_}/lib$${LIB_JPEG}.$${EXT_}
+        }
+
+        contains(USE_SYSTEM_Z_LIB, YES) {
+            # remove lib reference
+            LIBS_PRI     -= -l$${LIB_Z}
+            # remove 3rdParty lib reference
+            USE_3RD_PARTY_LIBS {
+                LIBS_INC -= $${ZLIB_INC}
+                LIBS_DIR -= $${ZLIB_LIBDIR}
+            }
+            # reset individual library entry
+            ZLIB_INC      = $${SYS_LIBINC_}
+            ZLIB_LIBDIR   = -L$${SYS_LIBDIR_}
+            ZLIB_LDLIBS   = $${SYS_LIBDIR_}/lib$${LIB_Z}.$${EXT_}
+        }
     }
 
     USE_SYSTEM_LIBS {
         WHICH_LIBS = SYSTEM
-        # detect system libraries
-        _LIB_OSMESA  = OSMesa
-        exists($${SYS_LIBDIR_}/lib$${_LIB_OSMESA}.$${EXT_}): _OSM_CUI: USE_SYSTEM_OSMESA_LIB=YES
-        exists($${SYS_LIBDIR_}/lib$${LIB_JPEG}.$${EXT_}): USE_SYSTEM_JPEG_LIB=YES
-        exists($${SYS_LIBDIR_}/libz.$${EXT_}): USE_SYSTEM_Z_LIB=YES
 
-        # special situation for libpng
-        macx {
-            _LIB_PNG = png
-            # use system png on macos only - version of libpng on Ubuntu is too low
-            exists($${SYS_LIBDIR_}/lib$${_LIB_PNG}.$${EXT_}): USE_SYSTEM_PNG_LIB=YES
-        }
+        # update base names
+        LIB_OSMESA = OSMesa
+        LIB_PNG    = png
 
-        # remove these for now, we'll append them at the end
-        !USE_3RD_PARTY_LIBS {
-            LIBS_INC -= -L$${LIBINC_}
-            LIBS_DIR -= -L$${LIBDIR_}
-        }
-        # append...
+        # remove pre-compiled libs path
+        LIBS_INC  -= -L$${LIBINC_}
+        LIBS_DIR  -= -L$${LIBDIR_}
+
+        # append system library paths
         # ===============================}
         LIBS_INC     += $${SYS_LIBINC_}
         LIBS_DIR     += -L$${SYS_LIBDIR_}
-    }
 
-    contains(USE_SYSTEM_PNG_LIB, YES) {
-        # use sytem lib name - only macos will trigger this logic
-        LIB_PNG = png
-        # remove 3rdParty lib reference
-        USE_3RD_PARTY_LIBS {
-            LIBS_INC -= $${PNG_INC}
-            LIBS_DIR -= $${PNG_LIBDIR}
-        }
-        # reset individual library entry
-        PNG_INC      = $${SYS_LIBINC_}
-        PNG_LIBDIR   = -L$${SYS_LIBDIR_}
-        PNG_LDLIBS   = $${SYS_LIBDIR_}/lib$${LIB_PNG}.$${EXT_}
-    }
+        # -------------------------------
+        GL2PS_INC           = $${SYS_LIBINC_}
+        GL2PS_LIBDIR        = -L$${SYS_LIBDIR_}
 
-    contains(USE_SYSTEM_JPEG_LIB, YES) {
-        # remove 3rdParty lib reference
-        USE_3RD_PARTY_LIBS {
-            LIBS_INC -= $${JPEG_INC}
-            LIBS_DIR -= $${JPEG_LIBDIR}
-        }
-        # reset individual library entry
-        JPEG_INC      = $${SYS_LIBINC_}
-        JPEG_LIBDIR   = -L$${SYS_LIBDIR_}
-        JPEG_LDLIBS   = $${SYS_LIBDIR_}/lib$${LIB_JPEG}.$${EXT_}
-    }
+        TINYXML_INC         = $${SYS_LIBINC_}
+        TINYXML_LIBDIR      = -L$${SYS_LIBDIR_}
 
-    contains(USE_SYSTEM_Z_LIB, YES) {
-        # remove 3rdParty lib reference
-        USE_3RD_PARTY_LIBS {
-            LIBS_INC -= $${ZLIB_INC}
-            LIBS_DIR -= $${ZLIB_LIBDIR}
-        }
-        # reset individual library entry
-        ZLIB_INC      = $${SYS_LIBINC_}
-        ZLIB_LIBDIR   = -L$${SYS_LIBDIR_}
-        ZLIB_LDLIBS   = $${SYS_LIBDIR_}/libz.$${EXT_}
-    }
+        MINIZIP_INC         = $${SYS_LIBINC_}
+        MINIZIP_LIBDIR      = -L$${SYS_LIBDIR_}
 
-    contains(USE_SYSTEM_OSMESA_LIB, YES): _OSM_CUI {
-        # use sytem lib name
-        LIB_OSMESA  = OSMesa
-        # remove 3rdParty lib reference
-        USE_3RD_PARTY_LIBS {
-            LIBS_INC       -= $${OSMESA_INC}
-            LIBS_DIR       -= $${OSMESA_LIBDIR}
-        }
-        # reset individual library entry
+        3DS_INC             = $${SYS_LIBINC_}
+        3DS_LIBDIR          = -L$${SYS_LIBDIR_}
+
+        PNG_INC             = $${SYS_LIBINC_}
+        PNG_LIBDIR          = -L$${SYS_LIBDIR_}
+
+        JPEG_INC            = $${SYS_LIBINC_}
+        JPEG_LIBDIR         = -L$${SYS_LIBDIR_}
+
+        ZLIB_INC            = $${SYS_LIBINC_}
+        ZLIB_LIBDIR         = -L$${SYS_LIBDIR_}
+
         OSMESA_INC          = $${SYS_LIBINC_}
         OSMESA_LIBDIR       = -L$${SYS_LIBDIR_}
         OSMESA_LDLIBS       = $${SYS_LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_} \
                               $${SYS_LIBDIR_}/lib$${LIB_GLU}.$${EXT_}
-    }
 
-    # append these the end to include missing system headers and libs
-    USE_SYSTEM_LIBS: !USE_3RD_PARTY_LIBS {
-        LIBS_INC += -L$${LIBINC_}
-        LIBS_DIR += -L$${LIBDIR_}
-    }
+        # override system libraries with 3rd party library paths as specified
+        contains(USE_3RD_PARTY_PNG, YES) {
+            # update base name
+            LIB_PNG         = png16
+            # remove lib reference
+            LIBS_PRI       -= -l$${LIB_PNG}
+            # reset individual library entry
+            PNG_INC         = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/libpng
+            PNG_LIBDIR      = -L$${3RD_PARTY_PREFIX_}/libpng/$$DESTDIR
+            PNG_LDLIBS      = $${3RD_PARTY_PREFIX_}/libpng/$$DESTDIR/lib$${LIB_PNG}.$${S_EXT_}
+            # update libs path
+            LIBS_INC       += $${PNG_INC}
+            #LIBS_DIR       += $${PNG_LIBDIR}
+        }
 
+        contains(USE_3RD_PARTY_JPEG, YES) {
+            # remove lib reference
+            LIBS_PRI       -= -l$${LIB_JPEG}
+            # reset individual library entry
+            JPEG_INC        = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/libJPEG
+            JPEG_LIBDIR     = -L$${3RD_PARTY_PREFIX_}/libJPEG/$$DESTDIR
+            JPEG_LDLIBS     = $${3RD_PARTY_PREFIX_}/libJPEG/$$DESTDIR/lib$${LIB_JPEG}.$${S_EXT_}
+            # update libs path
+            LIBS_INC       += $${JPEG_INC}
+            #LIBS_DIR       += $${JPEG_LIBDIR}
+        }
+
+        contains(USE_3RD_PARTY_3DS, YES) {
+            # remove lib reference
+            LIBS_PRI       -= -l$${LIB_3DS}
+            # reset individual library entry
+            3DS_INC         = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/lib3ds
+            3DS_LIBDIR      = -L$${3RD_PARTY_PREFIX_}/lib3ds/$$DESTDIR
+            3DS_LDLIBS      = $${3RD_PARTY_PREFIX_}/lib3ds/$$DESTDIR/lib$${LIB_3DS}.$${S_EXT_}
+            # update libs path
+            LIBS_INC       += $${3DS_INC}
+            #LIBS_DIR       += $${3DS_LIBDIR}
+        }
+    }
 }
 
 message("~~~ USING $${WHICH_LIBS} LIBS ~~~")
-
-# GUI/CUI environment identifiers
-_QT_GUI {
-    POSTFIX  = -qt$${QT_MAJOR_VERSION}
-    BUILD   += QT
-} else: _OSM_CUI {
-    POSTFIX  = -osmesa
-    BUILD   += OSMESA
-}
-win32: BUILD += WINDOWS
-else:  BUILD += $$upper($$system(uname))
 
 DEPENDPATH  += .
 INCLUDEPATH += . ..
@@ -320,10 +420,6 @@ contains(DEFINES, USE_CPP11) {
     }
 }
 
-# 3ds
-!freebsd: DEFINES	+= EXPORT_3DS
-else:     DEFINES	-= EXPORT_3DS
-
 # Boost
 !contains(CONFIG, USE_BOOST): {
     DEFINES		+= _NO_BOOST
@@ -333,9 +429,9 @@ else:     DEFINES	-= EXPORT_3DS
 }
 
 # dirs
-OBJECTS_DIR       = $$DESTDIR/.obj$${POSTFIX}
+OBJECTS_DIR        = $$DESTDIR/.obj$${POSTFIX}
 win32 {
-    CONFIG       += windows
+    CONFIG        += windows
     QMAKE_EXT__OBJ = .obj
 }
 

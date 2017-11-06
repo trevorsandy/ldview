@@ -64,21 +64,27 @@
 #        |     |--- 3rdParty_jpeg.pro      3rdParty library project file - consumes 3rdParty.pri
 #        |
 #
+win32:HOST = $$system(systeminfo | findstr /B /C:"OS Name")
+unix:HOST = $$system(. /etc/os-release && if test \"$PRETTY_NAME\" != \"\"; then echo \"$PRETTY_NAME\"; else echo `uname`; fi)
 
-# Configuration settings
+# qmake Configuration settings
 # CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_linux_3rdparty
 # CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_macos_3rdparty
 # CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_windows_3rdparty
-# Uncomment right side of directive to manually enable
-!contains(CONFIG, USE_3RD_PARTY_LIBS):  # CONFIG+=USE_3RD_PARTY_LIBS   # must also manually set/unset in LDViewGlobal.pri
-!contains(CONFIG, USE_SYSTEM_LIBS):     # CONFIG+=USE_SYSTEM_LIBS      # must also manually set/unset in LDViewGlobal.pri
-!contains(CONFIG, BUILD_GUI_ONLY):      # CONFIG+=BUILD_GUI_ONLY
-!contains(CONFIG, BUILD_CUI_ONLY):      # CONFIG+=BUILD_CUI_ONLY
+# CONFIG+=USE_3RD_PARTY_LIBS
+# CONFIG+=USE_SYSTEM_LIBS
+# CONFIG+=BUILD_GUI_ONLY
+# CONFIG+=BUILD_CUI_ONLY
+# CONFIG+=USE_SYSTEM_OSMESA    # override USE_3RD_PARTY_LIBS for OSMesa libs
 
 BUILD_GUI = YES
 BUILD_CUI = YES
 BUILD_GUI_ONLY: BUILD_CUI = NO
 BUILD_CUI_ONLY: BUILD_GUI = NO
+USE_3RD_PARTY_LIBS:USE_SYSTEM_LIBS {
+    message("~~~ NOTICE: 'USE_3RD_PARTY_LIBS' and 'USE_SYSTEM_LIBS' Specified. Using 'USE_3RD_PARTY_LIBS'")
+    CONFIG -= USE_SYSTEM_LIBS
+}
 
 TEMPLATE=subdirs
 
@@ -88,7 +94,6 @@ CONFIG 	+= ordered
 MAKEFILE_3RDPARTY = Makefile.ldview
 
 # Build 3rdParty Libraries'
-
 USE_3RD_PARTY_LIBS {
 
     SUBDIRS = 3rdParty_zlib
@@ -132,6 +137,31 @@ USE_3RD_PARTY_LIBS {
     3rdParty_gl2ps.makefile   = $${MAKEFILE_3RDPARTY}
     3rdParty_gl2ps.target     = sub-3rdParty_gl2ps
     3rdParty_gl2ps.depends    =
+}
+
+USE_SYSTEM_LIBS {
+    # Trusty does have the correct versions for libpng and lib3ds so use the 3rd party
+    # version if 'use system libs' selected.
+    contains(HOST, Ubuntu):contains(HOST, 14.04.5) {
+        USE_3RD_PARTY_PNG = YES
+        USE_3RD_PARTY_3DS = YES
+    }
+
+    contains(USE_3RD_PARTY_PNG, YES) {
+        SUBDIRS = 3rdParty_png
+        3rdParty_png.file        = $$PWD/3rdParty/libpng/3rdParty_png.pro
+        3rdParty_png.makefile    = $${MAKEFILE_3RDPARTY}
+        3rdParty_png.target      = sub-3rdParty_png
+        3rdParty_png.depends     =
+    }
+
+    contains(USE_3RD_PARTY_3DS, YES) {
+        SUBDIRS += 3rdParty_3ds
+        3rdParty_3ds.file        = $$PWD/3rdParty/lib3ds/3rdParty_3ds.pro
+        3rdParty_3ds.makefile    = $${MAKEFILE_3RDPARTY}
+        3rdParty_3ds.target      = sub-3rdParty_3ds
+        3rdParty_3ds.depends     =
+    }
 }
 
 # Build Qt Graphic User Interface (GUI)
@@ -179,6 +209,8 @@ contains(BUILD_GUI, YES) {
     LDView_GUI_Qt.depends  += TCFoundation_GUI_Qt
     LDView_GUI_Qt.depends  += LDLoader_GUI_Qt
     LDView_GUI_Qt.depends  += LDExporter_GUI_Qt
+    USE_3RD_PARTY_PNG:LDView_GUI_Qt.depends += 3rdParty_png
+    USE_3RD_PARTY_3DS:LDView_GUI_Qt.depends += 3rdParty_3ds
     USE_3RD_PARTY_LIBS: LDView_GUI_Qt.depends += 3rdParty_minizip
     USE_3RD_PARTY_LIBS: LDView_GUI_Qt.depends += 3rdParty_gl2ps
     USE_3RD_PARTY_LIBS:!USE_SYSTEM_LIBS: LDView_GUI_Qt.depends += 3rdParty_zlib
@@ -243,15 +275,17 @@ contains(BUILD_CUI, YES) {
     LDView_CUI_OSMesa.depends  += LDLoader_CUI_OSMesa
     LDView_CUI_OSMesa.depends  += LDExporter_CUI_OSMesa
     LDView_CUI_OSMesa.depends  += Headerize_CUI_OSMesa
+    USE_3RD_PARTY_PNG:LDView_CUI_OSMesa.depends += 3rdParty_png
+    USE_3RD_PARTY_3DS:LDView_CUI_OSMesa.depends += 3rdParty_3ds
     USE_3RD_PARTY_LIBS: LDView_CUI_OSMesa.depends += 3rdParty_tinyxml
     USE_3RD_PARTY_LIBS: LDView_CUI_OSMesa.depends += 3rdParty_gl2ps
     USE_3RD_PARTY_LIBS:!USE_SYSTEM_LIBS: LDView_CUI_OSMesa.depends += 3rdParty_zlib
 }
 
 CONFIG(debug, debug|release) {
-    message("~~~ LDVIEW DEBUG BUILD ~~~")
+    message("~~~ LDVIEW DEBUG BUILD ON $$upper($$HOST) ~~~")
 } else {
-    message("~~~ LDVIEW RELEASE BUILD ~~~")
+    message("~~~ LDVIEW RELEASE BUILD ON $$upper($$HOST) ~~~")
 }
 
 OTHER_FILES += $$PWD/LDViewMessages.ini \

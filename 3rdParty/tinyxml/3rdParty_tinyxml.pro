@@ -5,7 +5,7 @@
 TARGET = tinyxml
 include(../../3rdParty.pri)
 
-message("~~~ tinyxml.a $$BUILD BUILD ~~~")
+message("~~~ tinyxml.a LIBRARY $${BUILD} ~~~")
 
 DEFINES += TIXML_USE_STL
 

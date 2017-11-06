@@ -29,7 +29,7 @@ else:  VERSION = $$VER_MAJ"."$$VER_MIN"."$$VER_PAT              # major.minor.pa
 DEFINES += VERSION_INFO=\\\"$$VERSION\\\"
 DEFINES += ARCH=\\\"$$join(ARCH,,,bit)\\\"
 
-message("~~~ LDVIEW ($$join(ARCH,,,bit)) $${BUILD} CUI EXECUTABLE VERSION $$VERSION ~~~")
+message("~~~ LDVIEW ($$join(ARCH,,,bit)) VERSION $$VERSION CUI EXECUTABLE $${BUILD} ~~~")
 
 DEFINES		+= QT_THREAD_SUPPORT
 
@@ -41,12 +41,14 @@ unix:!macx: TARGET = ldview
 else:       TARGET = LDView
 
 unix {
-    exists($${OSMESA_INC}/GL/osmesa.h): !USE_SYSTEM_LIBS {
-        message("~~~ Using LOCAL OSMESA library ~~~")
-    } else: exists($${SYSTEM_PREFIX_}/X11/include/GL/osmesa.h): contains(USE_SYSTEM_OSMESA_LIB, YES) {
-        message("~~~ NOTICE: Using X11 SYSTEM OSMESA library ~~~")
-    } else: exists($${SYSTEM_PREFIX_}/include/GL/osmesa.h): contains(USE_SYSTEM_OSMESA_LIB, YES) {
-        message("~~~ NOTICE: Using SYSTEM OSMESA library ~~~")
+    exists($${OSMESA_INC}/GL/osmesa.h):!USE_SYSTEM_LIBS {
+        message("~~~ NOTICE: Using LDView Pre-defined OSMESA library ~~~")
+    } else:USE_SYSTEM_LIBS {
+        exists($${SYSTEM_PREFIX_}/X11/include/GL/osmesa.h): message("~~~ NOTICE: Using X11 SYSTEM OSMESA library ~~~")
+        else:exists($${SYSTEM_PREFIX_}/include/GL/osmesa.h): message("~~~ NOTICE: Using SYSTEM OSMESA library ~~~")
+    } else:USE_3RD_PARTY_LIBS:contains(USE_SYSTEM_OSMESA_LIB, YES) {
+        exists($${SYSTEM_PREFIX_}/X11/include/GL/osmesa.h): message("~~~ NOTICE: Using X11 SYSTEM OSMESA library ~~~")
+        else:exists($${SYSTEM_PREFIX_}/include/GL/osmesa.h): message("~~~ NOTICE: Using SYSTEM OSMESA library ~~~")
     } else {
         message("CRITICAL: OSMESA LIBRARIES NOT FOUND!")
     }
@@ -116,12 +118,6 @@ LDLIBS = ../TCFoundation/$$DESTDIR/libTCFoundation$${POSTFIX}.a \
 
 LDLIBS += $${OSMESA_LDLIBS}
 
-USE_SYSTEM_LIBS {
-    LDLIBS +=   $${PNG_LDLIBS} \
-                $${JPEG_LDLIBS} \
-                $${ZLIB_LDLIBS}
-}
-
 LDLIBDIRS = -L../TCFoundation/$$DESTDIR \
             -L../TRE/$$DESTDIR \
             -L../LDLoader/$$DESTDIR \
@@ -130,23 +126,21 @@ LDLIBDIRS = -L../TCFoundation/$$DESTDIR \
 
 LIBDIRS += $${LDLIBDIRS}
 
-LIBS_  = -lLDraw$${POSTFIX} \
-         -lTRE$${POSTFIX} \
-         -lLDLoader$${POSTFIX} \
-         -lTCFoundation$${POSTFIX} \
-         -lLDExporter$${POSTFIX} \
-         -l$${LIB_PNG} \
-         -l$${LIB_JPEG} \
-         -l$${LIB_OSMESA} \
-         -l$${LIB_GLU} \
-         -lgl2ps \
-         -lz \
-         -ltinyxml
+LIBS_    = -lLDraw$${POSTFIX} \
+           -lTRE$${POSTFIX} \
+           -lLDLoader$${POSTFIX} \
+           -lTCFoundation$${POSTFIX} \
+           -lLDExporter$${POSTFIX}
 
-# 3ds
-contains(DEFINES, EXPORT_3DS) {
-    LIBS_ += -l$${LIB_3DS}
+# override system or 3rdparty libraries as specified
+if (USE_SYSTEM_LIBS|USE_3RD_PARTY_LIBS) {
+   LIBS_ +=  $${PNG_LDLIBS} \
+             $${JPEG_LDLIBS} \
+             $${3DS_LDLIBS} \
+             $${ZLIB_LDLIBS}
 }
+
+LIBS_   += $${LIBS_PRI}
 
 INCLUDEPATH += .. $${LIBS_INC}
 
@@ -159,14 +153,14 @@ unix {
     # slurm is media.peeron.com
     OSTYPE = $$system(hostname)
     contains(OSTYPE, slurm) {
-        LIBDIRS      -= $${OSMESA_LIBDIR}
+        LIBDIRS  -= $${OSMESA_LIBDIR}
         LIBDIRS	 += -L../../Mesa-7.0.2/lib
         CONFIG 	 -= static	# reverse static directive - not sure about this ?
     }
 
     OSTYPE = $$system(hostname | cut -d. -f2-)
     contains(OSTYPE, pair.com) {
-        LIBDIRS      -= $${OSMESA_LIBDIR}
+        LIBDIRS  -= $${OSMESA_LIBDIR}
         LIBDIRS	 += -L../../Mesa-7.11/lib -L/usr/local/lib/pth -L/usr/local/lib
         LIBS_	 += -lpth
     }
@@ -176,7 +170,7 @@ unix {
     }
 }
 
-!contains(USE_SYSTEM_OSMESA_LIB, YES) {
+if(!contains(USE_SYSTEM_OSMESA_LIB, YES):!USE_SYSTEM_LIBS) {
     macx:        QMAKE_LFLAGS += -Wl,-search_paths_first -Wl,-headerpad_max_install_names
     unix: !macx: QMAKE_LFLAGS += -Wl,--no-as-needed
     LLVM_LIBS       = -lLLVMX86Disassembler -lLLVMX86AsmParser -lLLVMX86CodeGen -lLLVMGlobalISel -lLLVMSelectionDAG \
@@ -197,17 +191,28 @@ ini.target = LDViewMessages.ini
 ini.depends = $$_PRO_FILE_PWD_/../LDViewMessages.ini $$_PRO_FILE_PWD_/../LDExporter/LDExportMessages.ini
 ini.commands = cat $$_PRO_FILE_PWD_/../LDViewMessages.ini $$_PRO_FILE_PWD_/../LDExporter/LDExportMessages.ini > $$_PRO_FILE_PWD_/LDViewMessages.ini
 
+!equals(PWD, $${OUT_PWD}) {
+    message("~~~ YESSIR!, shadow building ~~~")
+    ldviewmessages_commands = ./$$DESTDIR/Headerize $$_PRO_FILE_PWD_/LDViewMessages.ini; mv LDViewMessages.h $$_PRO_FILE_PWD_/LDViewMessages.h
+    studlogo_commands = ./$$DESTDIR/Headerize $$_PRO_FILE_PWD_/../Textures/StudLogo.png; mv StudLogo.h $$_PRO_FILE_PWD_/StudLogo.h
+} else {
+    message("~~~ NOSIR! not shadow building ~~~")
+    ldviewmessages_commands = ./$$DESTDIR/Headerize $$_PRO_FILE_PWD_/LDViewMessages.ini
+    studlogo_commands = ./$$DESTDIR/Headerize $$_PRO_FILE_PWD_/../Textures/StudLogo.png
+}
+
 ldviewmessages.target = LDViewMessages.h
 ldviewmessages.depends = $$DESTDIR/Headerize $$_PRO_FILE_PWD_/LDViewMessages.ini
-ldviewmessages.commands = ./$$DESTDIR/Headerize $$_PRO_FILE_PWD_/LDViewMessages.ini #; mv LDViewMessages.h $$_PRO_FILE_PWD_/LDViewMessages.h
+ldviewmessages.commands = $$ldviewmessages_commands
 
 studlogo.target = StudLogo.h
 studlogo.depends = $$DESTDIR/Headerize $$_PRO_FILE_PWD_/../Textures/StudLogo.png
-studlogo.commands = ./$$DESTDIR/Headerize $$_PRO_FILE_PWD_/../Textures/StudLogo.png #; mv StudLogo.h $$_PRO_FILE_PWD_/StudLogo.h
+studlogo.commands = $$studlogo_commands
 
 QMAKE_EXTRA_TARGETS += ini ldviewmessages studlogo
 PRE_TARGETDEPS += LDViewMessages.ini LDViewMessages.h StudLogo.h
 
+# LDraw library path - needed for tests
 unix: !macx: exists(/usr/local/ldraw/parts/3001.dat) {
     LDRAW_PATH = /usr/local/ldraw
 } else: macx: exists(/Library/ldraw/parts/3001.dat) {

@@ -5,7 +5,7 @@
 TARGET = minizip
 include(../../3rdParty.pri)
 
-message("~~~ libminizip.a $$BUILD BUILD ~~~")
+message("~~~ libminizip.a LIBRARY $${BUILD} ~~~")
 
 !USE_SYSTEM_ZLIB {
         INCLUDEPATH  += $$_PRO_FILE_PWD_/../zlib
@@ -17,13 +17,13 @@ message("~~~ libminizip.a $$BUILD BUILD ~~~")
 macx: DEFINES     += unix
 
 # Input
-HEADERS += $$PWD/crypt.h \	   		   
+HEADERS += $$PWD/crypt.h \
            $$PWD/mztools.h \
            $$PWD/unzip.h \
            $$PWD/zip.h
 win32: HEADERS += $$PWD/iowin32.h
 else:  HEADERS += $$PWD/ioapi.h
-		   
+
 SOURCES += $$PWD/miniunz.c \
            $$PWD/minizip.c \
            $$PWD/mztools.c \

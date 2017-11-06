@@ -6,8 +6,12 @@ TEMPLATE = lib
 QT 	-= core
 QT 	-= gui
 CONFIG 	-= qt
-CONFIG  += staticlib 
+CONFIG  += staticlib
 CONFIG 	+= warn_on
+
+# fine-grained host identification
+win32:HOST = $$system(systeminfo | findstr /B /C:"OS Name")
+unix:HOST = $$system(. /etc/os-release && if test \"$PRETTY_NAME\" != \"\"; then echo \"$PRETTY_NAME\"; else echo `uname`; fi)
 
 # platform switch
 contains(QT_ARCH, x86_64) {
@@ -24,8 +28,7 @@ CONFIG(debug, debug|release) {
     BUILD = RELEASE
     DESTDIR = $$join(ARCH,,,bit_release)
 }
-win32: BUILD += WINDOWS
-else:  BUILD += $$upper($$system(uname))
+BUILD += BUILD ON $$upper($$HOST)
 
 INCLUDEPATH += $$PWD
 

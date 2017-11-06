@@ -14,7 +14,7 @@ CONFIG 	+= warn_on
 
 include(../LDViewGlobal.pri)
 
-message("~~~ libLDraw$$POSTFIX.a $$BUILD BUILD ~~~")
+message("~~~ libLDraw$$POSTFIX.a MODULE $$BUILD ~~~")
 
 TARGET = LDraw$$POSTFIX
 
