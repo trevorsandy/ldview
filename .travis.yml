@@ -64,16 +64,15 @@ install:
 
 script:
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then
-      cd QT;
       if  [ -n "$QT_BASE" ] ; then
-        qmake -v
+        qmake -v;
         qmake CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_linux_3rdparty CONFIG+=release CONFIG+=BUILD_CUI_ONLY CONFIG+=USE_SYSTEM_LIBS;
         make && install;
       else
         ./makedeb;
       fi
     else
-        qmake -v
+        qmake -v;
         qmake CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_linux_3rdparty CONFIG+=release CONFIG+=BUILD_CUI_ONLY CONFIG+=USE_SYSTEM_LIBS;
         make && install;
     fi
