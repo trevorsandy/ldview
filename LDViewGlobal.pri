@@ -16,13 +16,17 @@
 # Get fine-grained host identification
 win32:HOST = $$system(systeminfo | findstr /B /C:"OS Name")
 unix:!macx:HOST = $$system(. /etc/os-release && if test \"$PRETTY_NAME\" != \"\"; then echo \"$PRETTY_NAME\"; else echo `uname`; fi)
-macx:HOST = $$system(echo `sw_vers -productName` `sw_vers - productVersion`)
+macx:HOST = $$system(echo `sw_vers -productName` `sw_vers -productVersion`)
 
-# Ubuntu Trusty does have the correct versions for libpng and lib3ds so use the 3rd party
-# version if 'use system libs' selected.
+# Ubuntu Trusty uses libpng12 which is too old
 contains(HOST, Ubuntu):contains(HOST, 14.04.5): \
 USE_SYSTEM_LIBS {
     USE_3RD_PARTY_PNG = YES
+}
+# Macos homebrew only updates tinyxml2
+contains(HOST, Mac):contains(HOST, OS): \
+USE_SYSTEM_LIBS {
+    USE_3RD_PARTY_TINYXML = YES
 }
 
 # system lib3ds dpoes not appear to have lib3ds.h - so always use 3rd party version
@@ -386,6 +390,18 @@ unix {
             # update libs path
             LIBS_INC       += $${PNG_INC}
             #LIBS_DIR       += $${PNG_LIBDIR}
+        }
+
+        contains(USE_3RD_PARTY_TINYXML, YES) {
+            # remove lib reference
+            LIBS_PRI       -= -l$${LIB_TINYXML}
+            # reset individual library entry
+            TINYXML_INC     = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/tinyxml
+            TINYXML_LIBDIR  = -L$${3RD_PARTY_PREFIX_}/tinyxml/$$DESTDIR
+            TINYXML_LDLIBS  = $${3RD_PARTY_PREFIX_}/tinyxml/$$DESTDIR/lib$${LIB_TINYXML}.$${S_EXT_}
+            # update libs path
+            LIBS_INC       += $${TINYXML_INC}
+            #LIBS_DIR       += $${TINYXML_LIBDIR}
         }
 
         contains(USE_3RD_PARTY_JPEG, YES) {
