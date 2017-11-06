@@ -22,12 +22,6 @@ matrix:
     sudo: required
     compiler: gcc
     env:
-     - QT_BASE=58
-  - os: linux
-    dist: trusty
-    sudo: required
-    compiler: gcc
-    env:
      - QT_BASE=59
   - os: osx
     compiler: clang
@@ -67,12 +61,12 @@ script:
       if  [ -n "$QT_BASE" ] ; then
         qmake -v;
         qmake CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_linux_3rdparty CONFIG+=release CONFIG+=BUILD_CUI_ONLY CONFIG+=USE_SYSTEM_LIBS;
-        make && install;
+        make && make install;
       else
         ./makedeb;
       fi
     else
         qmake -v;
         qmake CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_linux_3rdparty CONFIG+=release CONFIG+=BUILD_CUI_ONLY CONFIG+=USE_SYSTEM_LIBS;
-        make && install;
+        make && make install;
     fi
