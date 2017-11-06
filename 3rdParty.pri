@@ -11,7 +11,8 @@ CONFIG 	+= warn_on
 
 # fine-grained host identification
 win32:HOST = $$system(systeminfo | findstr /B /C:"OS Name")
-unix:HOST = $$system(. /etc/os-release && if test \"$PRETTY_NAME\" != \"\"; then echo \"$PRETTY_NAME\"; else echo `uname`; fi)
+unix:!macx:HOST = $$system(. /etc/os-release && if test \"$PRETTY_NAME\" != \"\"; then echo \"$PRETTY_NAME\"; else echo `uname`; fi)
+macx:HOST = $$system(echo `sw_vers -productName` `sw_vers - productVersion`)
 
 # platform switch
 contains(QT_ARCH, x86_64) {

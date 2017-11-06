@@ -15,14 +15,18 @@
 
 # Get fine-grained host identification
 win32:HOST = $$system(systeminfo | findstr /B /C:"OS Name")
-unix:HOST = $$system(. /etc/os-release && if test \"$PRETTY_NAME\" != \"\"; then echo \"$PRETTY_NAME\"; else echo `uname`; fi)
+unix:!macx:HOST = $$system(. /etc/os-release && if test \"$PRETTY_NAME\" != \"\"; then echo \"$PRETTY_NAME\"; else echo `uname`; fi)
+macx:HOST = $$system(echo `sw_vers -productName` `sw_vers - productVersion`)
 
 # Ubuntu Trusty does have the correct versions for libpng and lib3ds so use the 3rd party
 # version if 'use system libs' selected.
-contains(HOST, Ubuntu):contains(HOST, 14.04.5):USE_SYSTEM_LIBS {
+contains(HOST, Ubuntu):contains(HOST, 14.04.5): \
+USE_SYSTEM_LIBS {
     USE_3RD_PARTY_PNG = YES
-    USE_3RD_PARTY_3DS = YES
 }
+
+# system lib3ds dpoes not appear to have lib3ds.h - so always use 3rd party version
+USE_3RD_PARTY_3DS = YES
 
 # GUI/CUI switch
 contains(DEFINES, _QT):     CONFIG += _QT_GUI
@@ -84,14 +88,19 @@ unix {
     LIBINC_         = $$_PRO_FILE_PWD_/../include       # zlib.h and zconf.h, glext and wglext headers
 
     # base names
-    LIB_PNG       = png16
-    LIB_JPEG      = jpeg
-    LIB_OSMESA    = OSMesa32
-    LIB_GLU       = GLU
-    LIB_GL2PS     = gl2ps
-    LIB_Z         = z
-    LIB_TINYXML   = tinyxml
-    LIB_3DS       = 3ds
+    USE_SYSTEM_LIBS {
+        LIB_PNG    = png
+        LIB_OSMESA = OSMesa
+    } else {
+        LIB_PNG    = png16
+        LIB_OSMESA = OSMesa32
+    }
+    LIB_JPEG       = jpeg
+    LIB_GLU        = GLU
+    LIB_GL2PS      = gl2ps
+    LIB_Z          = z
+    LIB_TINYXML    = tinyxml
+    LIB_3DS        = 3ds
 
     macx {
         # pre-compiled libraries location
@@ -137,7 +146,7 @@ unix {
 LIBS_INC            = $${LIBINC_}
 LIBS_DIR            = -L$${LIBDIR_}
 # -------------------------------
-WHICH_LIBS = PRE-COMPILED
+WHICH_LIBS          = PRE-COMPILED
 
 PNG_INC             = $${LIBINC_}
 PNG_LIBDIR          = -L$${LIBDIR_}
@@ -173,8 +182,14 @@ LIBS_PRI            = -l$${LIB_PNG} \
                       -l$${LIB_TINYXML} \
                       -l$${LIB_Z}
 
+# conditional libraries
 contains(DEFINES, EXPORT_3DS) {
-   LIBS_PRI += -l$${LIB_3DS}
+    LIBS_PRI += -l$${LIB_3DS}
+}
+
+contains(HOST, Fedora):contains(HOST, 25): \
+USE_SYSTEM_LIBS {
+    LIBS_PRI += -lGL
 }
 
 # 3rd party libreries - compiled from source
@@ -233,8 +248,10 @@ unix {
     # detect system libraries paths
     SYS_LIBINC_         = $${SYSTEM_PREFIX_}/include
     macx {                                                           # OSX
-        SYS_LIBINC_    += $${SYSTEM_PREFIX_}/X11/include
-        SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/X11/lib
+        SYS_LIBINC_     = $${SYSTEM_PREFIX_}/local/include \
+                          $${SYSTEM_PREFIX_}/X11/include
+        SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/local/lib \
+                          $${SYSTEM_PREFIX_}/X11/lib
     } else: exists($${SYSTEM_PREFIX_}/lib/$$QT_ARCH-linux-gnu) {     # Debian
         SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/lib/$$QT_ARCH-linux-gnu
     } else: exists($${SYSTEM_PREFIX_}/lib$$ARCH/) {                  # RedHat (64bit)
@@ -314,20 +331,20 @@ unix {
     }
 
     USE_SYSTEM_LIBS {
-        WHICH_LIBS = SYSTEM
+        WHICH_LIBS          = SYSTEM
 
         # update base names
-        LIB_OSMESA = OSMesa
-        LIB_PNG    = png
+        LIB_OSMESA          = OSMesa
+        LIB_PNG             = png
 
         # remove pre-compiled libs path
-        LIBS_INC  -= -L$${LIBINC_}
-        LIBS_DIR  -= -L$${LIBDIR_}
+        LIBS_INC           -= -L$${LIBINC_}
+        LIBS_DIR           -= -L$${LIBDIR_}
 
         # append system library paths
         # ===============================}
-        LIBS_INC     += $${SYS_LIBINC_}
-        LIBS_DIR     += -L$${SYS_LIBDIR_}
+        LIBS_INC           += $${SYS_LIBINC_}
+        LIBS_DIR           += -L$${SYS_LIBDIR_}
 
         # -------------------------------
         GL2PS_INC           = $${SYS_LIBINC_}
@@ -358,10 +375,10 @@ unix {
 
         # override system libraries with 3rd party library paths as specified
         contains(USE_3RD_PARTY_PNG, YES) {
-            # update base name
-            LIB_PNG         = png16
             # remove lib reference
             LIBS_PRI       -= -l$${LIB_PNG}
+            # update base name
+            LIB_PNG         = png16
             # reset individual library entry
             PNG_INC         = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/libpng
             PNG_LIBDIR      = -L$${3RD_PARTY_PREFIX_}/libpng/$$DESTDIR

@@ -65,7 +65,8 @@
 #        |
 #
 win32:HOST = $$system(systeminfo | findstr /B /C:"OS Name")
-unix:HOST = $$system(. /etc/os-release && if test \"$PRETTY_NAME\" != \"\"; then echo \"$PRETTY_NAME\"; else echo `uname`; fi)
+unix:!macx:HOST = $$system(. /etc/os-release && if test \"$PRETTY_NAME\" != \"\"; then echo \"$PRETTY_NAME\"; else echo `uname`; fi)
+macx:HOST = $$system(echo `sw_vers -productName` `sw_vers - productVersion`)
 
 # qmake Configuration settings
 # CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_linux_3rdparty
@@ -76,6 +77,8 @@ unix:HOST = $$system(. /etc/os-release && if test \"$PRETTY_NAME\" != \"\"; then
 # CONFIG+=BUILD_GUI_ONLY
 # CONFIG+=BUILD_CUI_ONLY
 # CONFIG+=USE_SYSTEM_OSMESA    # override USE_3RD_PARTY_LIBS for OSMesa libs
+# Trusty does have the correct versions for libpng and lib3ds so use the 3rd party
+# version if 'use system libs' selected.
 
 BUILD_GUI = YES
 BUILD_CUI = YES
@@ -139,14 +142,14 @@ USE_3RD_PARTY_LIBS {
     3rdParty_gl2ps.depends    =
 }
 
+contains(HOST, Ubuntu):contains(HOST, 14.04.5): \
 USE_SYSTEM_LIBS {
-    # Trusty does have the correct versions for libpng and lib3ds so use the 3rd party
-    # version if 'use system libs' selected.
-    contains(HOST, Ubuntu):contains(HOST, 14.04.5) {
-        USE_3RD_PARTY_PNG = YES
-        USE_3RD_PARTY_3DS = YES
-    }
+    USE_3RD_PARTY_PNG = YES
+}
+# system lib3ds dpoes not appear to have lib3ds.h - so always use 3rd party version
+USE_3RD_PARTY_3DS = YES
 
+USE_SYSTEM_LIBS {
     contains(USE_3RD_PARTY_PNG, YES) {
         SUBDIRS = 3rdParty_png
         3rdParty_png.file        = $$PWD/3rdParty/libpng/3rdParty_png.pro
