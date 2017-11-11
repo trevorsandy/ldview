@@ -138,6 +138,7 @@ IF "%APPVEYOR%" EQU "True" (
 ECHO   PACKAGE.............[%PACKAGE%]
 ECHO   VERSION.............[%VERSION%]
 ECHO   LDRAW_DIR...........[%LDRAW_DIR%]
+ECHO.  LDRAW_DOWNLOAD_DIR..[%LDRAW_DOWNLOAD_DIR%]
 
 rem Console output logging level message
 CALL :CONSOLE_OUTPUT_MESSAGE %MIN_CONSOLE_OUTPUT%
