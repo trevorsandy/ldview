@@ -222,6 +222,9 @@ unix: !macx: exists(/usr/local/ldraw/parts/3001.dat) {
     LDRAW_PATH = $$(HOME)/Library/ldraw
 } else: win32: exists($$(USERPROFILE)\\LDraw\\parts\\3001.dat)  {
     LDRAW_PATH = $$(USERPROFILE)\\LDraw
+} else: exists(c:\\projects\\ldraw\\parts\\3001.dat) {
+    # Appveyor environment - tighten up later
+    LDRAW_PATH = c:\\projects\\ldraw
 }
 
 # tests on unix (linux OSX)
