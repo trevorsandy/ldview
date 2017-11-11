@@ -2,6 +2,10 @@ version: LDView-AV-4.3.0.{build}
 
 clone_folder: c:\projects\ldview
 
+cache:
+ - 'C:\projects\ldraw'
+ - 'C:\projects\complete.zip'
+
 shallow_clone: true
 
 branches:
