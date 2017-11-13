@@ -6,7 +6,7 @@ unix {
     else: macx:   GAL_DRIVER = llvmpipe
     else:         GAL_DRIVER = swr
 
-#   ./ldview ../8464.mpd -SaveSnapshot=/tmp/8464i.png -IniFile=/home/trevor/projects/ldview/OSMesa/LDViewCustomIni Info=1 -SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0
+#   ./ldview ../8464.mpd -SaveSnapshot=/tmp/8464i.png -IniFile=/home/trevor/projects/ldview/OSMesa/LDViewCustomIni -Info=1 -SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0
 
     INI_FILE   = $$(HOME)/projects/ldview/OSMesa/LDViewCustomIni
     QMAKE_POST_LINK += $$escape_expand(\n\t)                                                            \

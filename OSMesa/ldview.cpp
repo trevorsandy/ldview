@@ -332,17 +332,17 @@ int main(int argc, char *argv[])
 	memcpy(stringTable, LDViewMessages_bytes, stringTableSize);
 	stringTable[stringTableSize] = 0;
 	TCLocalStrings::setStringTable(stringTable);
-    if (setupDefaults(argv) != 0)
-    {
-        if (TCUserDefaults::boolForKey("Info"))
-        {
-            defaultsKO = true;
-        }
-        else
-        {
-            return 1;
-        }
-    }
+  if (setupDefaults(argv) != 0)
+  {
+      if (TCUserDefaults::boolForKey("Info"))
+      {
+          defaultsKO = true;
+      }
+      else
+      {
+          return 1;
+      }
+  }
 	if ((buffer = setupContext(ctx)) != NULL)
 	{
 		//ProgressHandler *progressHandler = new ProgressHandler;

@@ -213,22 +213,21 @@ studlogo.commands = $$studlogo_commands
 QMAKE_EXTRA_TARGETS += ini ldviewmessages studlogo
 PRE_TARGETDEPS += LDViewMessages.ini LDViewMessages.h StudLogo.h
 
-# LDraw library path - needed for tests
-unix: !macx: exists(/usr/local/ldraw/parts/3001.dat) {
-    LDRAW_PATH = /usr/local/ldraw
-} else: macx: exists(/Library/ldraw/parts/3001.dat) {
-    LDRAW_PATH = /Library/ldraw
-} else: macx: exists($$(HOME)/Library/ldraw/parts/3001.dat) {
-    LDRAW_PATH = $$(HOME)/Library/ldraw
-} else: win32: exists($$(USERPROFILE)\\LDraw\\parts\\3001.dat)  {
-    LDRAW_PATH = $$(USERPROFILE)\\LDraw
-} else: exists(c:\\projects\\ldraw\\parts\\3001.dat) {
-    # Appveyor environment - tighten up later
-    LDRAW_PATH = c:\\projects\\ldraw
-}
-
 # tests on unix (linux OSX)
-unix {
+BUILD_CHECK: unix {
+    # LDraw library path - needed for tests
+    unix: !macx {
+        # Linux local check
+        exists(/usr/local/ldraw/parts/3001.dat): LDRAW_PATH = /usr/local/ldraw
+    } else: macx {
+        # MacOS local check
+        exists(/Library/ldraw/parts/3001.dat): LDRAW_PATH = /Library/ldraw
+        exists($$(HOME)/Library/ldraw/parts/3001.dat): LDRAW_PATH = $$(HOME)/Library/ldraw
+    } else: {
+        # Travis Ci check
+        exists($$(HOME)/build/$$(TRAVIS_REPO_SLUG)/ldraw/parts/3001.dat): \
+        LDRAW_PATH = $$(HOME)/build/$$(TRAVIS_REPO_SLUG)/ldraw
+    }
     !isEmpty(LDRAW_PATH) {
         message("~~~ LDRAW LIBRARY $${LDRAW_PATH} ~~~")
 
@@ -272,7 +271,7 @@ unix {
         #./ldview ../8464.mpd -SaveSnapshot=/tmp/8464i.png -IniFile=/home/trevor/projects/ldview/OSMesa/LDViewCustomIni -SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0
         # Set CONFIG+=USE_SOFTPIPE to test LLVM softpipe driver
         contains(USE_SYSTEM_OSMESA_LIB, YES): CONFIG+=USE_SWRAST
-        !3RD_PARTY_INSTALL: include(LDViewCUITest.pri)
+        include(LDViewCUITest.pri)
 
     } else {
         message("WARNING: LDRAW LIBRARY NOT FOUND - LDView CUI cannot be tested")

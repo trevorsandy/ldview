@@ -14,7 +14,13 @@
 #include "SSPreview.h"
 #include "Resource.h"
 #include <LDLib/LDUserDefaultsKeys.h>
+// #include <GLInfo.h>
 #include <stdio.h>
+
+#ifdef __USE_GNU
+#include <errno.h>
+#include <stdlib.h>
+#endif
 
 //#include <TCFoundation/TCImage.h>
 //#include <TCFoundation/TCJpegOptions.h>
@@ -136,9 +142,9 @@ int mainLoop()
 		{
 			topParent = newParent;
 		}
-		if (screenSaver || !TranslateAccelerator( 
-		    topParent,     // handle to receiving window 
-			hAccel,        // handle to active accelerator table 
+		if (screenSaver || !TranslateAccelerator(
+		    topParent,     // handle to receiving window
+			hAccel,        // handle to active accelerator table
 			&msg))
 		{
 			if (!parentWindow || !IsDialogMessage(parentWindow, &msg))
@@ -158,7 +164,7 @@ int mainLoop()
 
 BOOL flushPreviewEvents(HWND hWindow)
 {
-    // In preview mode, "pause" (enter a limited message loop) briefly 
+    // In preview mode, "pause" (enter a limited message loop) briefly
     // before proceeding, so the display control panel knows to update itself.
     BOOL waitForInputIdle = TRUE;
 
@@ -363,6 +369,26 @@ static void loadLanguageModule(void)
 	}
 }
 
+std::string iniFileStatus(const char *iniPath )
+{
+#ifdef __USE_GNU
+        errno = 0;
+#endif
+    FILE *iniFile = fopen(iniPath, "r+b");
+
+    if (!iniFile)
+    {
+#ifdef __USE_GNU
+            return formatString("%s: Could not open file %s; %s",
+                                program_invocation_short_name, iniPath, strerror(errno));
+#else
+            return formatString("LDView: Cound not open file %s", iniPath);
+#endif
+    }
+    // we should never get here, but if we do ...
+    return NULL;
+}
+
 static bool setupUserDefaults(
 	LPSTR lpCmdLine,
 	bool screenSaver,
@@ -377,6 +403,15 @@ static bool setupUserDefaults(
 	// different one.
 	if (removableDrive && !TCUserDefaults::isIniFileSet())
 	{
+		// Check if IniFile specified on command line ...
+		std::string iniFile = TCUserDefaults::commandLineStringForKey("IniFile");
+		if (iniFile.size() > 0 )
+		{
+		    std::string fileMsg = iniFileStatus(iniFile.c_str());
+		    printf("Could not set command line INI file. Returned message:\n"
+		           " - %s\n - ldview: Checking for user INI files...\n", fileMsg.c_str());
+		}
+		// Try to force default ini or return false
 		if (!TCUserDefaults::setIniFile("LDView.ini"))
 		{
 			retValue = false;
@@ -443,7 +478,7 @@ static bool isRemovableDrive(HINSTANCE hInstance)
 //	{
 //		typedef HRESULT (__stdcall *PSetCurrentProcessExplicitAppUserModelID)(PCWSTR AppID);
 //		PSetCurrentProcessExplicitAppUserModelID
-//			pSetCurrentProcessExplicitAppUserModelID = 
+//			pSetCurrentProcessExplicitAppUserModelID =
 //			(PSetCurrentProcessExplicitAppUserModelID)GetProcAddress(hShell32,
 //			"SetCurrentProcessExplicitAppUserModelID");
 //
@@ -529,6 +564,12 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/,
 	bool udok = setupUserDefaults(lpCmdLine, screenSaver,
 		isRemovableDrive(hInstance));
 	setupLocalStrings();
+	if (fromConsole && TCUserDefaults::boolForKey("Info", false, false))
+	{
+		std::string message = "Command Line:\n";
+		message += lpCmdLine;
+	  printf("Arguments = %s", message.c_str());
+	}
 	if (TCUserDefaults::boolForKey(DEBUG_COMMAND_LINE_KEY, false, false))
 	{
 		std::string message = "Command Line:\n";

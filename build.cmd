@@ -27,24 +27,22 @@ IF "%APPVEYOR%" EQU "True" (
     GOTO :END
   )
   SET DIST_DIR_ROOT=%LDV_DIST_DIR_PATH%
-  SET LDRAW_DOWNLOAD_DIR=%LDV_LDRAW_ROOT%
-  SET LDRAW_DIR=%LDV_LDRAW_ROOT%\LDraw
+  SET LDRAW_DOWNLOAD_DIR=%APPVEYOR_BUILD_FOLDER%
+  SET LDRAW_DIR=%APPVEYOR_BUILD_FOLDER%\LDraw
 ) ELSE (
   SET LDRAW_DOWNLOAD_DIR=%USERPROFILE%
   SET LDRAW_DIR=%USERPROFILE%\LDraw
   SET DIST_DIR_ROOT=..\lpub3d_windows_3rdparty
 )
-rem Set console output logging level - (0=normal:all output or 1=minimum:error output)
-SET MIN_CONSOLE_OUTPUT=1
+SET INI_POV_FILE=%PWD%OSMesa\ldviewPOV.ini
+
 SET PACKAGE=LDView
 SET VERSION=4.3
+SET CONFIGURATION=Release
 
 SET zipWin64=C:\program files\7-zip
 SET OfficialCONTENT=complete.zip
-SET UnofficialCONTENT=ldrawunf.zip
-
-SET INI_POV_FILE=%PWD%OSMesa\ldviewPOV.ini
-SET CONFIGURATION=Release
+SET MIN_CONSOLE_OUTPUT=unknown
 SET PLATFORM=unknown
 SET INI_FILE=unknown
 SET THIRD_INSTALL=unknown
@@ -98,6 +96,11 @@ IF NOT [%3]==[] (
   IF NOT "%3"=="-chk" GOTO :CONFIGURATION_ERROR
 )
 
+rem Only build release configuraion
+IF NOT [%4]==[] (
+  IF NOT "%4"=="-minout" GOTO :CONFIGURATION_ERROR
+)
+
 rem Parse configuration input flag
 IF [%2]==[] (
   SET THIRD_INSTALL=1
@@ -120,11 +123,6 @@ rem Initialize the Visual Studio command line development environment
 rem Note you can change this line to your specific environment - I am using VS2017 here.
 CALL "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
 
-rem Console output - see https://docs.microsoft.com/en-us/visualstudio/msbuild/msbuild-command-line-reference
-IF %MIN_CONSOLE_OUTPUT%==1 (
-  SET CONSOLE_OUTPUT_FLAGS=/clp:ErrorsOnly /nologo
-)
-
 rem Display build settings
 IF "%APPVEYOR%" EQU "True" (
   ECHO   BUILD_HOST..........[APPVEYOR CONTINUOUS INTEGRATION SERVICE]
@@ -137,8 +135,21 @@ IF "%APPVEYOR%" EQU "True" (
 )
 ECHO   PACKAGE.............[%PACKAGE%]
 ECHO   VERSION.............[%VERSION%]
+ECHO   WORKING_DIR.........[%CD%]
 ECHO   LDRAW_DIR...........[%LDRAW_DIR%]
 ECHO.  LDRAW_DOWNLOAD_DIR..[%LDRAW_DOWNLOAD_DIR%]
+
+rem Perform build check
+IF /I "%3"=="-chk" (
+  SET CHECK=1
+)
+
+rem Console output - see https://docs.microsoft.com/en-us/visualstudio/msbuild/msbuild-command-line-reference
+rem Set console output logging level - (normal:all output or minout=only error output)
+IF /I "%4"=="-minout" (
+  SET MIN_CONSOLE_OUTPUT=1
+  SET CONSOLE_OUTPUT_FLAGS=/clp:ErrorsOnly /nologo
+)
 
 rem Console output logging level message
 CALL :CONSOLE_OUTPUT_MESSAGE %MIN_CONSOLE_OUTPUT%
@@ -148,11 +159,6 @@ CALL :BACKUP_INI_FILES
 
 rem If check specified, update inifile with ldraw directory path
 CALL :UPDATE_INI_POV_FILE
-
-rem Perform quick check
-IF /I "%3"=="-chk" (
-  SET CHECK=1
-)
 
 rem Check if build all platforms
 IF /I "%PLATFORM%"=="-all" (
@@ -185,7 +191,7 @@ FOR %%P IN ( Win32, x64 ) DO (
   rem Assemble command line
   SET COMMAND_LINE=msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%%P LDView.vcxproj %CONSOLE_OUTPUT_FLAGS%
   SETLOCAL ENABLEDELAYEDEXPANSION
-  ECHO -Command: !COMMAND_LINE!
+  ECHO -Build Command: !COMMAND_LINE!
   !COMMAND_LINE!
   ENDLOCAL
   rem Perform build check if specified
@@ -215,7 +221,7 @@ ENDLOCAL
 MOVE /Y "%INI_POV_FILE%.new" "%INI_POV_FILE%" >nul 2>&1
 ) ELSE (
 	ECHO.
-	ECHO -LGEO directory %LDRAW_DIR%\lgeo does not exist - Update LDview.ini ignored.
+	ECHO -LGEO directory %LDRAW_DIR%\lgeo does not exist - LGEO Update ignored.
 )
 EXIT /b
 
@@ -232,8 +238,8 @@ SETLOCAL ENABLEDELAYEDEXPANSION
 ECHO.
 ECHO -Check %CONFIGURATION% Configuration, %1 Platform using Ini file !INI_FILE!...
 ECHO.
-SET COMMAND_LINE=Build\release%PL%\%PACKAGE%%PL%.exe "8464.mpd" -SaveSnapshot="8464.TestResult.%1.png" -IniFile=!INI_FILE! -SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0
-ECHO -Command: !COMMAND_LINE!
+SET COMMAND_LINE=Build\release!PL!\%PACKAGE%!PL!.exe "8464.mpd" -LDrawDir="%LDRAW_DIR%" -SaveSnapshot="8464.TestResult.%1.png" -IniFile=!INI_FILE! -SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0 -Info=1
+ECHO -Build Check Command: !COMMAND_LINE!
 !COMMAND_LINE!
 ENDLOCAL
 IF EXIST "8464.TestResult.%1.png" (
@@ -307,7 +313,7 @@ EXIT /b
 
 :CHECK_LDRAW_DIR
 ECHO.
-ECHO -Check LDraw library requested.
+ECHO -Build check...
 IF NOT EXIST "%LDRAW_DIR%\parts" (
   REM SET CHECK=0
   IF NOT EXIST "%LDRAW_DOWNLOAD_DIR%\%OfficialCONTENT%" (
@@ -437,8 +443,8 @@ ECHO - LDraw archive library download finshed.
 EXIT /b
 
 :CONSOLE_OUTPUT_MESSAGE
-SET STATE=Normal console display enabled - all output displayed - Default.
-IF %1==1 SET STATE=Minimum console display enabled - only error output displayed.
+SET STATE=Normal build output enabled - all output displayed - Default.
+IF %1==1 SET STATE=Minimum build output enabled - only error output displayed.
 ECHO.
 ECHO -%STATE%
 EXIT /b
@@ -501,6 +507,7 @@ ECHO  x86_64.....1......Platform flag       [Default=Off] Build 64bit architectu
 ECHO  -all.......1......Configuraiton flag  [Default=On ] Build both  32bit and 64bit architectures
 ECHO  -ins.......2......Project flag        [Default=Off] Install distribution as LPub3D 3rd party installation
 ECHO  -chk.......2,3....Project flag        [Default=On ] Perform a quick image redering check using command line ini file
+ECHO  -minout....4......Configuraiton flag  [Default=Off ] Build both  32bit and 64bit architectures
 ECHO.
 ECHO Be sure the set your LDraw directory in the variables section above if you expect to use the '-chk' option.
 ECHO.

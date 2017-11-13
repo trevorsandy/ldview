@@ -62,12 +62,12 @@ before_install:
   # Update repository index and download package dependencies/docker-engine if required
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then
       sudo apt-get update -qq;
-      export LDV_REPO_NAME=lpub3d_linux_3rdparty;
+      export LDV_DIST_DIR=lpub3d_linux_3rdparty;
     else
       brew update;
       brew install ccache;
       export PATH="/usr/local/opt/ccache/libexec:$PATH";
-      export LDV_REPO_NAME=lpub3d_macos_3rdparty;
+      export LDV_DIST_DIR=lpub3d_macos_3rdparty;
     fi
 
 install:
@@ -94,14 +94,14 @@ install:
 script:
   # Compile and install - this will be the MacOS logic, linux will move to Docker
   - qmake -v;
-  - qmake CONFIG+=3RD_PARTY_INSTALL=../${LDV_REPO_NAME} CONFIG+=release CONFIG+=BUILD_CUI_ONLY CONFIG+=USE_SYSTEM_LIBS;
+  - qmake CONFIG+=3RD_PARTY_INSTALL=../${LDV_DIST_DIR} CONFIG+=release CONFIG+=BUILD_CUI_ONLY CONFIG+=USE_SYSTEM_LIBS CONFIG+=BUILD_CHECK;
   - make && make install;
 
 before_deploy:
   # create a tarball of the lpub3d_linux_3rdparty folder
   - if [ "$LDV_BUILD_PKG" = "yes" ]; then
-      if [ -d ${LDV_REPO_NAME} ]; then
-        tar -czf ${LDV_REPO_NAME}.tar.gz ${LDV_REPO_NAME} && echo "Tarball ${LDV_REPO_NAME}.tar.gz created.";
+      if [ -d ${LDV_DIST_DIR} ]; then
+        tar -czf ${LDV_DIST_DIR}.tar.gz ${LDV_DIST_DIR} && echo "Tarball ${LDV_DIST_DIR}.tar.gz created.";
       fi;
     fi
 
@@ -109,8 +109,11 @@ deploy:
   provider: releases
   api_key:
     secure: 7Rd6ucWhoORZo5v3kjilzCH7GWpA+ncVmyskqdjFoIqFa+VECyeSLJdOLZIZxZYTdqSHkvgRNxmUMZJI2rGFdkbEcGJ9BMRls4ClKL1OA5TU9ZAGIrbpG2Rl+lwmmqfBSupjAOSAabL5fn8NuxOqDyjjmHChZPPIdJwnP/dt3DaW0bbWnFvOCOVRbQx/cydJ31VFwXrTyqdVHbM2J3HgXEqqzEnuMZMht39983SZM2uzf7JcqyRfKC5YW87ykGGB3BmE0tQBsrLQSDJlcOskqVheIuqkOOG81ci1cz62vskVuWAEZd/hlZ8luAm/7VkMQO1KvuxKBRqDfDZb5DCJ2nIh2fN7dO3jirrFXQiEILAa823qPpCIonI+TZOyfqsnNZLTlglZ62rtcXH/7Tj+nQfC7WX057lT7bTxgf1epkPYyIdXpiqPFUhHXHSbEnDfDgvoBeGGgUcriM1GkIXBvpw0dk5IdRj7r7sda3T9ZoFMaYuk48WfBmVqoRYjFOfCoAPV3a654EvRA6cIKdLn5yFlK+z1geUb6FiVyPKTi6MXpCVDe99/qqxSMwm6nQtRfXp8PM/pkZmO8rSh88bH5ql0Jh8mfPPxQkDL0wz/tLh54szBj0mTi0/AKzYHkeO/EUkkp+Jtl9pU5VZUBtTzheFZsa+nBwUcGwPPhIgUwzw=
-  file: ${LDV_REPO_NAME}.tar.gz
+  file: ${LDV_DIST_DIR}.tar.gz
   overwrite: true
+  name: ${LDV_DIST_DIR}
+  body: 'LDView - `uname` archive package of LPub3D image renderer'
+  prerelease: true
   skip_cleanup: true
   on:
     repo: trevorsandy/ldview
