@@ -94,7 +94,7 @@ CONFIG += $$section(3RD_ARG, =, 0, 0)
         isEmpty(MANDIR):MANDIR          = $$DATADIR/man
 
         target.path         = $${BINDIR}
-        documentation.path  = $${DOCDIR}/ldview
+        documentation.path  = $${DOCDIR}/$${TARGET}
         documentation.files = ../Readme.txt ../Help.html ../license.txt \
                               ../m6459.ldr \
                               ../ChangeHistory.html ../8464.mpd todo.txt \

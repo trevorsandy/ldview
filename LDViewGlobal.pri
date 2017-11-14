@@ -1,4 +1,5 @@
 # qmake Configuration settings
+# CONFIG+=BUILD_CHECK
 # CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_linux_3rdparty
 # CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_macos_3rdparty
 # CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_windows_3rdparty
@@ -252,10 +253,10 @@ unix {
     # detect system libraries paths
     SYS_LIBINC_         = $${SYSTEM_PREFIX_}/include
     macx {                                                           # OSX
-        SYS_LIBINC_     = $${SYSTEM_PREFIX_}/local/include \
-                          $${SYSTEM_PREFIX_}/X11/include
-        SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/local/lib \
-                          $${SYSTEM_PREFIX_}/X11/lib
+        SYS_LIBINC_     = $${SYSTEM_PREFIX_}/local/include
+        SYS_LIBINC_X11_ = $${SYSTEM_PREFIX_}/X11/include
+        SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/local/lib
+        SYS_LIBDIR_X11_ = $${SYSTEM_PREFIX_}/X11/lib
     } else: exists($${SYSTEM_PREFIX_}/lib/$$QT_ARCH-linux-gnu) {     # Debian
         SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/lib/$$QT_ARCH-linux-gnu
     } else: exists($${SYSTEM_PREFIX_}/lib$$ARCH/) {                  # RedHat (64bit)
@@ -349,7 +350,10 @@ unix {
         # ===============================}
         LIBS_INC           += $${SYS_LIBINC_}
         LIBS_DIR           += -L$${SYS_LIBDIR_}
-
+        macx {
+            LIBS_INC       += $${SYS_LIBINC_X11_}
+            LIBS_DIR       += -L$${SYS_LIBDIR_X11_}
+        }
         # -------------------------------
         GL2PS_INC           = $${SYS_LIBINC_}
         GL2PS_LIBDIR        = -L$${SYS_LIBDIR_}

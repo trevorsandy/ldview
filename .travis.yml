@@ -18,9 +18,13 @@ addons:
     - libgl2ps-dev
     - libjpeg-dev
 
+cache:
+  directories:
+  - $HOME/build/$TRAVIS_REPO_SLUG/ldraw
+
 matrix:
- fast_finish: true
- include:
+  fast_finish: true
+  include:
   - os: linux
     compiler: gcc
     env:
@@ -89,6 +93,10 @@ install:
         brew install qt5;
         brew link --force qt5;
       fi;
+    fi
+  - if [ ! -f "$HOME/build/$TRAVIS_REPO_SLUG/ldraw/parts/3001.dat" ]; then
+      wget http://www.ldraw.org/library/updates/complete.zip -O ./complete.zip;
+      unzip -qq ./complete.zip -d "$HOME/build/$TRAVIS_REPO_SLUG/" && if test "$HOME/build/$TRAVIS_REPO_SLUG/ldraw"; then echo "LDraw lib unzipped"; fi;
     fi
 
 script:

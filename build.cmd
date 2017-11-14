@@ -8,7 +8,7 @@ rem LDView distributions and package the build contents (exe, doc and
 rem resources ) as LPub3D 3rd Party components.
 rem --
 rem  Trevor SANDY <trevor.sandy@gmail.com>
-rem  Last Update: November 11, 2017
+rem  Last Update: November 13, 2017
 rem  Copyright (c) 2017 by Trevor SANDY
 rem --
 rem This script is distributed in the hope that it will be useful,
@@ -47,7 +47,6 @@ SET PLATFORM=unknown
 SET INI_FILE=unknown
 SET THIRD_INSTALL=unknown
 SET CHECK=unknown
-SET zipExe=unknown
 
 rem Check if invalid platform flag
 IF NOT [%1]==[] (
@@ -87,7 +86,7 @@ GOTO :COMMAND_ERROR
 rem Only build release configuraion
 IF NOT [%2]==[] (
   IF NOT "%2"=="-ins" (
-  	IF NOT "%2"=="-chk" GOTO :CONFIGURATION_ERROR
+    IF NOT "%2"=="-chk" GOTO :CONFIGURATION_ERROR
   )
 )
 
@@ -114,8 +113,8 @@ IF /I "%2"=="-ins" (
 
 rem Perform quick check
 IF /I "%2"=="-chk" (
-	SET CHECK=1
-	GOTO :BUILD
+  SET CHECK=1
+  GOTO :BUILD
 )
 
 :BUILD
@@ -220,8 +219,8 @@ ENDLOCAL
 ))>"%INI_POV_FILE%.new"
 MOVE /Y "%INI_POV_FILE%.new" "%INI_POV_FILE%" >nul 2>&1
 ) ELSE (
-	ECHO.
-	ECHO -LGEO directory %LDRAW_DIR%\lgeo does not exist - LGEO Update ignored.
+  ECHO.
+  ECHO -LGEO directory %LDRAW_DIR%\lgeo does not exist - LGEO Update ignored.
 )
 EXIT /b
 
@@ -232,13 +231,13 @@ SET INI_FILE=%INI_POV_FILE%
 IF %1==Win32 SET PL=
 IF %1==x64 SET PL=64
 IF EXIST "8464.TestResult.%1.png" (
-	DEL /Q "8464.TestResult.%1.png"
+  DEL /Q "8464.TestResult.%1.png"
 )
 SETLOCAL ENABLEDELAYEDEXPANSION
 ECHO.
 ECHO -Check %CONFIGURATION% Configuration, %1 Platform using Ini file !INI_FILE!...
 ECHO.
-SET COMMAND_LINE=Build\release!PL!\%PACKAGE%!PL!.exe "8464.mpd" -LDrawDir="%LDRAW_DIR%" -SaveSnapshot="8464.TestResult.%1.png" -IniFile=!INI_FILE! -SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0 -Info=1
+SET COMMAND_LINE=Build\release!PL!\%PACKAGE%!PL!.exe "8464.mpd" -LDrawDir="%LDRAW_DIR%" -SaveSnapshot="8464.TestResult.%1.png" -IniFile=!INI_FILE! -SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0
 ECHO -Build Check Command: !COMMAND_LINE!
 !COMMAND_LINE!
 ENDLOCAL
@@ -313,7 +312,7 @@ EXIT /b
 
 :CHECK_LDRAW_DIR
 ECHO.
-ECHO -Build check...
+ECHO -Check for LDraw library...
 IF NOT EXIST "%LDRAW_DIR%\parts" (
   REM SET CHECK=0
   IF NOT EXIST "%LDRAW_DOWNLOAD_DIR%\%OfficialCONTENT%" (
@@ -400,7 +399,7 @@ IF EXIST %TEMP%\$\%vbs% (
 >>%t% If fileSystem.FileExists(target) Then fileSystem.DeleteFile target
 >>%t% If Err.Number ^<^> 0 Then
 >>%t%   WScript.Echo "- Error - CANNOT DELETE: '" ^& target ^& "', " ^& Err.Description
->>%t%   WScript.Echo " The file may be in use by another process.", vbLF
+>>%t%   WScript.Echo "  The file may be in use by another process.", vbLF
 >>%t%   adoStream.Close
 >>%t%   Err.Clear
 >>%t% Else

@@ -3,8 +3,7 @@ version: LDView-AV-4.3.0.{build}
 clone_folder: c:\projects\ldview
 
 cache:
- - 'C:\projects\ldraw'
- - 'C:\projects\complete.zip'
+ - '$(APPVEYOR_BUILD_FOLDER)\ldraw'
 
 shallow_clone: true
 
@@ -47,11 +46,11 @@ build_script:
       write-host "  Distribution directory..[$env:LDV_DIST_DIR_PATH]"
       write-host "  Working Directory.......[$PWD]"
       If ($env:LDV_BUILD_PKG -eq "yes") {
-        cmd.exe /c build.cmd -all -ins -chk
+        cmd.exe /c build.cmd -all -ins -chk -minout
         $env:LDV_ARTEFACT_ITEM_COUNT = (Get-ChildItem -Path $env:LDV_DIST_DIR_PATH -Recurse).count
         write-host "`n  Artifact count....[$env:LDV_ARTEFACT_ITEM_COUNT]"
       } Else {
-        cmd.exe /c autobuild.cmd -all -chk
+        cmd.exe /c autobuild.cmd -all -chk -minout
       }
 
 test: off
@@ -59,9 +58,9 @@ test: off
 after_build:
  - ps: |
       If (($env:LDV_BUILD_PKG -eq "yes") -and ([int]$env:LDV_ARTEFACT_ITEM_COUNT -gt 5)){
-        cd $env:APPVEYOR_BUILD_FOLDER; write-host "Creating single tarball artefact from ./$env:LDV_DIST_DIR..."
+        cd $env:APPVEYOR_BUILD_FOLDER; write-host "Creating zip archive artefact from ./$env:LDV_DIST_DIR..."
         7z a $env:POV_DIST_DIR $env:LDV_DIST_DIR | Select-String -Pattern '(^Creating)|(^Everything)' -CaseSensitive; write-host "Zip archive $env:LDV_DIST_DIR.zip created."
-        $root = Resolve-Path $env:APPVEYOR_BUILD_FOLDER; [IO.Directory]::GetFiles($root.Path, '*.zip', 'TopDirectoryOnly') | % { Push-AppveyorArtifact $_ -FileName $_.Substring($root.Path.Length + 1) -DeploymentName $env:LDV_DIST_DIR}
+        $root = Resolve-Path $env:APPVEYOR_BUILD_FOLDER; [IO.Directory]::GetFiles($root.Path, '*.zip', 'TopDirectoryOnly') | % { Push-AppveyorArtifact $_ -Type zip -FileName $_.Substring($root.Path.Length + 1) -DeploymentName $env:LDV_DIST_DIR}
       }
 
 deploy:
