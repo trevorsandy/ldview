@@ -27,6 +27,7 @@ USE_SYSTEM_LIBS {
 # Macos homebrew only updates tinyxml2
 contains(HOST, Mac):contains(HOST, OS): \
 USE_SYSTEM_LIBS {
+    USE_PRE_DEF_OSMESA    = YES
     USE_3RD_PARTY_TINYXML = YES
 }
 
@@ -376,12 +377,15 @@ unix {
         ZLIB_INC            = $${SYS_LIBINC_}
         ZLIB_LIBDIR         = -L$${SYS_LIBDIR_}
 
-        OSMESA_INC          = $${SYS_LIBINC_}
-        OSMESA_LIBDIR       = -L$${SYS_LIBDIR_}
-        OSMESA_LDLIBS       = $${SYS_LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_} \
-                              $${SYS_LIBDIR_}/lib$${LIB_GLU}.$${EXT_}
+        # override system libraries with 3rd party/pre-defined library paths as specified
+        !contains(USE_PRE_DEF_OSMESA, YES) {
+            #  GL/gl.h on MacOS doesn't seem to play nice so use the pre-defined OSMesa libs
+            OSMESA_INC          = $${SYS_LIBINC_}
+            OSMESA_LIBDIR       = -L$${SYS_LIBDIR_}
+            OSMESA_LDLIBS       = $${SYS_LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_} \
+                                  $${SYS_LIBDIR_}/lib$${LIB_GLU}.$${EXT_}
+        }
 
-        # override system libraries with 3rd party library paths as specified
         contains(USE_3RD_PARTY_PNG, YES) {
             # remove lib reference
             LIBS_PRI       -= -l$${LIB_PNG}

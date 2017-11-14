@@ -146,12 +146,12 @@ IF /I "%3"=="-chk" (
 rem Console output - see https://docs.microsoft.com/en-us/visualstudio/msbuild/msbuild-command-line-reference
 rem Set console output logging level - (normal:all output or minout=only error output)
 IF /I "%4"=="-minout" (
-  SET MIN_CONSOLE_OUTPUT=1
-  SET CONSOLE_OUTPUT_FLAGS=/clp:ErrorsOnly /nologo
+  SET MINIMUM_LOGGING=1
+  SET LOGGING_FLAGS=/clp:ErrorsOnly /nologo
 )
 
 rem Console output logging level message
-CALL :CONSOLE_OUTPUT_MESSAGE %MIN_CONSOLE_OUTPUT%
+CALL :CONSOLE_OUTPUT_MESSAGE %MINIMUM_LOGGING%
 
 rem Backup ini files
 CALL :BACKUP_INI_FILES
@@ -161,7 +161,7 @@ CALL :UPDATE_INI_POV_FILE
 
 rem Check if build all platforms
 IF /I "%PLATFORM%"=="-all" (
-  GOTO :BUILD_ALL
+  GOTO :BUILD_ALL_ARCHITECTURES
 )
 
 rem Display platform setting
@@ -169,7 +169,7 @@ ECHO.
 ECHO -Building %PLATFORM% Platform...
 ECHO.
 rem Assemble command line
-SET COMMAND_LINE=msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%PLATFORM% LDView.vcxproj %CONSOLE_OUTPUT_FLAGS%
+SET COMMAND_LINE=msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%PLATFORM% LDView.vcxproj %LOGGING_FLAGS%
 ECHO -Command: %COMMAND_LINE%
 rem Launch msbuild
 %COMMAND_LINE%
@@ -181,14 +181,16 @@ rem Restore ini file
 CALL :RESTORE_INI_FILES
 GOTO :END
 
-:BUILD_ALL
+:BUILD_ALL_ARCHITECTURES
 rem Launch msbuild across all platform builds
+ECHO.
+ECHO -Build x86 and x86_64 platform...
 FOR %%P IN ( Win32, x64 ) DO (
   ECHO.
-  ECHO -All Platforms: Building %%P Platform...
+  ECHO -Building %%P Platform...
   ECHO.
   rem Assemble command line
-  SET COMMAND_LINE=msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%%P LDView.vcxproj %CONSOLE_OUTPUT_FLAGS%
+  SET COMMAND_LINE=msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%%P LDView.vcxproj %LOGGING_FLAGS%
   SETLOCAL ENABLEDELAYEDEXPANSION
   ECHO -Build Command: !COMMAND_LINE!
   !COMMAND_LINE!
@@ -517,6 +519,7 @@ ECHO ----------------------------------------------------------------
 EXIT /b
 
 :END
+ECHO.
 ECHO Finished.
 ENDLOCAL
 EXIT /b
