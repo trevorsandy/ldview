@@ -24,12 +24,6 @@ contains(HOST, Ubuntu):contains(HOST, 14.04.5): \
 USE_SYSTEM_LIBS {
     USE_3RD_PARTY_PNG = YES
 }
-# Macos homebrew only updates tinyxml2
-contains(HOST, Mac):contains(HOST, OS): \
-USE_SYSTEM_LIBS {
-    USE_PRE_DEF_OSMESA    = YES
-    USE_3RD_PARTY_TINYXML = YES
-}
 
 # system lib3ds dpoes not appear to have lib3ds.h - so always use 3rd party version
 USE_3RD_PARTY_3DS = YES
@@ -255,8 +249,8 @@ unix {
     SYS_LIBINC_         = $${SYSTEM_PREFIX_}/include
     macx {                                                           # OSX
         SYS_LIBINC_     = $${SYSTEM_PREFIX_}/local/include
-        SYS_LIBINC_X11_ = $${SYSTEM_PREFIX_}/X11/include
         SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/local/lib
+        SYS_LIBINC_X11_ = $${SYSTEM_PREFIX_}/X11/include
         SYS_LIBDIR_X11_ = $${SYSTEM_PREFIX_}/X11/lib
     } else: exists($${SYSTEM_PREFIX_}/lib/$$QT_ARCH-linux-gnu) {     # Debian
         SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/lib/$$QT_ARCH-linux-gnu
@@ -285,10 +279,17 @@ unix {
                 LIBS_DIR       -= $${OSMESA_LIBDIR}
             }
             # reset individual library entry
-            OSMESA_INC          = $${SYS_LIBINC_}
-            OSMESA_LIBDIR       = -L$${SYS_LIBDIR_}
-            OSMESA_LDLIBS       = $${SYS_LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_} \
-                                  $${SYS_LIBDIR_}/lib$${LIB_GLU}.$${EXT_}
+            macx {
+                OSMESA_INC          = $${SYS_LIBINC_X11_}
+                OSMESA_LIBDIR       = -L$${SYS_LIBDIR_X11_}
+                OSMESA_LDLIBS       = $${SYS_LIBDIR_X11_}/lib$${LIB_OSMESA}.$${EXT_} \
+                                      $${SYS_LIBDIR_X11_}/lib$${LIB_GLU}.$${EXT_}
+            } else {
+                OSMESA_INC          = $${SYS_LIBINC_}
+                OSMESA_LIBDIR       = -L$${SYS_LIBDIR_}
+                OSMESA_LDLIBS       = $${SYS_LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_} \
+                                      $${SYS_LIBDIR_}/lib$${LIB_GLU}.$${EXT_}
+            }
         }
 
         contains(USE_SYSTEM_PNG_LIB, YES) {
@@ -344,7 +345,7 @@ unix {
         LIB_PNG             = png
 
         # remove pre-compiled libs path
-        LIBS_INC           -= -L$${LIBINC_}
+        LIBS_INC           -= $${LIBINC_}
         LIBS_DIR           -= -L$${LIBDIR_}
 
         # append system library paths
@@ -352,10 +353,11 @@ unix {
         LIBS_INC           += $${SYS_LIBINC_}
         LIBS_DIR           += -L$${SYS_LIBDIR_}
         macx {
-            LIBS_INC       += $${SYS_LIBINC_X11_}
-            LIBS_DIR       += -L$${SYS_LIBDIR_X11_}
+            LIBS_INC       +=$${SYS_LIBINC_X11_}
+            LIBS_DIR       +=-L$${SYS_LIBDIR_X11_}
         }
         # -------------------------------
+
         GL2PS_INC           = $${SYS_LIBINC_}
         GL2PS_LIBDIR        = -L$${SYS_LIBDIR_}
 
@@ -377,15 +379,20 @@ unix {
         ZLIB_INC            = $${SYS_LIBINC_}
         ZLIB_LIBDIR         = -L$${SYS_LIBDIR_}
 
-        # override system libraries with 3rd party/pre-defined library paths as specified
-        !contains(USE_PRE_DEF_OSMESA, YES) {
-            #  GL/gl.h on MacOS doesn't seem to play nice so use the pre-defined OSMesa libs
+        # reset individual library entry
+        macx {
+            OSMESA_INC          = $${SYS_LIBINC_X11_}
+            OSMESA_LIBDIR       = -L$${SYS_LIBDIR_X11_}
+            OSMESA_LDLIBS       = $${SYS_LIBDIR_X11_}/lib$${LIB_OSMESA}.$${EXT_} \
+                                  $${SYS_LIBDIR_X11_}/lib$${LIB_GLU}.$${EXT_}
+        } else {
             OSMESA_INC          = $${SYS_LIBINC_}
             OSMESA_LIBDIR       = -L$${SYS_LIBDIR_}
             OSMESA_LDLIBS       = $${SYS_LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_} \
                                   $${SYS_LIBDIR_}/lib$${LIB_GLU}.$${EXT_}
         }
 
+        # override system libraries with 3rd party/pre-defined library paths as specified
         contains(USE_3RD_PARTY_PNG, YES) {
             # remove lib reference
             LIBS_PRI       -= -l$${LIB_PNG}
@@ -398,18 +405,6 @@ unix {
             # update libs path
             LIBS_INC       += $${PNG_INC}
             #LIBS_DIR       += $${PNG_LIBDIR}
-        }
-
-        contains(USE_3RD_PARTY_TINYXML, YES) {
-            # remove lib reference
-            LIBS_PRI       -= -l$${LIB_TINYXML}
-            # reset individual library entry
-            TINYXML_INC     = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/tinyxml
-            TINYXML_LIBDIR  = -L$${3RD_PARTY_PREFIX_}/tinyxml/$$DESTDIR
-            TINYXML_LDLIBS  = $${3RD_PARTY_PREFIX_}/tinyxml/$$DESTDIR/lib$${LIB_TINYXML}.$${S_EXT_}
-            # update libs path
-            LIBS_INC       += $${TINYXML_INC}
-            #LIBS_DIR       += $${TINYXML_LIBDIR}
         }
 
         contains(USE_3RD_PARTY_JPEG, YES) {

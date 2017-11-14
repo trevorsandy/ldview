@@ -147,16 +147,13 @@ contains(HOST, Ubuntu):contains(HOST, 14.04.5): \
 USE_SYSTEM_LIBS {
     USE_3RD_PARTY_PNG = YES
 }
-# Macos homebrew only updates tinyxml2
-contains(HOST, Mac):contains(HOST, OS): \
-USE_SYSTEM_LIBS {
-    USE_3RD_PARTY_TINYXML = YES
-}
+
 # system lib3ds dpoes not appear to have lib3ds.h - so always use 3rd party version
 USE_3RD_PARTY_3DS = YES
 
 
 USE_SYSTEM_LIBS {
+    # built for Ubuntu Trusty
     contains(USE_3RD_PARTY_PNG, YES) {
         SUBDIRS = 3rdParty_png
         3rdParty_png.file        = $$PWD/3rdParty/libpng/3rdParty_png.pro
@@ -164,15 +161,7 @@ USE_SYSTEM_LIBS {
         3rdParty_png.target      = sub-3rdParty_png
         3rdParty_png.depends     =
     }
-
-    contains(USE_3RD_PARTY_TINYXML, YES) {
-        SUBDIRS += 3rdParty_tinyxml
-        3rdParty_tinyxml.file     = $$PWD/3rdParty/tinyxml/3rdParty_tinyxml.pro
-        3rdParty_tinyxml.makefile = $${MAKEFILE_3RDPARTY}
-        3rdParty_tinyxml.target   = sub-3rdParty_tinyxml
-        3rdParty_tinyxml.depends  =
-    }
-
+    # always built...
     contains(USE_3RD_PARTY_3DS, YES) {
         SUBDIRS += 3rdParty_3ds
         3rdParty_3ds.file        = $$PWD/3rdParty/lib3ds/3rdParty_3ds.pro

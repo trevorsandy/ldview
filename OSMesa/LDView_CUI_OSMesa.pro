@@ -137,7 +137,6 @@ if (USE_SYSTEM_LIBS|USE_3RD_PARTY_LIBS) {
    LIBS_ +=  $${PNG_LDLIBS} \
              $${JPEG_LDLIBS} \
              $${3DS_LDLIBS} \
-             $${TINYXML_LDLIBS} \
              $${ZLIB_LDLIBS}
 }
 
@@ -216,20 +215,8 @@ PRE_TARGETDEPS += LDViewMessages.ini LDViewMessages.h StudLogo.h
 # tests on unix (linux OSX)
 BUILD_CHECK: unix {
     # LDraw library path - needed for tests
-    _TRAVIS = $$(TRAVIS)
-    contains(_TRAVIS, true){
-        # Travis Ci check
-        exists($$(HOME)/build/$$(TRAVIS_REPO_SLUG)/ldraw/parts/3001.dat): \
-        LDRAW_PATH = $$(HOME)/build/$$(TRAVIS_REPO_SLUG)/ldraw
-    } else: unix: !macx {
-        # Linux local check
-        exists(/usr/local/ldraw/parts/3001.dat): LDRAW_PATH = /usr/local/ldraw
-    } else: macx {
-        # MacOS local check
-        exists(/Library/ldraw/parts/3001.dat): LDRAW_PATH = /Library/ldraw
-        exists($$(HOME)/Library/ldraw/parts/3001.dat): LDRAW_PATH = $$(HOME)/Library/ldraw
-    }
-    !isEmpty(LDRAW_PATH) {
+    LDRAW_PATH = $$(LDRAWDIR)
+    !isEmpty(LDRAW_PATH){
         message("~~~ LDRAW LIBRARY $${LDRAW_PATH} ~~~")
 
         LDRAW_DIR = LDrawDir=$${LDRAW_PATH}
@@ -252,8 +239,8 @@ BUILD_CHECK: unix {
         } else {
             message("~~~ LGEO LIBRARY NOT FOUND ~~~")
 
-            !macx: ldviewini.commands += ; sed -i      \'$${LN_57}s\' $${DEV_DIR}/LDViewCustomIni
-            else:  ldviewini.commands += ; sed -i \'\' \'$${LN_57}s\' $${DEV_DIR}/LDViewCustomIni
+            !macx: ldviewini.commands += ; sed -i      \'$${LN_57}s%.*%%\' $${DEV_DIR}/LDViewCustomIni
+            else:  ldviewini.commands += ; sed -i \'\' \'$${LN_57}s%.*%%\' $${DEV_DIR}/LDViewCustomIni
             ldviewiniMessage.commands += ; echo Project MESSAGE: Removing LDViewCustomnIi entry XmlMapPath
         }
 
@@ -275,7 +262,7 @@ BUILD_CHECK: unix {
         include(LDViewCUITest.pri)
 
     } else {
-        message("WARNING: LDRAW LIBRARY NOT FOUND - LDView CUI cannot be tested")
+        message("WARNING: LDRAW LIBRARY NOT DEFINED - LDView CUI cannot be tested")
     }
 }
 

@@ -20,7 +20,9 @@ TARGET = LDraw$$POSTFIX
 
 INCLUDEPATH += $${GL2PS_INC}
 
-contains(DEFINES, _OSMESA): USE_3RD_PARTY_LIBS: INCLUDEPATH += $${OSMESA_INC}
+contains(DEFINES, _OSMESA): INCLUDEPATH += $${OSMESA_INC}
+
+INCLUDEPATH += ../TCFoundation
 
 # Input
 HEADERS += $$PWD/LDConsoleAlertHandler.h \

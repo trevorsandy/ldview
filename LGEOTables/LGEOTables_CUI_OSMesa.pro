@@ -23,10 +23,9 @@ TARGET      = LGEOTables
 
 INCLUDEPATH = $${TINYXML_INC}
 
-DEFINES 	  += TIXML_USE_STL
+DEFINES 	 += TIXML_USE_STL
 
-USE_SYSTEM_LIBS: LIBS += -ltinyxml
-else:            LIBS += $${TINYXML_LIBDIR} -ltinyxml
+LIBS       += $${TINYXML_LIBDIR} -ltinyxml
 
 # Input
-SOURCES     += LGEOTables.cpp
+SOURCES    += LGEOTables.cpp
