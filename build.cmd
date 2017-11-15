@@ -97,7 +97,7 @@ IF NOT [%3]==[] (
 
 rem Only build release configuraion
 IF NOT [%4]==[] (
-  IF NOT "%4"=="-minout" GOTO :CONFIGURATION_ERROR
+  IF NOT "%4"=="-minlog" GOTO :CONFIGURATION_ERROR
 )
 
 rem Parse configuration input flag
@@ -144,8 +144,8 @@ IF /I "%3"=="-chk" (
 )
 
 rem Console output - see https://docs.microsoft.com/en-us/visualstudio/msbuild/msbuild-command-line-reference
-rem Set console output logging level - (normal:all output or minout=only error output)
-IF /I "%4"=="-minout" (
+rem Set console output logging level - (normal:all output or minlog=only error output)
+IF /I "%4"=="-minlog" (
   SET MINIMUM_LOGGING=1
   SET LOGGING_FLAGS=/clp:ErrorsOnly /nologo
 )
@@ -161,7 +161,7 @@ CALL :UPDATE_INI_POV_FILE
 
 rem Check if build all platforms
 IF /I "%PLATFORM%"=="-all" (
-  GOTO :BUILD_ALL_ARCHITECTURES
+  GOTO :BUILD_ALL
 )
 
 rem Display platform setting
@@ -181,7 +181,7 @@ rem Restore ini file
 CALL :RESTORE_INI_FILES
 GOTO :END
 
-:BUILD_ALL_ARCHITECTURES
+:BUILD_ALL
 rem Launch msbuild across all platform builds
 ECHO.
 ECHO -Build x86 and x86_64 platform...
@@ -508,7 +508,7 @@ ECHO  x86_64.....1......Platform flag       [Default=Off] Build 64bit architectu
 ECHO  -all.......1......Configuraiton flag  [Default=On ] Build both  32bit and 64bit architectures
 ECHO  -ins.......2......Project flag        [Default=Off] Install distribution as LPub3D 3rd party installation
 ECHO  -chk.......2,3....Project flag        [Default=On ] Perform a quick image redering check using command line ini file
-ECHO  -minout....4......Configuraiton flag  [Default=Off ] Build both  32bit and 64bit architectures
+ECHO  -minlog....4......Configuraiton flag  [Default=Off] Minimum build logging - only display build errors
 ECHO.
 ECHO Be sure the set your LDraw directory in the variables section above if you expect to use the '-chk' option.
 ECHO.

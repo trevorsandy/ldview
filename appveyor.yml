@@ -46,11 +46,11 @@ build_script:
       write-host "  Distribution directory..[$env:LDV_DIST_DIR_PATH]"
       write-host "  Working Directory.......[$PWD]"
       If ($env:LDV_BUILD_PKG -eq "yes") {
-        cmd.exe /c build.cmd -all -ins -chk -minout
+        cmd.exe /c "build.cmd -all -ins -chk -minlog"
         $env:LDV_ARTEFACT_ITEM_COUNT = (Get-ChildItem -Path $env:LDV_DIST_DIR_PATH -Recurse).count
         write-host "`n  Artifact count....[$env:LDV_ARTEFACT_ITEM_COUNT]"
       } Else {
-        cmd.exe /c autobuild.cmd -all -chk -minout
+        cmd.exe /c "build.cmd -all -chk -minlog"
       }
 
 test: off
