@@ -42,7 +42,7 @@ SET CONFIGURATION=Release
 
 SET zipWin64=C:\program files\7-zip
 SET OfficialCONTENT=complete.zip
-SET MIN_CONSOLE_OUTPUT=unknown
+SET MINIMUM_LOGGING=unknown
 SET PLATFORM=unknown
 SET INI_FILE=unknown
 SET THIRD_INSTALL=unknown
@@ -151,7 +151,7 @@ IF /I "%4"=="-minlog" (
 )
 
 rem Console output logging level message
-CALL :CONSOLE_OUTPUT_MESSAGE %MINIMUM_LOGGING%
+CALL :OUTPUT_LOGGING_MESSAGE %MINIMUM_LOGGING%
 
 rem Backup ini files
 CALL :BACKUP_INI_FILES
@@ -334,6 +334,9 @@ IF NOT EXIST "%LDRAW_DIR%\parts" (
       IF EXIST "%LDRAW_DIR%\parts" (
         ECHO.
         ECHO -LDraw directory %LDRAW_DIR% extracted.
+        ECHO.
+        ECHO -Cleanup %OfficialCONTENT%...
+        DEL /Q "%LDRAW_DOWNLOAD_DIR%\%OfficialCONTENT%"
       )
     ) ELSE (
       ECHO [WARNING] Could not find zip executable.
@@ -443,7 +446,7 @@ ECHO.
 ECHO - LDraw archive library download finshed.
 EXIT /b
 
-:CONSOLE_OUTPUT_MESSAGE
+:OUTPUT_LOGGING_MESSAGE
 SET STATE=Normal build output enabled - all output displayed - Default.
 IF %1==1 SET STATE=Minimum build output enabled - only error output displayed.
 ECHO.

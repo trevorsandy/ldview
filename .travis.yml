@@ -15,13 +15,13 @@ addons:
     packages:
     - libosmesa6-dev
     - libtinyxml-dev
-    - libminizip-dev
     - libgl2ps-dev
     - libjpeg-dev
 
 cache:
   directories:
-  - $HOME/build/$TRAVIS_REPO_SLUG/ldraw
+  - ${HOME}/ldraw
+  - ${HOME}/Library/ldraw
 
 matrix:
   fast_finish: true
@@ -71,7 +71,7 @@ before_install:
       export LDRAWDIR=~/ldraw;
     else
       brew update;
-      brew install ccache timyxml gl2ps libjpeg minizip;
+      brew install ccache tinyxml gl2ps libjpeg minizip;
       export PATH="/usr/local/opt/ccache/libexec:$PATH";
       export LDV_DIST_DIR=lpub3d_macos_3rdparty;
       export LDRAWDIR=~/Library/ldraw;
@@ -104,7 +104,7 @@ install:
       curl -s -O http://www.ldraw.org/library/updates/complete.zip;
       echo "Extracting LDraw library into ${LDRAWDIR}...";
       unzip -d ${LDRAWDIR_ROOT} -q complete.zip;
-      if test -d ${LDRAWDIR_ROOT}; then echo "LDraw extracted, LDRAWDIR defined."; fi;
+      if test -d ${LDRAWDIR_ROOT}; then echo "LDraw library extracted, LDRAWDIR defined."; fi;
     fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then
       echo "set LDRAWDIR in environment.plist...";
