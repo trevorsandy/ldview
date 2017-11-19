@@ -241,7 +241,7 @@ BUILD_CHECK: unix {
 
             !macx: ldviewini.commands += ; sed -i      \'$${LN_57}s%.*%%\' $${DEV_DIR}/LDViewCustomIni
             else:  ldviewini.commands += ; sed -i \'\' \'$${LN_57}s%.*%%\' $${DEV_DIR}/LDViewCustomIni
-            ldviewiniMessage.commands += ; echo Project MESSAGE: Removing LDViewCustomnIi entry XmlMapPath
+            ldviewiniMessage.commands += ; echo Project MESSAGE: Removing LDViewCustomnIni entry XmlMapPath
         }
 
         exists($$(HOME)/.ldviewrc) {
@@ -269,6 +269,4 @@ BUILD_CHECK: unix {
 QMAKE_CLEAN += LDViewMessages.ini LDViewMessages.h StudLogo.h
 
 # Input
-HEADERS += glinfo.h
-SOURCES += ldview.cpp \
-           glinfo.cpp
+SOURCES += ldview.cpp

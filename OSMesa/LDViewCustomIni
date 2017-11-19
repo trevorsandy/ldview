@@ -10,7 +10,7 @@ IgnorePBuffer=0
 JPGProgressive=0
 JPGQuality=55
 JPGSubSampling=2
-LDrawDir=/usr/local/ldraw
+LDrawDir=
 SaveActualSize=1
 SaveAlpha=1
 SaveDigits=1
@@ -54,5 +54,5 @@ TransIoR=1.25
 TransRefl=0.2
 UnmirrorStuds=1
 XmlMap=1
-XmlMapPath=/usr/local/ldraw/lgeo
+XmlMapPath=
 

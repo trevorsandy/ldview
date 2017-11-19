@@ -21,7 +21,7 @@
 #endif
 #include <GL/osmesa.h>
 #include <TRE/TREMainModel.h>
-#include <glinfo.h>
+#include <TCFoundation/TCGLInfo.h>
 #include "StudLogo.h"
 #include "LDViewMessages.h"
 
