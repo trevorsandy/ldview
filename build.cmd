@@ -35,17 +35,19 @@ IF "%APPVEYOR%" EQU "True" (
   SET DIST_DIR_ROOT=..\lpub3d_windows_3rdparty
 )
 SET INI_POV_FILE=%PWD%OSMesa\ldviewPOV.ini
+SET zipWin64=C:\program files\7-zip
+SET OfficialCONTENT=complete.zip
 
 SET PACKAGE=LDView
 SET VERSION=4.3
 SET CONFIGURATION=Release
 
-SET zipWin64=C:\program files\7-zip
-SET OfficialCONTENT=complete.zip
 SET MINIMUM_LOGGING=unknown
+SET THIRD_INSTALL=unknown
+SET INSTALL_32BIT=unknown
+SET INSTALL_64BIT=unknown
 SET PLATFORM=unknown
 SET INI_FILE=unknown
-SET THIRD_INSTALL=unknown
 SET CHECK=unknown
 
 rem Check if invalid platform flag
@@ -92,7 +94,7 @@ IF NOT [%2]==[] (
 
 rem Only build release configuraion
 IF NOT [%3]==[] (
-  IF NOT "%3"=="-chk"
+  IF NOT "%3"=="-chk" (
     IF NOT "%3"=="-minlog" GOTO :CONFIGURATION_ERROR
   )
 )
@@ -182,8 +184,12 @@ rem Launch msbuild
 %COMMAND_LINE%
 rem Perform build check if specified
 IF %CHECK%==1 CALL :CHECK_BUILD %PLATFORM%
-rem Package 3rd party install
-IF %THIRD_INSTALL%==1 CALL :3RD_PARTY_INSTALL
+rem Package 3rd party install content
+IF %THIRD_INSTALL%==1 (
+	IF %PLATFORM%==Win32 SET INSTALL_32BIT=1
+    IF %PLATFORM%==x64 SET INSTALL_64BIT=1
+	CALL :3RD_PARTY_INSTALL
+)
 rem Restore ini file
 CALL :RESTORE_INI_FILES
 GOTO :END
@@ -208,7 +214,11 @@ FOR %%P IN ( Win32, x64 ) DO (
 rem Restore ini file
 CALL :RESTORE_INI_FILES
 rem Package 3rd party install
-IF %THIRD_INSTALL%==1 CALL :3RD_PARTY_INSTALL
+IF %THIRD_INSTALL%==1 (
+    SET INSTALL_32BIT=1
+    SET INSTALL_64BIT=1
+    CALL :3RD_PARTY_INSTALL
+)
 GOTO :END
 
 :UPDATE_INI_POV_FILE
@@ -252,7 +262,7 @@ ECHO -Build Check Command: !COMMAND_LINE!
 ENDLOCAL
 IF EXIST "8464.TestResult.%1.png" (
   ECHO.
-  ECHO -Create 8464.TestResult.%1.png from 8464.mpd - Test successful!
+  ECHO -Build Check, create 8464.TestResult.%1.png from 8464.mpd - Test successful!
 )
 ) ELSE (
   ECHO -Check is not possible
@@ -262,19 +272,23 @@ EXIT /b
 :3RD_PARTY_INSTALL
 ECHO.
 ECHO -Copying 3rd party distribution files...
+IF %INSTALL_32BIT% == 1 (
+  ECHO.
+  ECHO -Copying %PACKAGE%32bit exe...
+  IF NOT EXIST "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\i386\" (
+    MKDIR "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\i386\"
+  )
+  COPY /V /Y "Build\Release\%PACKAGE%.exe" "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\i386\" /B
+)
+IF %INSTALL_64BIT% == 1 (
+  ECHO.
+  ECHO -Copying %PACKAGE%64bit exe...
+  IF NOT EXIST "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\x86_64\" (
+    MKDIR "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\x86_64\"
+  )
+  COPY /V /Y "Build\Release64\%PACKAGE%64.exe" "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\x86_64\" /B
+)
 ECHO.
-ECHO -Copying 32bit exe...
-IF NOT EXIST "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\i386\" (
-  MKDIR "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\i386\"
-)
-COPY /V /Y "Build\Release\%PACKAGE%.exe" "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\i386\" /B
-
-ECHO -Copying 64bit exe...
-IF NOT EXIST "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\x86_64\" (
-  MKDIR "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\x86_64\"
-)
-COPY /V /Y "Build\Release64\%PACKAGE%64.exe" "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\x86_64\" /B
-
 ECHO -Copying Documentaton...
 IF NOT EXIST "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\docs\" (
   MKDIR "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\docs\"
@@ -284,7 +298,7 @@ COPY /V /Y "Readme.txt" "%DIST_DIR%" /A
 COPY /V /Y "Help.html" "%DIST_DIR%" /A
 COPY /V /Y "license.txt" "%DIST_DIR%" /A
 COPY /V /Y "ChangeHistory.html" "%DIST_DIR%" /A
-
+ECHO.
 ECHO -Copying Ini Files...
 IF NOT EXIST "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\resources\config\" (
   MKDIR "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\resources\config\"
@@ -293,7 +307,7 @@ SET DIST_DIR=%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\resources\config
 COPY /V /Y "OSMesa\LDViewCustomIni" "%DIST_DIR%" /A
 COPY /V /Y "OSMesa\ldview.ini" "%DIST_DIR%" /A
 COPY /V /Y "OSMesa\ldviewPOV.ini" "%DIST_DIR%" /A
-
+ECHO.
 ECHO -Copying Resources...
 SET DIST_DIR=%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\resources\
 COPY /V /Y "m6459.ldr" "%DIST_DIR%" /A
@@ -536,6 +550,6 @@ EXIT /b
 
 :END
 ECHO.
-ECHO Finished.
+ECHO -%~nx0 finished.
 ENDLOCAL
 EXIT /b
