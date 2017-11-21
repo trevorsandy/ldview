@@ -224,7 +224,7 @@ BUILD_CHECK: unix {
         LN_13=13
         LN_57=57
         ldviewini.target = LDViewCustomIni
-        ldviewini.depends = ldviewiniMessage $${OUT_PWD}/$${DESTDIR}/$${TARGET} $${OUT_PWD}/$${DESTDIR}/Headerize
+        ldviewini.depends = ldviewiniMessage
         !macx: ldviewini.commands = @sed -i      \'$${LN_13}s%.*%$${LDRAW_DIR}%\' $${DEV_DIR}/LDViewCustomIni
         else:  ldviewini.commands = @sed -i \'\' \'$${LN_13}s%.*%$${LDRAW_DIR}%\' $${DEV_DIR}/LDViewCustomIni
         ldviewiniMessage.commands = @echo && echo "Project MESSAGE: Updating LDViewCustomIni with entry $${LDRAW_DIR} at line $${LN_13}"
@@ -253,7 +253,7 @@ BUILD_CHECK: unix {
         }
 
         QMAKE_EXTRA_TARGETS += ldviewini ldviewiniMessage
-        PRE_TARGETDEPS += LDViewCustomIni
+        PRE_TARGETDEPS += LDViewCustomIni $${OUT_PWD}/$${DESTDIR}/$${TARGET}
 
         # Test
         #./ldview ../8464.mpd -SaveSnapshot=/tmp/8464i.png -IniFile=/home/trevor/projects/ldview/OSMesa/LDViewCustomIni -SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0

@@ -12,8 +12,7 @@ unix {
     INI_FILE   = $$_PRO_FILE_PWD_/LDViewCustomIni
 
 	  ldviewCUITest.target = /tmp/8464i.png
-    ldviewCUITest.files = ../8464.mpd
-    ldviewCUITest.depends = $${OUT_PWD}/$${DESTDIR}/$${TARGET} $${OUT_PWD}/$${DESTDIR}/Headerize
+    ldviewCUITest.depends = ../8464.mpd
     ldviewCUITest.commands = $$escape_expand(\n\t)                                                                              \
                                    @export GALLIUM_DRIVER=$$GAL_DRIVER                                                          \
                               $$escape_expand(\n\t)                                                                             \
@@ -101,6 +100,6 @@ unix {
                                    @echo && echo "Project MESSAGE: User INI test completed." && echo
 
 	QMAKE_EXTRA_TARGETS += ldviewCUITest
-	PRE_TARGETDEPS += /tmp/8464i.png
+	PRE_TARGETDEPS += $${OUT_PWD}/$${DESTDIR}/$${TARGET}
 }
 

@@ -50,7 +50,7 @@ SET PLATFORM=unknown
 SET INI_FILE=unknown
 SET CHECK=unknown
 
-rem Check if invalid platform flag
+rem Verify 1st input flag options
 IF NOT [%1]==[] (
   IF NOT "%1"=="x86" (
     IF NOT "%1"=="x86_64" (
@@ -85,26 +85,26 @@ rem If we get here display invalid command message.
 GOTO :COMMAND_ERROR
 
 :SET_CONFIGURATION
-rem Only build release configuraion
+rem Verify 2nd input flag options
 IF NOT [%2]==[] (
   IF NOT "%2"=="-ins" (
     IF NOT "%2"=="-chk" GOTO :CONFIGURATION_ERROR
   )
 )
 
-rem Only build release configuraion
+rem Verify 3rd input flag options
 IF NOT [%3]==[] (
   IF NOT "%3"=="-chk" (
     IF NOT "%3"=="-minlog" GOTO :CONFIGURATION_ERROR
   )
 )
 
-rem Only build release configuraion
+rem Verify 4th input flag options
 IF NOT [%4]==[] (
   IF NOT "%4"=="-minlog" GOTO :CONFIGURATION_ERROR
 )
 
-rem Parse configuration input flag
+rem Set third party install as default behaviour
 IF [%2]==[] (
   SET THIRD_INSTALL=1
   GOTO :BUILD
@@ -115,7 +115,7 @@ IF /I "%2"=="-ins" (
   GOTO :BUILD
 )
 
-rem Perform quick check
+rem Set build check flag
 IF /I "%2"=="-chk" (
   SET CHECK=1
   GOTO :BUILD
@@ -200,7 +200,7 @@ ECHO.
 ECHO -Build x86 and x86_64 platform...
 FOR %%P IN ( Win32, x64 ) DO (
   ECHO.
-  ECHO -Building %%P Platform...
+  ECHO -Building %%P Platforms...
   ECHO.
   rem Assemble command line
   SET COMMAND_LINE=msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%%P LDView.vcxproj %LOGGING_FLAGS%
@@ -477,8 +477,6 @@ IF EXIST %OfficialCONTENT% (
   ECHO.
   ECHO - LDraw archive library %OfficialCONTENT% downloaded
 )
-ECHO.
-ECHO - LDraw archive library download finshed.
 EXIT /b
 
 :OUTPUT_LOGGING_MESSAGE
