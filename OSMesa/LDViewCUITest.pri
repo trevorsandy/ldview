@@ -100,6 +100,5 @@ unix {
                                    @echo && echo "Project MESSAGE: User INI test completed." && echo
 
 	QMAKE_EXTRA_TARGETS += ldviewCUITest
-	PRE_TARGETDEPS += $${OUT_PWD}/$${DESTDIR}/$${TARGET}
 }
 

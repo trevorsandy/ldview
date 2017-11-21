@@ -253,7 +253,7 @@ BUILD_CHECK: unix {
         }
 
         QMAKE_EXTRA_TARGETS += ldviewini ldviewiniMessage
-        PRE_TARGETDEPS += LDViewCustomIni $${OUT_PWD}/$${DESTDIR}/$${TARGET}
+        PRE_TARGETDEPS += LDViewCustomIni
 
         # Test
         #./ldview ../8464.mpd -SaveSnapshot=/tmp/8464i.png -IniFile=/home/trevor/projects/ldview/OSMesa/LDViewCustomIni -SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0
