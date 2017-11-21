@@ -60,8 +60,7 @@ HEADERS += $$PWD/ConvertUTF.h \
            $$PWD/TCUnzip.h \
            $$PWD/TCUserDefaults.h \
            $$PWD/TCVector.h \
-           $$PWD/TCWebClient.h \
-		   $$PWD/TCGLInfo.h
+           $$PWD/TCWebClient.h
 SOURCES += $$PWD/ConvertUTF.c \
            $$PWD/mystring.cpp \
            $$PWD/TCAlert.cpp \
@@ -87,5 +86,4 @@ SOURCES += $$PWD/ConvertUTF.c \
            $$PWD/TCUnzip.cpp \
            $$PWD/TCUserDefaults.cpp \
            $$PWD/TCVector.cpp \
-           $$PWD/TCWebClient.cpp \
-		   $$PWD/TCGLInfo.cpp
+           $$PWD/TCWebClient.cpp

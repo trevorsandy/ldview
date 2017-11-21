@@ -224,10 +224,10 @@ BUILD_CHECK: unix {
         LN_13=13
         LN_57=57
         ldviewini.target = LDViewCustomIni
-        ldviewini.depends = ldviewiniMessage
-        !macx: ldviewini.commands = sed -i      \'$${LN_13}s%.*%$${LDRAW_DIR}%\' $${DEV_DIR}/LDViewCustomIni
-        else:  ldviewini.commands = sed -i \'\' \'$${LN_13}s%.*%$${LDRAW_DIR}%\' $${DEV_DIR}/LDViewCustomIni
-        ldviewiniMessage.commands = @echo Project MESSAGE: Updating LDViewCustomIni entry $${LDRAW_DIR}
+        ldviewini.depends = ldviewiniMessage $${OUT_PWD}/$${DESTDIR}/$${TARGET} $${OUT_PWD}/$${DESTDIR}/Headerize
+        !macx: ldviewini.commands = @sed -i      \'$${LN_13}s%.*%$${LDRAW_DIR}%\' $${DEV_DIR}/LDViewCustomIni
+        else:  ldviewini.commands = @sed -i \'\' \'$${LN_13}s%.*%$${LDRAW_DIR}%\' $${DEV_DIR}/LDViewCustomIni
+        ldviewiniMessage.commands = @echo && echo "Project MESSAGE: Updating LDViewCustomIni with entry $${LDRAW_DIR} at line $${LN_13}"
 
         exists($${LDRAW_PATH}/lgeo/LGEO.xml) {
             LGEO_DIR = XmlMapPath=$${LDRAW_PATH}/lgeo
@@ -235,13 +235,13 @@ BUILD_CHECK: unix {
 
             !macx: ldviewini.commands += ; sed -i      \'$${LN_57}s%.*%$${LGEO_DIR}%\' $${DEV_DIR}/LDViewCustomIni
             else:  ldviewini.commands += ; sed -i \'\' \'$${LN_57}s%.*%$${LGEO_DIR}%\' $${DEV_DIR}/LDViewCustomIni
-            ldviewiniMessage.commands += ; echo Project MESSAGE: Updating LDViewCustomIni entry $${LGEO_DIR}
+            ldviewiniMessage.commands += ; echo "Project MESSAGE: Updating LDViewCustomIni with entry $${LGEO_DIR} at line $${LN_57}"
         } else {
             message("~~~ LGEO LIBRARY NOT FOUND ~~~")
 
             !macx: ldviewini.commands += ; sed -i      \'$${LN_57}s%.*%%\' $${DEV_DIR}/LDViewCustomIni
             else:  ldviewini.commands += ; sed -i \'\' \'$${LN_57}s%.*%%\' $${DEV_DIR}/LDViewCustomIni
-            ldviewiniMessage.commands += ; echo Project MESSAGE: Removing LDViewCustomnIni entry XmlMapPath
+            ldviewiniMessage.commands += ; echo "Project MESSAGE: Removing LDViewCustomnIi entry XmlMapPath at line $${LN_57}"
         }
 
         exists($$(HOME)/.ldviewrc) {
@@ -259,6 +259,7 @@ BUILD_CHECK: unix {
         #./ldview ../8464.mpd -SaveSnapshot=/tmp/8464i.png -IniFile=/home/trevor/projects/ldview/OSMesa/LDViewCustomIni -SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0
         # Set CONFIG+=USE_SOFTPIPE to test LLVM softpipe driver
         contains(USE_SYSTEM_OSMESA_LIB, YES): CONFIG+=USE_SWRAST
+
         include(LDViewCUITest.pri)
 
     } else {
@@ -269,4 +270,6 @@ BUILD_CHECK: unix {
 QMAKE_CLEAN += LDViewMessages.ini LDViewMessages.h StudLogo.h
 
 # Input
-SOURCES += ldview.cpp
+HEADERS += GLInfo.h
+SOURCES += ldview.cpp \
+           GLInfo.cpp

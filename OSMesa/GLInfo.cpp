@@ -38,7 +38,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <cstring>
-#include "TCGLInfo.h"
+#include "GLInfo.h"
 
 
 

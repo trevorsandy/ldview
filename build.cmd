@@ -15,7 +15,7 @@ rem This script is distributed in the hope that it will be useful,
 rem but WITHOUT ANY WARRANTY; without even the implied warranty of
 rem MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-SET PWD=%~dp0
+SET PWD=%CD%
 
 rem Variables
 rem Static defaults
@@ -34,7 +34,7 @@ IF "%APPVEYOR%" EQU "True" (
   SET LDRAW_DIR=%USERPROFILE%\LDraw
   SET DIST_DIR_ROOT=..\lpub3d_windows_3rdparty
 )
-SET INI_POV_FILE=%PWD%OSMesa\ldviewPOV.ini
+SET INI_POV_FILE=%PWD%\OSMesa\ldviewPOV.ini
 SET zipWin64=C:\program files\7-zip
 SET OfficialCONTENT=complete.zip
 
@@ -217,7 +217,7 @@ rem Package 3rd party install
 IF %THIRD_INSTALL%==1 (
     SET INSTALL_32BIT=1
     SET INSTALL_64BIT=1
-    CALL :3RD_PARTY_INSTALL
+	  CALL :3RD_PARTY_INSTALL
 )
 GOTO :END
 
@@ -244,26 +244,40 @@ MOVE /Y "%INI_POV_FILE%.new" "%INI_POV_FILE%" >nul 2>&1
 EXIT /b
 
 :CHECK_BUILD
+ECHO.
+ECHO -Perform build check for %CONFIGURATION% Configuration, %1 Platform using Ini file %INI_POV_FILE%......
 CALL :CHECK_LDRAW_DIR
-IF %CHECK%==1 (
-SET INI_FILE=%INI_POV_FILE%
 IF %1==Win32 SET PL=
 IF %1==x64 SET PL=64
-IF EXIST "8464.TestResult.%1.png" (
-  DEL /Q "8464.TestResult.%1.png"
-)
-SETLOCAL ENABLEDELAYEDEXPANSION
-ECHO.
-ECHO -Check %CONFIGURATION% Configuration, %1 Platform using Ini file !INI_FILE!...
-ECHO.
-SET COMMAND_LINE=Build\release!PL!\%PACKAGE%!PL!.exe "8464.mpd" -LDrawDir="%LDRAW_DIR%" -SaveSnapshot="8464.TestResult.%1.png" -IniFile=!INI_FILE! -SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0
-ECHO -Build Check Command: !COMMAND_LINE!
-!COMMAND_LINE!
-ENDLOCAL
-IF EXIST "8464.TestResult.%1.png" (
+SET INI_FILE=%INI_POV_FILE%
+SET IN_FILE=8464.mpd
+SET OUT_FILE=8464.TestResult.%1.png
+SET ARGS=-SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0
+SET PACKAGE_PATH=Build\%CONFIGURATION%%PL%\%PACKAGE%%PL%.exe
+SET COMMAND_LINE_ARGS= "%IN_FILE%" -LDrawDir="%LDRAW_DIR%" -SaveSnapshot="%OUT_FILE%" -IniFile="%INI_FILE%" %ARGS%
+SET COMMAND=%PACKAGE_PATH% %COMMAND_LINE_ARGS%
+IF %CHECK%==1 (
   ECHO.
-  ECHO -Build Check, create 8464.TestResult.%1.png from 8464.mpd - Test successful!
-)
+  ECHO   PACKAGE................[%PACKAGE%]
+  ECHO   PACKAGE_PATH...........[%PACKAGE_PATH%]
+  ECHO   ARGUMENTS..............[%ARGS%]
+  ECHO   INI_FILE...............[%INI_FILE%]
+  ECHO   OUT_FILE...............[%OUT_FILE%]
+  ECHO   IN_FILE................[%IN_FILE%]
+  ECHO   LDRAW_DIRECTORY........[%LDRAW_DIR%]
+  ECHO   COMMAND................[%COMMAND%]
+  IF EXIST "%OUT_FILE%" (
+    DEL /Q "%OUT_FILE%"
+  )
+  %COMMAND%> Check.out
+  IF EXIST "Check.out" (
+	FOR %%R IN (Check.out) DO IF NOT %%~zR lss 1 ECHO. & TYPE "Check.out"
+	DEL /Q "Check.out"
+  )
+  IF EXIST "%OUT_FILE%" (
+    ECHO.
+    ECHO -Build Check, create %OUT_FILE% from %IN_FILE% - Test successful!
+  )
 ) ELSE (
   ECHO -Check is not possible
 )
@@ -273,20 +287,20 @@ EXIT /b
 ECHO.
 ECHO -Copying 3rd party distribution files...
 IF %INSTALL_32BIT% == 1 (
-  ECHO.
-  ECHO -Copying %PACKAGE%32bit exe...
-  IF NOT EXIST "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\i386\" (
-    MKDIR "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\i386\"
-  )
-  COPY /V /Y "Build\Release\%PACKAGE%.exe" "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\i386\" /B
+	ECHO.
+	ECHO -Copying %PACKAGE%32bit exe...
+	IF NOT EXIST "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\i386\" (
+	  MKDIR "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\i386\"
+	)
+	COPY /V /Y "Build\Release\%PACKAGE%.exe" "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\i386\" /B
 )
 IF %INSTALL_64BIT% == 1 (
-  ECHO.
-  ECHO -Copying %PACKAGE%64bit exe...
-  IF NOT EXIST "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\x86_64\" (
-    MKDIR "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\x86_64\"
-  )
-  COPY /V /Y "Build\Release64\%PACKAGE%64.exe" "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\x86_64\" /B
+	ECHO.
+	ECHO -Copying %PACKAGE%64bit exe...
+	IF NOT EXIST "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\x86_64\" (
+	  MKDIR "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\x86_64\"
+	)
+	COPY /V /Y "Build\Release64\%PACKAGE%64.exe" "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\x86_64\" /B
 )
 ECHO.
 ECHO -Copying Documentaton...
@@ -542,7 +556,7 @@ ECHO  -minlog....4,3....Project flag        [Default=Off] Minimum build logging 
 ECHO.
 ECHO Be sure the set your LDraw directory in the variables section above if you expect to use the '-chk' option.
 ECHO.
-ECHO Flags are not case sensitive, use lowere case.
+ECHO Flags are case sensitive, use lowere case.
 ECHO.
 ECHO If no flag is supplied, 64bit platform, Release Configuration built by default.
 ECHO ----------------------------------------------------------------
