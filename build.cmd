@@ -8,7 +8,7 @@ rem LDView distributions and package the build contents (exe, doc and
 rem resources ) as LPub3D 3rd Party components.
 rem --
 rem  Trevor SANDY <trevor.sandy@gmail.com>
-rem  Last Update: November 13, 2017
+rem  Last Update: November 23, 2017
 rem  Copyright (c) 2017 by Trevor SANDY
 rem --
 rem This script is distributed in the hope that it will be useful,
@@ -20,19 +20,19 @@ SET PWD=%CD%
 rem Variables
 rem Static defaults
 IF "%APPVEYOR%" EQU "True" (
-  IF [%LDV_DIST_DIR_PATH%] == [] (
+  IF [%LP3D_DIST_DIR_PATH%] == [] (
     ECHO.
     ECHO  -ERROR: Distribution directory path not defined.
     ECHO  -%~nx0 terminated!
     GOTO :END
   )
-  SET DIST_DIR_ROOT=%LDV_DIST_DIR_PATH%
+  SET DIST_DIR=%LP3D_DIST_DIR_PATH%
   SET LDRAW_DOWNLOAD_DIR=%APPVEYOR_BUILD_FOLDER%
   SET LDRAW_DIR=%APPVEYOR_BUILD_FOLDER%\LDraw
 ) ELSE (
   SET LDRAW_DOWNLOAD_DIR=%USERPROFILE%
   SET LDRAW_DIR=%USERPROFILE%\LDraw
-  SET DIST_DIR_ROOT=..\lpub3d_windows_3rdparty
+  SET DIST_DIR=..\lpub3d_windows_3rdparty
 )
 SET INI_POV_FILE=%PWD%\OSMesa\ldviewPOV.ini
 SET zipWin64=C:\program files\7-zip
@@ -134,7 +134,7 @@ IF "%APPVEYOR%" EQU "True" (
   ECHO   PROJECT_NAME........[%APPVEYOR_PROJECT_NAME%]
   ECHO   REPOSITORY_NAME.....[%APPVEYOR_REPO_NAME%]
   ECHO   REPO_PROVIDER.......[%APPVEYOR_REPO_PROVIDER%]
-  ECHO   DIST_DIRECTORY......[%DIST_DIR_ROOT%]
+  ECHO   DIST_DIRECTORY......[%DIST_DIR%]
 )
 ECHO   PACKAGE.............[%PACKAGE%]
 ECHO   VERSION.............[%VERSION%]
@@ -269,10 +269,10 @@ IF %CHECK%==1 (
   IF EXIST "%OUT_FILE%" (
     DEL /Q "%OUT_FILE%"
   )
-  %COMMAND%> Check.out
+  %COMMAND% > Check.out 2>&1
   IF EXIST "Check.out" (
-	FOR %%R IN (Check.out) DO IF NOT %%~zR lss 1 ECHO. & TYPE "Check.out"
-	DEL /Q "Check.out"
+	  FOR %%R IN (Check.out) DO IF NOT %%~zR lss 1 ECHO. & TYPE "Check.out"
+	  DEL /Q "Check.out"
   )
   IF EXIST "%OUT_FILE%" (
     ECHO.
@@ -285,48 +285,47 @@ EXIT /b
 
 :3RD_PARTY_INSTALL
 ECHO.
-ECHO -Copying 3rd party distribution files...
+ECHO -Installing distribution files...
 IF %INSTALL_32BIT% == 1 (
 	ECHO.
-	ECHO -Copying %PACKAGE%32bit exe...
-	IF NOT EXIST "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\i386\" (
-	  MKDIR "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\i386\"
+	ECHO -Installing %PACKAGE%32bit exe...
+	IF NOT EXIST "%DIST_DIR%\%PACKAGE%-%VERSION%\bin\i386\" (
+	  MKDIR "%DIST_DIR%\%PACKAGE%-%VERSION%\bin\i386\"
 	)
-	COPY /V /Y "Build\Release\%PACKAGE%.exe" "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\i386\" /B
+	COPY /V /Y "Build\Release\%PACKAGE%.exe" "%DIST_DIR%\%PACKAGE%-%VERSION%\bin\i386\" /B
 )
 IF %INSTALL_64BIT% == 1 (
 	ECHO.
-	ECHO -Copying %PACKAGE%64bit exe...
-	IF NOT EXIST "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\x86_64\" (
-	  MKDIR "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\x86_64\"
+	ECHO -Installing %PACKAGE%64bit exe...
+	IF NOT EXIST "%DIST_DIR%\%PACKAGE%-%VERSION%\bin\x86_64\" (
+	  MKDIR "%DIST_DIR%\%PACKAGE%-%VERSION%\bin\x86_64\"
 	)
-	COPY /V /Y "Build\Release64\%PACKAGE%64.exe" "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\bin\x86_64\" /B
+	COPY /V /Y "Build\Release64\%PACKAGE%64.exe" "%DIST_DIR%\%PACKAGE%-%VERSION%\bin\x86_64\" /B
 )
 ECHO.
-ECHO -Copying Documentaton...
-IF NOT EXIST "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\docs\" (
-  MKDIR "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\docs\"
+ECHO -Installing Documentaton...
+IF NOT EXIST "%DIST_DIR%\%PACKAGE%-%VERSION%\docs\" (
+  MKDIR "%DIST_DIR%\%PACKAGE%-%VERSION%\docs\"
 )
-SET DIST_DIR=%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\docs\
-COPY /V /Y "Readme.txt" "%DIST_DIR%" /A
-COPY /V /Y "Help.html" "%DIST_DIR%" /A
-COPY /V /Y "license.txt" "%DIST_DIR%" /A
-COPY /V /Y "ChangeHistory.html" "%DIST_DIR%" /A
+SET DIST_INSTALL_PATH=%DIST_DIR%\%PACKAGE%-%VERSION%\docs\
+COPY /V /Y "Readme.txt" "%DIST_INSTALL_PATH%" /A
+COPY /V /Y "Help.html" "%DIST_INSTALL_PATH%" /A
+COPY /V /Y "license.txt" "%DIST_INSTALL_PATH%" /A
+COPY /V /Y "ChangeHistory.html" "%DIST_INSTALL_PATH%" /A
 ECHO.
-ECHO -Copying Ini Files...
-IF NOT EXIST "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\resources\config\" (
-  MKDIR "%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\resources\config\"
+ECHO -Installing Ini Files...
+IF NOT EXIST "%DIST_DIR%\%PACKAGE%-%VERSION%\resources\config\" (
+  MKDIR "%DIST_DIR%\%PACKAGE%-%VERSION%\resources\config\"
 )
-SET DIST_DIR=%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\resources\config
-COPY /V /Y "OSMesa\LDViewCustomIni" "%DIST_DIR%" /A
-COPY /V /Y "OSMesa\ldview.ini" "%DIST_DIR%" /A
-COPY /V /Y "OSMesa\ldviewPOV.ini" "%DIST_DIR%" /A
+SET DIST_INSTALL_PATH=%DIST_DIR%\%PACKAGE%-%VERSION%\resources\config\
+COPY /V /Y "OSMesa\LDViewCustomIni" "%DIST_INSTALL_PATH%" /A
+COPY /V /Y "OSMesa\ldview.ini" "%DIST_INSTALL_PATH%" /A
+COPY /V /Y "OSMesa\ldviewPOV.ini" "%DIST_INSTALL_PATH%" /A
 ECHO.
-ECHO -Copying Resources...
-SET DIST_DIR=%DIST_DIR_ROOT%\%PACKAGE%-%VERSION%\resources\
-COPY /V /Y "m6459.ldr" "%DIST_DIR%" /A
-COPY /V /Y "8464.mpd" "%DIST_DIR%" /A
-COPY /V /Y "LDExporter\LGEO.xml" "%DIST_DIR%" /A
+ECHO -Installing Resources...
+COPY /V /Y "m6459.ldr" "%DIST_INSTALL_PATH%" /A
+COPY /V /Y "8464.mpd" "%DIST_INSTALL_PATH%" /A
+COPY /V /Y "LDExporter\LGEO.xml" "%DIST_INSTALL_PATH%" /A
 EXIT /b
 
 :BACKUP_INI_FILES
@@ -374,7 +373,7 @@ IF NOT EXIST "%LDRAW_DIR%\parts" (
         DEL /Q "%LDRAW_DOWNLOAD_DIR%\%OfficialCONTENT%"
       )
     ) ELSE (
-      ECHO [WARNING] Could not find zip executable.
+      ECHO [WARNING] Could not find 7zip executable.
       SET CHECK=0
     )
   ) ELSE (
