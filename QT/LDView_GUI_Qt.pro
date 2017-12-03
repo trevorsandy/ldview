@@ -243,7 +243,7 @@ QMAKE_CLEAN += *.qm
 
 LIBS	+= -lLDLoader$$POSTFIX -lTRE$$POSTFIX -lTCFoundation$$POSTFIX
 
-unix: LIBS += -ljpeg -l$${LIB_PNG} -lGLU
+unix: LIBS += -ljpeg -l$${LIB_PNG} -lGL -lGLU
 
 win32: LIBS += -llibjpeg-vc2005
 

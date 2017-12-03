@@ -19,7 +19,7 @@ if [[ $result == 'ldview' ]]; then
     echo "  qrc_resource      - resource file"
 	echo "  StudLogo.h        - generated file"
 	echo "  LDViewMessages.h  - generated file"
-	echo 
+	echo
 	echo "Use -a to include 3rd party libraries - e.g. cleanup.sh -a"
     find . -name "Headerize" -type f -delete
     find . -name "LDView" -type f -delete

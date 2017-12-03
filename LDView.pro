@@ -62,7 +62,6 @@
 #        |
 #        `--- /libjpeg
 #        |     |--- 3rdParty_jpeg.pro      3rdParty library project file - consumes 3rdParty.pri
-#        |
 #
 win32:HOST = $$system(systeminfo | findstr /B /C:"OS Name")
 unix:!macx:HOST = $$system(. /etc/os-release && if test \"$PRETTY_NAME\" != \"\"; then echo \"$PRETTY_NAME\"; else echo `uname`; fi)

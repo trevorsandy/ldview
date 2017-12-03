@@ -19,6 +19,13 @@ win32:HOST = $$system(systeminfo | findstr /B /C:"OS Name")
 unix:!macx:HOST = $$system(. /etc/os-release && if test \"$PRETTY_NAME\" != \"\"; then echo \"$PRETTY_NAME\"; else echo `uname`; fi)
 macx:HOST = $$system(echo `sw_vers -productName` `sw_vers -productVersion`)
 
+# some funky processing to get the prefix passed in on the command line
+3RD_ARG = $$find(CONFIG, 3RD_PARTY_INSTALL.*)
+!isEmpty(3RD_ARG): CONFIG -= $$3RD_ARG
+CONFIG += $$section(3RD_ARG, =, 0, 0)
+isEmpty(3RD_PREFIX):3RD_PREFIX = $$_PRO_FILE_PWD_/$$section(3RD_ARG, =, 1, 1)
+!exists($${3RD_PREFIX}): message("~~~ ERROR 3rd party repository path not found ~~~")
+
 # Ubuntu Trusty uses libpng12 which is too old
 contains(HOST, Ubuntu):contains(HOST, 14.04.5): \
 USE_SYSTEM_LIBS {
@@ -142,7 +149,7 @@ unix {
 # pre-compiled libraries
 # Library variables - you can modify the items below if
 # you want to set individual libray paths/names etc...
-
+# ===============================
 LIBS_INC            = $${LIBINC_}
 LIBS_DIR            = -L$${LIBDIR_}
 # -------------------------------
@@ -176,24 +183,28 @@ MINIZIP_LIBDIR      = -L$${LIBDIR_}
 
 # Update Libraries
 # ===============================
+
 LIBS_PRI            = -l$${LIB_PNG} \
                       -l$${LIB_JPEG} \
                       -l$${LIB_GL2PS} \
                       -l$${LIB_TINYXML} \
                       -l$${LIB_Z}
 
+unix: contains(HOST, Fedora): \
+USE_SYSTEM_LIBS {
+  OSMESA_LDFLAGS = $$system($${3RD_PREFIX}/mesa/osmesa-config --ldflags)
+  isEmpty(OSMESA_LDFLAGS): message("~~~ OSMESA - ERROR OSMesa ldflags not defined ~~~")
+  else: LIBS_PRI += $${OSMESA_LDFLAGS}
+}
+
 # conditional libraries
 contains(DEFINES, EXPORT_3DS) {
     LIBS_PRI += -l$${LIB_3DS}
 }
 
-contains(HOST, Fedora):contains(HOST, 25): \
-USE_SYSTEM_LIBS {
-    LIBS_PRI += -lGL
-}
-
 # 3rd party libreries - compiled from source
 # Be careful not to move this chunk. moving it will affect to overall logic flow.
+# ===============================
 USE_3RD_PARTY_LIBS {
     WHICH_LIBS      = 3RD PARTY
 
@@ -260,6 +271,7 @@ unix {
         SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/lib
     }
 
+    # ===============================
     USE_3RD_PARTY_LIBS {
         # detect system libraries
         _LIB_OSMESA = OSMesa
@@ -337,6 +349,7 @@ unix {
         }
     }
 
+    # ===============================
     USE_SYSTEM_LIBS {
         WHICH_LIBS          = SYSTEM
 
@@ -386,10 +399,17 @@ unix {
             OSMESA_LDLIBS       = $${SYS_LIBDIR_X11_}/lib$${LIB_OSMESA}.$${EXT_} \
                                   $${SYS_LIBDIR_X11_}/lib$${LIB_GLU}.$${EXT_}
         } else {
-            OSMESA_INC          = $${SYS_LIBINC_}
-            OSMESA_LIBDIR       = -L$${SYS_LIBDIR_}
-            OSMESA_LDLIBS       = $${SYS_LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_} \
-                                  $${SYS_LIBDIR_}/lib$${LIB_GLU}.$${EXT_}
+            contains(HOST, Fedora) {
+                OSMESA_INC          = $$system($${3RD_PREFIX}/mesa/osmesa-config --cflags)
+                isEmpty(OSMESA_INC): message("~~~ OSMESA - ERROR OSMesa include path not found ~~~")
+                OSMESA_LDLIBS       = $$system($${3RD_PREFIX}/mesa/osmesa-config --libs)
+                isEmpty(OSMESA_LDLIBS): message("~~~ OSMESA - ERROR OSMesa library not defined ~~~")
+            } else {
+                OSMESA_INC          = $${SYS_LIBINC_}
+                OSMESA_LIBDIR       = -L$${SYS_LIBDIR_}
+                OSMESA_LDLIBS       = $${SYS_LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_} \
+                                      $${SYS_LIBDIR_}/lib$${LIB_GLU}.$${EXT_}
+            }
         }
 
         # override system libraries with 3rd party/pre-defined library paths as specified

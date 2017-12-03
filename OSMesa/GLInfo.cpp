@@ -32,14 +32,12 @@
 #  include <GL/gl.h>
 #  include <GL/glext.h>
 #endif	// __APPLE__
-
 #include <iostream>
 #include <sstream>
 #include <iomanip>
 #include <algorithm>
 #include <cstring>
 #include "GLInfo.h"
-
 
 
 // WGL specific extensions for v3.0+ //////////////////////////////////////////

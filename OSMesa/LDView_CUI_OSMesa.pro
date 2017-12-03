@@ -54,16 +54,7 @@ unix {
     }
 }
 
-# some funky processing to get the prefix passed in on the command line
-# CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_linux_3rdparty
-# CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_macos_3rdparty
-# CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_windows_3rdparty
-3RD_ARG = $$find(CONFIG, 3RD_PARTY_INSTALL.*)
-!isEmpty(3RD_ARG): CONFIG -= $$3RD_ARG
-CONFIG += $$section(3RD_ARG, =, 0, 0)
-
 3RD_PARTY_INSTALL {
-    isEmpty(3RD_PREFIX):3RD_PREFIX           = $$_PRO_FILE_PWD_/$$section(3RD_ARG, =, 1, 1)
     isEmpty(3RD_PACKAGE_VER):3RD_PACKAGE_VER = $$TARGET-$$VER_MAJ"."$$VER_MIN
     isEmpty(3RD_BINDIR):3RD_BINDIR           = $$3RD_PREFIX/$$3RD_PACKAGE_VER/bin/$$QT_ARCH
     isEmpty(3RD_DOCDIR):3RD_DOCDIR           = $$3RD_PREFIX/$$3RD_PACKAGE_VER/docs
@@ -181,6 +172,26 @@ if(!contains(USE_SYSTEM_OSMESA_LIB, YES):!USE_SYSTEM_LIBS) {
     unix: !macx: LLVM_LIBS += -lrt -ldl -lm
 
     LIBS_          += $${LLVM_LIBS}
+} else: contains(HOST, Fedora): {
+        exists (/usr/bin/llvm-config) {
+        message("~~~ LLVM - llvm-config found ~~~")
+        LLVM_LIB_PATH = $$SYS_LIBDIR_
+        isEmpty(LLVM_LIB_PATH): message("~~~ LLVM - ERROR llvm library path not found ~~~")
+        else: LLVM_LIBS = -L$${LLVM_LIB_PATH}
+        LLVM_LIB_NAME = $$system(/usr/bin/llvm-config --libs engine mcjit)
+        isEmpty(LLVM_LIBS): message("~~~ LLVM - ERROR llvm library not found ~~~")
+        else: LLVM_LIBS += $${LLVM_LIB_NAME}
+        LLVM_SYS_LIBS = $$system(/usr/bin/llvm-config --system-libs)
+        isEmpty(LLVM_SYS_LIBS): message("~~~ LLVM - NOTICE llvm system libs not defined ~~~")
+        else: LLVM_LIBS += $${LLVM_SYS_LIBS}
+        LLVM_LDFLAGS  = $$system(/usr/bin/llvm-config --ldflags)
+        isEmpty(LLVM_LDFLAGS): message("~~~ LLVM - WARNIGN llvm ldflags not found ~~~")
+        else: LLVM_LIBS += $${LLVM_LDFLAGS}
+
+        LIBS_     += $${LLVM_LIBS}
+    } else {
+        message("~~~ LLVM - ERROR llvm-config not found ~~~")
+    }
 }
 
 LIBS               += $${LDLIBS} $${LIBDIRS} $${LIBS_DIR} $${LIBS_}
