@@ -159,34 +159,14 @@ unix {
     }
 }
 
-if(!contains(USE_SYSTEM_OSMESA_LIB, YES):!USE_SYSTEM_LIBS) {
-    macx:        QMAKE_LFLAGS += -Wl,-search_paths_first -Wl,-headerpad_max_install_names
-    unix: !macx: QMAKE_LFLAGS += -Wl,--no-as-needed
-    LLVM_LIBS       = -lLLVMX86Disassembler -lLLVMX86AsmParser -lLLVMX86CodeGen -lLLVMGlobalISel -lLLVMSelectionDAG \
-                      -lLLVMAsmPrinter -lLLVMDebugInfoCodeView -lLLVMDebugInfoMSF -lLLVMCodeGen -lLLVMScalarOpts \
-                      -lLLVMInstCombine -lLLVMTransformUtils -lLLVMBitWriter -lLLVMX86Desc -lLLVMMCDisassembler \
-                      -lLLVMX86Info -lLLVMX86AsmPrinter -lLLVMX86Utils -lLLVMMCJIT -lLLVMExecutionEngine \
-                      -lLLVMTarget -lLLVMAnalysis -lLLVMProfileData -lLLVMRuntimeDyld -lLLVMObject \
-                      -lLLVMMCParser -lLLVMBitReader -lLLVMMC -lLLVMCore -lLLVMSupport -lLLVMDemangle
-    macx:        LLVM_LIBS += -lm
-    unix: !macx: LLVM_LIBS += -lrt -ldl -lm
-
-    LIBS_          += $${LLVM_LIBS}
-} else: contains(HOST, Fedora): {
-        exists (/usr/bin/llvm-config) {
-        message("~~~ LLVM - llvm-config found ~~~")
-        LLVM_LIB_PATH = $$SYS_LIBDIR_
-        isEmpty(LLVM_LIB_PATH): message("~~~ LLVM - ERROR llvm library path not found ~~~")
-        else: LLVM_LIBS = -L$${LLVM_LIB_PATH}
-        LLVM_LIB_NAME = $$system(/usr/bin/llvm-config --libs engine mcjit)
+USE_OSMESA_STATIC {
+    exists (/usr/bin/llvm-config) {
+        LLVM_LDFLAGS     = $$system(/usr/bin/llvm-config --ldflags)
+        isEmpty(LLVM_LDFLAGS): message("~~~ LLVM - ERROR llvm ldflags not found ~~~")
+        else: LLVM_LIBS += $${LLVM_LDFLAGS}
+        LLVM_LIB_NAME    = $$system(/usr/bin/llvm-config --libs engine mcjit)
         isEmpty(LLVM_LIBS): message("~~~ LLVM - ERROR llvm library not found ~~~")
         else: LLVM_LIBS += $${LLVM_LIB_NAME}
-        LLVM_SYS_LIBS = $$system(/usr/bin/llvm-config --system-libs)
-        isEmpty(LLVM_SYS_LIBS): message("~~~ LLVM - NOTICE llvm system libs not defined ~~~")
-        else: LLVM_LIBS += $${LLVM_SYS_LIBS}
-        LLVM_LDFLAGS  = $$system(/usr/bin/llvm-config --ldflags)
-        isEmpty(LLVM_LDFLAGS): message("~~~ LLVM - WARNIGN llvm ldflags not found ~~~")
-        else: LLVM_LIBS += $${LLVM_LDFLAGS}
 
         LIBS_     += $${LLVM_LIBS}
     } else {

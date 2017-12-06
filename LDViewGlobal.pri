@@ -7,6 +7,7 @@
 # CONFIG+=USE_SYSTEM_LIBS
 # CONFIG+=BUILD_GUI_ONLY
 # CONFIG+=BUILD_CUI_ONLY
+# CONFIG+=USE_OSMESA_STATIC
 # CONFIG+=USE_SYSTEM_PNG     # override USE_3RD_PARTY_LIBS for libPng
 # CONFIG+=USE_SYSTEM_JPEG    # override USE_3RD_PARTY_LIBS for libJpeg
 # CONFIG+=USE_SYSTEM_Z       # override USE_3RD_PARTY_LIBS for libz
@@ -190,7 +191,7 @@ LIBS_PRI            = -l$${LIB_PNG} \
                       -l$${LIB_TINYXML} \
                       -l$${LIB_Z}
 
-unix: contains(HOST, Fedora): \
+unix: USE_OSMESA_STATIC: \
 USE_SYSTEM_LIBS {
   OSMESA_LDFLAGS = $$system($${3RD_PREFIX}/mesa/osmesa-config --ldflags)
   isEmpty(OSMESA_LDFLAGS): message("~~~ OSMESA - ERROR OSMesa ldflags not defined ~~~")
@@ -399,7 +400,7 @@ unix {
             OSMESA_LDLIBS       = $${SYS_LIBDIR_X11_}/lib$${LIB_OSMESA}.$${EXT_} \
                                   $${SYS_LIBDIR_X11_}/lib$${LIB_GLU}.$${EXT_}
         } else {
-            contains(HOST, Fedora) {
+            USE_OSMESA_STATIC {
                 OSMESA_INC          = $$system($${3RD_PREFIX}/mesa/osmesa-config --cflags)
                 isEmpty(OSMESA_INC): message("~~~ OSMESA - ERROR OSMesa include path not found ~~~")
                 OSMESA_LDLIBS       = $$system($${3RD_PREFIX}/mesa/osmesa-config --libs)
