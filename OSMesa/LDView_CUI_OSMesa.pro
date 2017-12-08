@@ -67,7 +67,8 @@ unix {
     documentation.files         = ../Readme.txt ../Help.html ../license.txt \
                                   ../ChangeHistory.html ldview.1
     resources.path              = $${3RD_RESOURCES}
-    resources.files             = ../m6459.ldr ../8464.mpd ldviewrc.sample
+    resources.files             = ../m6459.ldr ../8464.mpd ldviewrc.sample \
+                                  ../LDExporter/LGEO.xml
     resources_config.path       = $${3RD_RESOURCES}/config
     resources_config.files      = ldview.ini ldviewPOV.ini LDViewCustomIni
     INSTALLS += target documentation resources resources_config

@@ -124,6 +124,8 @@ IF /I "%2"=="-chk" (
 :BUILD
 rem Initialize the Visual Studio command line development environment
 rem Note you can change this line to your specific environment - I am using VS2017 here.
+ECHO.
+ECHO -Initialize the Microsoft Build VS2017...
 CALL "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
 
 rem Display build settings
@@ -348,7 +350,7 @@ EXIT /b
 
 :CHECK_LDRAW_DIR
 ECHO.
-ECHO -Check for LDraw library...
+ECHO -%PACKAGE% - Check for LDraw library...
 IF NOT EXIST "%LDRAW_DIR%\parts" (
   REM SET CHECK=0
   IF NOT EXIST "%LDRAW_DOWNLOAD_DIR%\%OfficialCONTENT%" (
