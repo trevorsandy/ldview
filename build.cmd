@@ -50,6 +50,9 @@ SET PLATFORM=unknown
 SET INI_FILE=unknown
 SET CHECK=unknown
 
+ECHO.
+ECHO -Start %PACKAGE% %~nx0 with commandline args: [%*].
+
 rem Verify 1st input flag options
 IF NOT [%1]==[] (
   IF NOT "%1"=="x86" (
@@ -125,24 +128,24 @@ IF /I "%2"=="-chk" (
 rem Initialize the Visual Studio command line development environment
 rem Note you can change this line to your specific environment - I am using VS2017 here.
 ECHO.
-ECHO -Initialize the Microsoft Build VS2017...
+ECHO -Initialize Microsoft Build VS2017...
 CALL "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
 
 rem Display build settings
 IF "%APPVEYOR%" EQU "True" (
-  ECHO   BUILD_HOST..........[APPVEYOR CONTINUOUS INTEGRATION SERVICE]
-  ECHO   BUILD_ID............[%APPVEYOR_BUILD_ID%]
-  ECHO   BUILD_BRANCH........[%APPVEYOR_REPO_BRANCH%]
-  ECHO   PROJECT_NAME........[%APPVEYOR_PROJECT_NAME%]
-  ECHO   REPOSITORY_NAME.....[%APPVEYOR_REPO_NAME%]
-  ECHO   REPO_PROVIDER.......[%APPVEYOR_REPO_PROVIDER%]
-  ECHO   DIST_DIRECTORY......[%DIST_DIR%]
+  ECHO   BUILD_HOST..............[APPVEYOR CONTINUOUS INTEGRATION SERVICE]
+  ECHO   BUILD_ID................[%APPVEYOR_BUILD_ID%]
+  ECHO   BUILD_BRANCH............[%APPVEYOR_REPO_BRANCH%]
+  ECHO   PROJECT_NAME............[%APPVEYOR_PROJECT_NAME%]
+  ECHO   REPOSITORY_NAME.........[%APPVEYOR_REPO_NAME%]
+  ECHO   REPO_PROVIDER...........[%APPVEYOR_REPO_PROVIDER%]
+  ECHO   DIST_DIRECTORY..........[%DIST_DIR%]
 )
-ECHO   PACKAGE.............[%PACKAGE%]
-ECHO   VERSION.............[%VERSION%]
-ECHO   WORKING_DIR.........[%CD%]
-ECHO   LDRAW_DIR...........[%LDRAW_DIR%]
-ECHO.  LDRAW_DOWNLOAD_DIR..[%LDRAW_DOWNLOAD_DIR%]
+ECHO   PACKAGE................[%PACKAGE%]
+ECHO   VERSION................[%VERSION%]
+ECHO   WORKING_DIR............[%CD%]
+ECHO   LDRAW_DIR..............[%LDRAW_DIR%]
+ECHO.  LDRAW_DOWNLOAD_DIR.....[%LDRAW_DOWNLOAD_DIR%]
 
 rem Perform build check
 IF /I "%3"=="-chk" (
@@ -290,7 +293,7 @@ ECHO.
 ECHO -Installing distribution files...
 IF %INSTALL_32BIT% == 1 (
 	ECHO.
-	ECHO -Installing %PACKAGE%32bit exe...
+	ECHO -Installing %PACKAGE%32bit exe to [%DIST_DIR%\%PACKAGE%-%VERSION%\bin\i386]...
 	IF NOT EXIST "%DIST_DIR%\%PACKAGE%-%VERSION%\bin\i386\" (
 	  MKDIR "%DIST_DIR%\%PACKAGE%-%VERSION%\bin\i386\"
 	)
@@ -298,14 +301,14 @@ IF %INSTALL_32BIT% == 1 (
 )
 IF %INSTALL_64BIT% == 1 (
 	ECHO.
-	ECHO -Installing %PACKAGE%64bit exe...
+	ECHO -Installing %PACKAGE%64bit exe to [%DIST_DIR%\%PACKAGE%-%VERSION%\bin\x86_64]...
 	IF NOT EXIST "%DIST_DIR%\%PACKAGE%-%VERSION%\bin\x86_64\" (
 	  MKDIR "%DIST_DIR%\%PACKAGE%-%VERSION%\bin\x86_64\"
 	)
 	COPY /V /Y "Build\Release64\%PACKAGE%64.exe" "%DIST_DIR%\%PACKAGE%-%VERSION%\bin\x86_64\" /B
 )
 ECHO.
-ECHO -Installing Documentaton...
+ECHO -Installing Documentaton to [%DIST_DIR%\%PACKAGE%-%VERSION%\docs]...
 IF NOT EXIST "%DIST_DIR%\%PACKAGE%-%VERSION%\docs\" (
   MKDIR "%DIST_DIR%\%PACKAGE%-%VERSION%\docs\"
 )
@@ -314,17 +317,18 @@ COPY /V /Y "Readme.txt" "%DIST_INSTALL_PATH%" /A
 COPY /V /Y "Help.html" "%DIST_INSTALL_PATH%" /A
 COPY /V /Y "license.txt" "%DIST_INSTALL_PATH%" /A
 COPY /V /Y "ChangeHistory.html" "%DIST_INSTALL_PATH%" /A
-ECHO.
-ECHO -Installing Ini Files...
 IF NOT EXIST "%DIST_DIR%\%PACKAGE%-%VERSION%\resources\config\" (
   MKDIR "%DIST_DIR%\%PACKAGE%-%VERSION%\resources\config\"
 )
+ECHO.
+ECHO -Installing Ini Files to [%DIST_DIR%\%PACKAGE%-%VERSION%\resources\config]...
 SET DIST_INSTALL_PATH=%DIST_DIR%\%PACKAGE%-%VERSION%\resources\config\
 COPY /V /Y "OSMesa\LDViewCustomIni" "%DIST_INSTALL_PATH%" /A
 COPY /V /Y "OSMesa\ldview.ini" "%DIST_INSTALL_PATH%" /A
 COPY /V /Y "OSMesa\ldviewPOV.ini" "%DIST_INSTALL_PATH%" /A
 ECHO.
-ECHO -Installing Resources...
+ECHO -Installing Resource Files to [%DIST_DIR%\%PACKAGE%-%VERSION%\resources]...
+SET DIST_INSTALL_PATH=%DIST_DIR%\%PACKAGE%-%VERSION%\resources\
 COPY /V /Y "m6459.ldr" "%DIST_INSTALL_PATH%" /A
 COPY /V /Y "8464.mpd" "%DIST_INSTALL_PATH%" /A
 COPY /V /Y "LDExporter\LGEO.xml" "%DIST_INSTALL_PATH%" /A
@@ -332,7 +336,7 @@ EXIT /b
 
 :BACKUP_INI_FILES
 ECHO.
-ECHO -Backing up ini files...
+ECHO -Backing up ini files before build check...
 SET INI_FILE=%PWD%\OSMesa\ldviewPOV.ini
 COPY /V /Y "%INI_FILE%" "%INI_FILE%.hold" /A
 SET INI_FILE=%PWD%\OSMesa\ldview.ini
@@ -341,7 +345,7 @@ EXIT /b
 
 :RESTORE_INI_FILES
 ECHO.
-ECHO -Restoring ini files...
+ECHO -Restoring ini files after build check...
 SET INI_FILE=%PWD%\OSMesa\ldviewPOV.ini
 MOVE /Y "%INI_FILE%.hold" "%INI_FILE%" >nul 2>&1
 SET INI_FILE=%PWD%\OSMesa\ldview.ini
@@ -385,7 +389,7 @@ IF NOT EXIST "%LDRAW_DIR%\parts" (
   )
 ) ELSE (
   ECHO.
-  ECHO -LDraw directory %LDRAW_DIR% exist.
+  ECHO -LDraw directory exist at %LDRAW_DIR%.
 )
 EXIT /b
 
@@ -563,6 +567,6 @@ EXIT /b
 
 :END
 ECHO.
-ECHO -%~nx0 finished.
+ECHO -%PACKAGE% v%VERSION% %~nx0 finished.
 ENDLOCAL
 EXIT /b
