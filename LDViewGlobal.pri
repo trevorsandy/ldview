@@ -5,6 +5,8 @@
 # CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_windows_3rdparty
 # CONFIG+=USE_3RD_PARTY_LIBS
 # CONFIG+=USE_SYSTEM_LIBS
+# CONFIG+=OBS_GL2PS
+# CONFIG+=OBS_TINYXML
 # CONFIG+=BUILD_GUI_ONLY
 # CONFIG+=BUILD_CUI_ONLY
 # CONFIG+=USE_OSMESA_STATIC
@@ -31,6 +33,14 @@ isEmpty(3RD_PREFIX):3RD_PREFIX = $$_PRO_FILE_PWD_/$$section(3RD_ARG, =, 1, 1)
 contains(HOST, Ubuntu):contains(HOST, 14.04.5): \
 USE_SYSTEM_LIBS {
     USE_3RD_PARTY_PNG = YES
+}
+
+# Open Build Service overrides
+OBS_TINYXML {
+    USE_3RD_PARTY_TINYXML = YES
+}
+OBS_GL2PS {
+    USE_3RD_PARTY_GL2PS = YES
 }
 
 # system lib3ds dpoes not appear to have lib3ds.h - so always use 3rd party version
@@ -414,6 +424,32 @@ unix {
         }
 
         # override system libraries with 3rd party/pre-defined library paths as specified
+        contains(USE_3RD_PARTY_TINYXML, YES) {
+            # remove lib reference
+            LIBS_PRI           -= -l$${LIB_TINYXML}
+            # update base name
+            LIB_TINYXML         = tinyxml
+            # reset individual library entry
+            TINYXML_INC         = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/tinyxml
+            TINYXML_LIBDIR      = -L$${3RD_PARTY_PREFIX_}/tinyxml/$$DESTDIR
+            TINYXML_LDLIBS      = $${3RD_PARTY_PREFIX_}/tinyxml/$$DESTDIR/$${LIB_TINYXML}.$${S_EXT_}
+            # update libs path
+            LIBS_INC           += $${TINYXML_INC}
+            #LIBS_DIR           += $${TINYXML_LIBDIR}
+        }
+        contains(USE_3RD_PARTY_GL2PS, YES) {
+            # remove lib reference
+            LIBS_PRI         -= -l$${LIB_GL2PS}
+            # update base name
+            LIB_GL2PS         = gl2ps
+            # reset individual library entry
+            GL2PS_INC         = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/libgl2ps
+            GL2PS_LIBDIR      = -L$${3RD_PARTY_PREFIX_}/libgl2ps/$$DESTDIR
+            GL2PS_LDLIBS      = $${3RD_PARTY_PREFIX_}/libgl2ps/$$DESTDIR/lib$${LIB_GL2PS}.$${S_EXT_}
+            # update libs path
+            LIBS_INC         += $${GL2PS_INC}
+            #LIBS_DIR         += $${GL2PS_LIBDIR}
+        }
         contains(USE_3RD_PARTY_PNG, YES) {
             # remove lib reference
             LIBS_PRI       -= -l$${LIB_PNG}

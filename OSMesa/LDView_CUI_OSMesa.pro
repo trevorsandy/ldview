@@ -127,6 +127,8 @@ if (USE_SYSTEM_LIBS|USE_3RD_PARTY_LIBS) {
    LIBS_ +=  $${PNG_LDLIBS} \
              $${JPEG_LDLIBS} \
              $${3DS_LDLIBS} \
+             $${GL2PS_LDLIBS} \
+             $${TINYXML_LDLIBS} \
              $${ZLIB_LDLIBS}
 }
 

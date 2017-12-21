@@ -73,6 +73,8 @@ macx:HOST = $$system(echo `sw_vers -productName` `sw_vers -productVersion`)
 # CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_windows_3rdparty
 # CONFIG+=USE_3RD_PARTY_LIBS
 # CONFIG+=USE_SYSTEM_LIBS
+# CONFIG+=OBS_GL2PS
+# CONFIG+=OBS_TINYXML
 # CONFIG+=BUILD_GUI_ONLY
 # CONFIG+=BUILD_CUI_ONLY
 # CONFIG+=USE_SYSTEM_OSMESA    # override USE_3RD_PARTY_LIBS for OSMesa libs
@@ -150,9 +152,32 @@ USE_SYSTEM_LIBS {
 # system lib3ds dpoes not appear to have lib3ds.h - so always use 3rd party version
 USE_3RD_PARTY_3DS = YES
 
+# Open Build Service overrides
+OBS_TINYXML {
+    USE_3RD_PARTY_TINYXML = YES
+}
+OBS_GL2PS {
+    USE_3RD_PARTY_GL2PS = YES
+}
 
 USE_SYSTEM_LIBS {
-    # built for Ubuntu Trusty
+    # Open Build Service build-from-source requirements
+    contains(USE_3RD_PARTY_TINYXML, YES) {
+        SUBDIRS += 3rdParty_tinyxml
+        3rdParty_tinyxml.file     = $$PWD/3rdParty/tinyxml/3rdParty_tinyxml.pro
+        3rdParty_tinyxml.makefile = $${MAKEFILE_3RDPARTY}
+        3rdParty_tinyxml.target   = sub-3rdParty_tinyxml
+        3rdParty_tinyxml.depends  =
+    }
+    contains(USE_3RD_PARTY_GL2PS, YES) {
+        SUBDIRS += 3rdParty_gl2ps
+        3rdParty_gl2ps.file       = $$PWD/3rdParty/gl2ps/3rdParty_gl2ps.pro
+        3rdParty_gl2ps.makefile   = $${MAKEFILE_3RDPARTY}
+        3rdParty_gl2ps.target     = sub-3rdParty_gl2ps
+        3rdParty_gl2ps.depends    = 3rdParty_png
+        USE_3RD_PARTY_PNG         = YES
+    }
+    # built for Ubuntu Trusty and for libgl2ps for OBS build-from-source requirements
     contains(USE_3RD_PARTY_PNG, YES) {
         SUBDIRS = 3rdParty_png
         3rdParty_png.file        = $$PWD/3rdParty/libpng/3rdParty_png.pro
@@ -189,7 +214,9 @@ contains(BUILD_GUI, YES) {
     TRE_GUI_Qt.file     = $$PWD/TRE/TRE_GUI_Qt.pro
     TRE_GUI_Qt.makefile = $$MAKEFILE_GUI_QT
     TRE_GUI_Qt.target   = sub-TRE_GUI_Qt
-    USE_3RD_PARTY_LIBS: TRE_GUI_Qt.depends = 3rdParty_gl2ps
+    if (USE_3RD_PARTY_LIBS|OBS_GL2PS) {
+        TRE_GUI_Qt.depends = 3rdParty_gl2ps
+    }
 
     TCFoundation_GUI_Qt.file     = $$PWD/TCFoundation/TCFoundation_GUI_Qt.pro
     TCFoundation_GUI_Qt.makefile = $$MAKEFILE_GUI_QT
@@ -204,7 +231,9 @@ contains(BUILD_GUI, YES) {
     LDExporter_GUI_Qt.file     = $$PWD/LDExporter/LDExporter_GUI_Qt.pro
     LDExporter_GUI_Qt.makefile = $$MAKEFILE_GUI_QT
     LDExporter_GUI_Qt.target   = sub-LDExporter_GUI_Qt
-    USE_3RD_PARTY_LIBS: LDExporter_GUI_Qt.depends = 3rdParty_tinyxml
+    if (USE_3RD_PARTY_LIBS|OBS_TINYXML) {
+        LDExporter_GUI_Qt.depends = 3rdParty_tinyxml
+    }
 
     # Main
     LDView_GUI_Qt.file      = $$PWD/QT/LDView_GUI_Qt.pro
@@ -218,7 +247,9 @@ contains(BUILD_GUI, YES) {
     USE_3RD_PARTY_PNG:LDView_GUI_Qt.depends += 3rdParty_png
     USE_3RD_PARTY_3DS:LDView_GUI_Qt.depends += 3rdParty_3ds
     USE_3RD_PARTY_LIBS: LDView_GUI_Qt.depends += 3rdParty_minizip
-    USE_3RD_PARTY_LIBS: LDView_GUI_Qt.depends += 3rdParty_gl2ps
+    if (USE_3RD_PARTY_LIBS|OBS_GL2PS) {
+        LDView_GUI_Qt.depends += 3rdParty_gl2ps
+    }
     USE_3RD_PARTY_LIBS:!USE_SYSTEM_LIBS: LDView_GUI_Qt.depends += 3rdParty_zlib
 }
 
@@ -238,12 +269,16 @@ contains(BUILD_CUI, YES) {
     LDLib_CUI_OSMesa.file     = $$PWD/LDLib/LDLib_CUI_OSMesa.pro
     LDLib_CUI_OSMesa.makefile = $$MAKEFILE_CUI_OSMESA
     LDLib_CUI_OSMesa.target   = sub-LDLib_CUI_OSMesa
-    USE_3RD_PARTY_LIBS: LDLib_CUI_OSMesa.depends = 3rdParty_gl2ps
+    if (USE_3RD_PARTY_LIBS|OBS_GL2PS) {
+        LDLib_CUI_OSMesa.depends = 3rdParty_gl2ps
+    }
 
     TRE_CUI_OSMesa.file     = $$PWD/TRE/TRE_CUI_OSMesa.pro
     TRE_CUI_OSMesa.makefile = $$MAKEFILE_CUI_OSMESA
     TRE_CUI_OSMesa.target   = sub-TRE_CUI_OSMesa
-    USE_3RD_PARTY_LIBS: TRE_CUI_OSMesa.depends = 3rdParty_gl2ps
+    if (USE_3RD_PARTY_LIBS|OBS_GL2PS) {
+        TRE_CUI_OSMesa.depends = 3rdParty_gl2ps
+    }
 
     TCFoundation_CUI_OSMesa.file     = $$PWD/TCFoundation/TCFoundation_CUI_OSMesa.pro
     TCFoundation_CUI_OSMesa.makefile = $$MAKEFILE_CUI_OSMESA
@@ -258,7 +293,9 @@ contains(BUILD_CUI, YES) {
     LDExporter_CUI_OSMesa.file     = $$PWD/LDExporter/LDExporter_CUI_OSMesa.pro
     LDExporter_CUI_OSMesa.makefile = $$MAKEFILE_CUI_OSMESA
     LDExporter_CUI_OSMesa.target   = sub-LDExporter_CUI_OSMesa
-    USE_3RD_PARTY_LIBS: LDExporter_CUI_OSMesa.depends = 3rdParty_tinyxml
+    if (USE_3RD_PARTY_LIBS|OBS_TINYXML) {
+        LDExporter_CUI_OSMesa.depends = 3rdParty_tinyxml
+    }
 
     Headerize_CUI_OSMesa.file     = $$PWD/OSMesa/Headerize_CUI_OSMesa.pro
     Headerize_CUI_OSMesa.makefile = Makefile-head.osmesa
@@ -269,7 +306,9 @@ contains(BUILD_CUI, YES) {
     LGEOTables_CUI_OSMesa.file     = $$PWD/LGEOTables/LGEOTables_CUI_OSMesa.pro
     LGEOTables_CUI_OSMesa.makefile = $$MAKEFILE_CUI_OSMESA
     LGEOTables_CUI_OSMesa.target   = sub-LGEOTables_CUI_OSMesa
-    USE_3RD_PARTY_LIBS: LGEOTables_CUI_OSMesa.depends = 3rdParty_tinyxml
+    if (USE_3RD_PARTY_LIBS|OBS_TINYXML) {
+        LGEOTables_CUI_OSMesa.depends = 3rdParty_tinyxml
+    }
 
     # Main
     LDView_CUI_OSMesa.file      = $$PWD/OSMesa/LDView_CUI_OSMesa.pro
@@ -283,8 +322,12 @@ contains(BUILD_CUI, YES) {
     LDView_CUI_OSMesa.depends  += Headerize_CUI_OSMesa
     USE_3RD_PARTY_PNG:LDView_CUI_OSMesa.depends += 3rdParty_png
     USE_3RD_PARTY_3DS:LDView_CUI_OSMesa.depends += 3rdParty_3ds
-    USE_3RD_PARTY_LIBS: LDView_CUI_OSMesa.depends += 3rdParty_tinyxml
-    USE_3RD_PARTY_LIBS: LDView_CUI_OSMesa.depends += 3rdParty_gl2ps
+    if (USE_3RD_PARTY_LIBS|OBS_TINYXML) {
+        LDView_CUI_OSMesa.depends += 3rdParty_tinyxml
+    }
+    if (USE_3RD_PARTY_LIBS|OBS_GL2PS) {
+        LDView_CUI_OSMesa.depends += 3rdParty_gl2ps
+    }
     USE_3RD_PARTY_LIBS:!USE_SYSTEM_LIBS: LDView_CUI_OSMesa.depends += 3rdParty_zlib
 }
 

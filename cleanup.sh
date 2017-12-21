@@ -45,6 +45,9 @@ if [[ $result == 'ldview' ]]; then
         echo "  libgz.a      - 3rdParty static library"
         echo "  libjpeg.a    - 3rdParty static library"
         echo "  lib3ds.a     - 3rdParty static library"
+		echo "  64bit_release- build directory"
+		echo "  32bit_release- build directory"
+		echo "  Build        - build directory"		
         find ./3rdParty -name "*.o" -type f -delete
         find ./3rdParty -name "*.ldview" -type f -delete
         find ./3rdParty/minizip -name "libminizip.a" -type f -delete
@@ -55,6 +58,9 @@ if [[ $result == 'ldview' ]]; then
         find ./3rdParty/zlib -name "libz.a" -type f -delete
         find ./3rdParty/libjpeg -name "libjpeg.a" -type f -delete
         find ./3rdParty/lib3ds -name "lib3ds.a" -type f -delete
+		find . -name "64bit_release" -exec rm -r "{}" \;
+		find . -name "32bit_release" -exec rm -r "{}" \;
+		find . -name "Build" -exec rm -r "{}" \;
     fi
     echo " "
     echo "Clean!"

@@ -3,12 +3,12 @@
 ######################################################################
 
 TEMPLATE         = app
-QT  		-= core
+QT  		        -= core
 QT              -= opengl
-QT  		-= gui
-CONFIG		-= qt
-CONFIG		-= opengl
-CONFIG		+= warn_on
+QT  		        -= gui
+CONFIG		      -= qt
+CONFIG		      -= opengl
+CONFIG		      += warn_on
 win32: CONFIG   += console
 macx:  CONFIG   -= app_bundle
 
