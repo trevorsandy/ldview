@@ -64,7 +64,7 @@
 #        |     |--- 3rdParty_jpeg.pro      3rdParty library project file - consumes 3rdParty.pri
 #
 win32:HOST = $$system(systeminfo | findstr /B /C:"OS Name")
-unix:!macx:HOST = $$system(. /etc/os-release && if test \"$PRETTY_NAME\" != \"\"; then echo \"$PRETTY_NAME\"; else echo `uname`; fi)
+unix:!macx:HOST = $$system(. /etc/os-release 2>/dev/null; [ -n \"$PRETTY_NAME\" ] && echo \"$PRETTY_NAME\" || echo  `uname`)
 macx:HOST = $$system(echo `sw_vers -productName` `sw_vers -productVersion`)
 
 # qmake Configuration settings
@@ -73,8 +73,10 @@ macx:HOST = $$system(echo `sw_vers -productName` `sw_vers -productVersion`)
 # CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_windows_3rdparty
 # CONFIG+=USE_3RD_PARTY_LIBS
 # CONFIG+=USE_SYSTEM_LIBS
-# CONFIG+=OBS_GL2PS
-# CONFIG+=OBS_TINYXML
+# CONFIG+=USE_OSMESA_STATIC
+# CONFIG+=BUILD_PNG
+# CONFIG+=BUILD_GL2PS
+# CONFIG+=BUILD_TINYXML
 # CONFIG+=BUILD_GUI_ONLY
 # CONFIG+=BUILD_CUI_ONLY
 # CONFIG+=USE_SYSTEM_OSMESA    # override USE_3RD_PARTY_LIBS for OSMesa libs
@@ -143,24 +145,40 @@ USE_3RD_PARTY_LIBS {
     3rdParty_gl2ps.depends    =
 }
 
+# Open Build Service overrides
+BUILD_TINYXML {
+    USE_3RD_PARTY_TINYXML = YES
+}
+
+BUILD_GL2PS {
+    USE_3RD_PARTY_GL2PS = YES
+}
+
 # Ubuntu Trusty uses libpng12 which is too old
-contains(HOST, Ubuntu):contains(HOST, 14.04.5): \
-USE_SYSTEM_LIBS {
+if (contains(HOST, Ubuntu):contains(HOST, 14.04.5):USE_SYSTEM_LIBS|BUILD_GL2PS|BUILD_PNG) {
     USE_3RD_PARTY_PNG = YES
 }
 
 # system lib3ds dpoes not appear to have lib3ds.h - so always use 3rd party version
 USE_3RD_PARTY_3DS = YES
 
-# Open Build Service overrides
-OBS_TINYXML {
-    USE_3RD_PARTY_TINYXML = YES
-}
-OBS_GL2PS {
-    USE_3RD_PARTY_GL2PS = YES
-}
-
 USE_SYSTEM_LIBS {
+    # always built...
+    contains(USE_3RD_PARTY_3DS, YES) {
+        SUBDIRS += 3rdParty_3ds
+        3rdParty_3ds.file        = $$PWD/3rdParty/lib3ds/3rdParty_3ds.pro
+        3rdParty_3ds.makefile    = $${MAKEFILE_3RDPARTY}
+        3rdParty_3ds.target      = sub-3rdParty_3ds
+        3rdParty_3ds.depends     =
+    }
+    # built for Ubuntu Trusty and for libgl2ps for OBS build-from-source requirements
+    contains(USE_3RD_PARTY_PNG, YES) {
+        SUBDIRS = 3rdParty_png
+        3rdParty_png.file        = $$PWD/3rdParty/libpng/3rdParty_png.pro
+        3rdParty_png.makefile    = $${MAKEFILE_3RDPARTY}
+        3rdParty_png.target      = sub-3rdParty_png
+        3rdParty_png.depends     =
+    }
     # Open Build Service build-from-source requirements
     contains(USE_3RD_PARTY_TINYXML, YES) {
         SUBDIRS += 3rdParty_tinyxml
@@ -174,24 +192,7 @@ USE_SYSTEM_LIBS {
         3rdParty_gl2ps.file       = $$PWD/3rdParty/gl2ps/3rdParty_gl2ps.pro
         3rdParty_gl2ps.makefile   = $${MAKEFILE_3RDPARTY}
         3rdParty_gl2ps.target     = sub-3rdParty_gl2ps
-        3rdParty_gl2ps.depends    = 3rdParty_png
-        USE_3RD_PARTY_PNG         = YES
-    }
-    # built for Ubuntu Trusty and for libgl2ps for OBS build-from-source requirements
-    contains(USE_3RD_PARTY_PNG, YES) {
-        SUBDIRS = 3rdParty_png
-        3rdParty_png.file        = $$PWD/3rdParty/libpng/3rdParty_png.pro
-        3rdParty_png.makefile    = $${MAKEFILE_3RDPARTY}
-        3rdParty_png.target      = sub-3rdParty_png
-        3rdParty_png.depends     =
-    }
-    # always built...
-    contains(USE_3RD_PARTY_3DS, YES) {
-        SUBDIRS += 3rdParty_3ds
-        3rdParty_3ds.file        = $$PWD/3rdParty/lib3ds/3rdParty_3ds.pro
-        3rdParty_3ds.makefile    = $${MAKEFILE_3RDPARTY}
-        3rdParty_3ds.target      = sub-3rdParty_3ds
-        3rdParty_3ds.depends     =
+        3rdParty_gl2ps.depends    = 3rdParty_png   
     }
 }
 
@@ -214,7 +215,7 @@ contains(BUILD_GUI, YES) {
     TRE_GUI_Qt.file     = $$PWD/TRE/TRE_GUI_Qt.pro
     TRE_GUI_Qt.makefile = $$MAKEFILE_GUI_QT
     TRE_GUI_Qt.target   = sub-TRE_GUI_Qt
-    if (USE_3RD_PARTY_LIBS|OBS_GL2PS) {
+    if (USE_3RD_PARTY_LIBS|BUILD_GL2PS) {
         TRE_GUI_Qt.depends = 3rdParty_gl2ps
     }
 
@@ -231,7 +232,7 @@ contains(BUILD_GUI, YES) {
     LDExporter_GUI_Qt.file     = $$PWD/LDExporter/LDExporter_GUI_Qt.pro
     LDExporter_GUI_Qt.makefile = $$MAKEFILE_GUI_QT
     LDExporter_GUI_Qt.target   = sub-LDExporter_GUI_Qt
-    if (USE_3RD_PARTY_LIBS|OBS_TINYXML) {
+    if (USE_3RD_PARTY_LIBS|BUILD_TINYXML) {
         LDExporter_GUI_Qt.depends = 3rdParty_tinyxml
     }
 
@@ -247,7 +248,7 @@ contains(BUILD_GUI, YES) {
     USE_3RD_PARTY_PNG:LDView_GUI_Qt.depends += 3rdParty_png
     USE_3RD_PARTY_3DS:LDView_GUI_Qt.depends += 3rdParty_3ds
     USE_3RD_PARTY_LIBS: LDView_GUI_Qt.depends += 3rdParty_minizip
-    if (USE_3RD_PARTY_LIBS|OBS_GL2PS) {
+    if (USE_3RD_PARTY_LIBS|BUILD_GL2PS) {
         LDView_GUI_Qt.depends += 3rdParty_gl2ps
     }
     USE_3RD_PARTY_LIBS:!USE_SYSTEM_LIBS: LDView_GUI_Qt.depends += 3rdParty_zlib
@@ -269,14 +270,14 @@ contains(BUILD_CUI, YES) {
     LDLib_CUI_OSMesa.file     = $$PWD/LDLib/LDLib_CUI_OSMesa.pro
     LDLib_CUI_OSMesa.makefile = $$MAKEFILE_CUI_OSMESA
     LDLib_CUI_OSMesa.target   = sub-LDLib_CUI_OSMesa
-    if (USE_3RD_PARTY_LIBS|OBS_GL2PS) {
+    if (USE_3RD_PARTY_LIBS|BUILD_GL2PS) {
         LDLib_CUI_OSMesa.depends = 3rdParty_gl2ps
     }
 
     TRE_CUI_OSMesa.file     = $$PWD/TRE/TRE_CUI_OSMesa.pro
     TRE_CUI_OSMesa.makefile = $$MAKEFILE_CUI_OSMESA
     TRE_CUI_OSMesa.target   = sub-TRE_CUI_OSMesa
-    if (USE_3RD_PARTY_LIBS|OBS_GL2PS) {
+    if (USE_3RD_PARTY_LIBS|BUILD_GL2PS) {
         TRE_CUI_OSMesa.depends = 3rdParty_gl2ps
     }
 
@@ -293,7 +294,7 @@ contains(BUILD_CUI, YES) {
     LDExporter_CUI_OSMesa.file     = $$PWD/LDExporter/LDExporter_CUI_OSMesa.pro
     LDExporter_CUI_OSMesa.makefile = $$MAKEFILE_CUI_OSMESA
     LDExporter_CUI_OSMesa.target   = sub-LDExporter_CUI_OSMesa
-    if (USE_3RD_PARTY_LIBS|OBS_TINYXML) {
+    if (USE_3RD_PARTY_LIBS|BUILD_TINYXML) {
         LDExporter_CUI_OSMesa.depends = 3rdParty_tinyxml
     }
 
@@ -306,7 +307,7 @@ contains(BUILD_CUI, YES) {
     LGEOTables_CUI_OSMesa.file     = $$PWD/LGEOTables/LGEOTables_CUI_OSMesa.pro
     LGEOTables_CUI_OSMesa.makefile = $$MAKEFILE_CUI_OSMESA
     LGEOTables_CUI_OSMesa.target   = sub-LGEOTables_CUI_OSMesa
-    if (USE_3RD_PARTY_LIBS|OBS_TINYXML) {
+    if (USE_3RD_PARTY_LIBS|BUILD_TINYXML) {
         LGEOTables_CUI_OSMesa.depends = 3rdParty_tinyxml
     }
 
@@ -322,10 +323,10 @@ contains(BUILD_CUI, YES) {
     LDView_CUI_OSMesa.depends  += Headerize_CUI_OSMesa
     USE_3RD_PARTY_PNG:LDView_CUI_OSMesa.depends += 3rdParty_png
     USE_3RD_PARTY_3DS:LDView_CUI_OSMesa.depends += 3rdParty_3ds
-    if (USE_3RD_PARTY_LIBS|OBS_TINYXML) {
+    if (USE_3RD_PARTY_LIBS|BUILD_TINYXML) {
         LDView_CUI_OSMesa.depends += 3rdParty_tinyxml
     }
-    if (USE_3RD_PARTY_LIBS|OBS_GL2PS) {
+    if (USE_3RD_PARTY_LIBS|BUILD_GL2PS) {
         LDView_CUI_OSMesa.depends += 3rdParty_gl2ps
     }
     USE_3RD_PARTY_LIBS:!USE_SYSTEM_LIBS: LDView_CUI_OSMesa.depends += 3rdParty_zlib
