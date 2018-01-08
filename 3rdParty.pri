@@ -11,7 +11,7 @@ CONFIG 	+= warn_on
 
 # fine-grained host identification
 win32:HOST = $$system(systeminfo | findstr /B /C:"OS Name")
-unix:!macx:HOST = $$system(. /etc/os-release 2>/dev/null; [ -n \"$PRETTY_NAME\" ] && echo \"$PRETTY_NAME\" || echo  `uname`)
+unix:!macx:HOST = $$system(. /etc/os-release 2>/dev/null; [ -n \"$PRETTY_NAME\" ] && echo \"$PRETTY_NAME\" || echo `uname`)
 macx:HOST = $$system(echo `sw_vers -productName` `sw_vers -productVersion`)
 
 # platform switch

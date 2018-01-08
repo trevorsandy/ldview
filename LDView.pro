@@ -64,7 +64,7 @@
 #        |     |--- 3rdParty_jpeg.pro      3rdParty library project file - consumes 3rdParty.pri
 #
 win32:HOST = $$system(systeminfo | findstr /B /C:"OS Name")
-unix:!macx:HOST = $$system(. /etc/os-release 2>/dev/null; [ -n \"$PRETTY_NAME\" ] && echo \"$PRETTY_NAME\" || echo  `uname`)
+unix:!macx:HOST = $$system(. /etc/os-release 2>/dev/null; [ -n \"$PRETTY_NAME\" ] && echo \"$PRETTY_NAME\" || echo `uname`)
 macx:HOST = $$system(echo `sw_vers -productName` `sw_vers -productVersion`)
 
 # qmake Configuration settings
@@ -165,7 +165,7 @@ USE_3RD_PARTY_3DS = YES
 USE_SYSTEM_LIBS {
     # always built...
     contains(USE_3RD_PARTY_3DS, YES) {
-        SUBDIRS += 3rdParty_3ds
+        SUBDIRS = 3rdParty_3ds
         3rdParty_3ds.file        = $$PWD/3rdParty/lib3ds/3rdParty_3ds.pro
         3rdParty_3ds.makefile    = $${MAKEFILE_3RDPARTY}
         3rdParty_3ds.target      = sub-3rdParty_3ds
@@ -173,7 +173,7 @@ USE_SYSTEM_LIBS {
     }
     # built for Ubuntu Trusty and for libgl2ps for OBS build-from-source requirements
     contains(USE_3RD_PARTY_PNG, YES) {
-        SUBDIRS = 3rdParty_png
+        SUBDIRS += 3rdParty_png
         3rdParty_png.file        = $$PWD/3rdParty/libpng/3rdParty_png.pro
         3rdParty_png.makefile    = $${MAKEFILE_3RDPARTY}
         3rdParty_png.target      = sub-3rdParty_png

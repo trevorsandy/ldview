@@ -20,7 +20,7 @@
 
 # Get fine-grained host identification
 win32:HOST = $$system(systeminfo | findstr /B /C:"OS Name")
-unix:!macx:HOST = $$system(. /etc/os-release 2>/dev/null; [ -n \"$PRETTY_NAME\" ] && echo \"$PRETTY_NAME\" || echo  `uname`)
+unix:!macx:HOST = $$system(. /etc/os-release 2>/dev/null; [ -n \"$PRETTY_NAME\" ] && echo \"$PRETTY_NAME\" || echo `uname`)
 macx:HOST = $$system(echo `sw_vers -productName` `sw_vers -productVersion`)
 
 # some funky processing to get the install prefix passed in on the command line
@@ -28,6 +28,7 @@ macx:HOST = $$system(echo `sw_vers -productName` `sw_vers -productVersion`)
 !isEmpty(3RD_ARG): CONFIG -= $$3RD_ARG
 CONFIG += $$section(3RD_ARG, =, 0, 0)
 isEmpty(3RD_PREFIX):3RD_PREFIX = $$_PRO_FILE_PWD_/$$section(3RD_ARG, =, 1, 1)
+!exists($${3RD_PREFIX}): 3RD_PREFIX = $$_PRO_FILE_PWD_/../$$section(3RD_ARG, =, 1, 1)
 !exists($${3RD_PREFIX}): message("~~~ ERROR 3rd party repository path not found ~~~")
 
 # Open Build Service overrides
