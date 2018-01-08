@@ -28,7 +28,6 @@ macx:HOST = $$system(echo `sw_vers -productName` `sw_vers -productVersion`)
 !isEmpty(3RD_ARG): CONFIG -= $$3RD_ARG
 CONFIG += $$section(3RD_ARG, =, 0, 0)
 isEmpty(3RD_PREFIX):3RD_PREFIX = $$_PRO_FILE_PWD_/$$section(3RD_ARG, =, 1, 1)
-!exists($${3RD_PREFIX}): 3RD_PREFIX = $$_PRO_FILE_PWD_/../$$section(3RD_ARG, =, 1, 1)
 !exists($${3RD_PREFIX}): message("~~~ ERROR 3rd party repository path not found ~~~")
 
 # Open Build Service overrides
@@ -446,8 +445,8 @@ unix {
             LIB_GL2PS         = gl2ps
             # reset individual library entry
             GL2PS_INC         = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/libgl2ps
-            GL2PS_LIBDIR      = -L$${3RD_PARTY_PREFIX_}/libgl2ps/$$DESTDIR
-            GL2PS_LDLIBS      = $${3RD_PARTY_PREFIX_}/libgl2ps/$$DESTDIR/lib$${LIB_GL2PS}.$${S_EXT_}
+            GL2PS_LIBDIR      = -L$${3RD_PARTY_PREFIX_}/gl2ps/$$DESTDIR
+            GL2PS_LDLIBS      = $${3RD_PARTY_PREFIX_}/gl2ps/$$DESTDIR/lib$${LIB_GL2PS}.$${S_EXT_}
             # update libs path
             LIBS_INC         += $${GL2PS_INC}
             #LIBS_DIR         += $${GL2PS_LIBDIR}
