@@ -163,7 +163,10 @@ unix {
 }
 
 USE_OSMESA_STATIC {
-    exists (/usr/bin/llvm-config) {
+    NO_GALLIUM {
+      message("~~~ LLVM not needed - Gallium driver not used ~~~")
+    } else {
+      exists (/usr/bin/llvm-config) {
         LLVM_LDFLAGS     = $$system(/usr/bin/llvm-config --ldflags)
         isEmpty(LLVM_LDFLAGS): message("~~~ LLVM - ERROR llvm ldflags not found ~~~")
         else: LLVM_LIBS += $${LLVM_LDFLAGS}
@@ -171,9 +174,10 @@ USE_OSMESA_STATIC {
         isEmpty(LLVM_LIBS): message("~~~ LLVM - ERROR llvm library not found ~~~")
         else: LLVM_LIBS += $${LLVM_LIB_NAME}
 
-        LIBS_     += $${LLVM_LIBS}
-    } else {
+          _LIBS     += $${LLVM_LIBS}
+      } else {
         message("~~~ LLVM - ERROR llvm-config not found ~~~")
+      }
     }
 }
 
