@@ -11,6 +11,7 @@
 # CONFIG+=BUILD_GUI_ONLY
 # CONFIG+=BUILD_CUI_ONLY
 # CONFIG+=USE_OSMESA_STATIC
+# CONFIG+=USE_OSMESA_LOCAL   # use local OSmesa nd LLVM libraries - for OBS images w/o OSMesa stuff (e.g. RHEL)
 # CONFIG+=USE_SYSTEM_PNG     # override USE_3RD_PARTY_LIBS for libPng
 # CONFIG+=USE_SYSTEM_JPEG    # override USE_3RD_PARTY_LIBS for libJpeg
 # CONFIG+=USE_SYSTEM_Z       # override USE_3RD_PARTY_LIBS for libz
@@ -27,8 +28,14 @@ macx:HOST = $$system(echo `sw_vers -productName` `sw_vers -productVersion`)
 3RD_ARG = $$find(CONFIG, 3RD_PARTY_INSTALL.*)
 !isEmpty(3RD_ARG): CONFIG -= $$3RD_ARG
 CONFIG += $$section(3RD_ARG, =, 0, 0)
-isEmpty(3RD_PREFIX):3RD_PREFIX = $$_PRO_FILE_PWD_/$$section(3RD_ARG, =, 1, 1)
+isEmpty(3RD_PREFIX): 3RD_PREFIX = $$_PRO_FILE_PWD_/$$section(3RD_ARG, =, 1, 1)
 !exists($${3RD_PREFIX}): message("~~~ ERROR 3rd party repository path not found ~~~")
+
+# same more funky stuff to get the local library prefix - all this just to build on OBS' RHEL
+OSMESA_ARG = $$find(CONFIG, USE_OSMESA_LOCAL.*)
+!isEmpty(OSMESA_ARG): CONFIG -= $$OSMESA_ARG
+CONFIG += $$section(OSMESA_ARG, =, 0, 0)
+isEmpty(OSMESA_LOCAL_PREFIX): OSMESA_LOCAL_PREFIX = $$section(OSMESA_ARG, =, 1, 1)
 
 # Open Build Service overrides
 BUILD_TINYXML {
@@ -54,6 +61,9 @@ contains(DEFINES, _OSMESA): CONFIG += _OSM_CUI
 # platform switch
 contains(QT_ARCH, x86_64): ARCH = 64
 else:                      ARCH = 32
+# for libraries
+equals(ARCH, 64): LIB_ARCH = 64
+else:             LIB_ARCH =
 
 # build type
 CONFIG(debug, debug|release) {
@@ -90,7 +100,7 @@ else:     DEFINES   -= EXPORT_3DS
 # option, be sure to set SYSTEM_PREFIX_ below along with the directive CONFIG+=USE_SYSTEM_LIBS
 
 # 3rdParty libraries - compiled from source during build (some, not all)
-3RD_PARTY_PREFIX_       = ../3rdParty
+3RD_PARTY_PREFIX_  = ../3rdParty
 
 # You can modify library paths below to match your system
 # for default settings, place headers in ../include/..
@@ -98,13 +108,13 @@ else:     DEFINES   -= EXPORT_3DS
 # You may also set alternative locations for your libraries and headers
 unix {
     # System libraries - on Unix, change to or add /usr/local if you want
-    SYSTEM_PREFIX_  = /usr
+    SYSTEM_PREFIX_ = /usr
 
     # Static library extension
-    S_EXT_          = a
+    EXT_S          = a
 
     # pre-compiled libraries heaers location
-    LIBINC_         = $$_PRO_FILE_PWD_/../include       # zlib.h and zconf.h, glext and wglext headers
+    LIBINC_        = $$_PRO_FILE_PWD_/../include       # zlib.h and zconf.h, glext and wglext headers
 
     # base names
     USE_SYSTEM_LIBS {
@@ -125,7 +135,7 @@ unix {
         # pre-compiled libraries location
         LIBDIR_     = $$_PRO_FILE_PWD_/../lib/MacOSX
         # dynamic library extension
-        EXT_        = dylib
+        EXT_D       = dylib
 
         # frameworks
         OSX_FRAMEWORKS_CORE = -framework CoreFoundation -framework CoreServices
@@ -136,16 +146,16 @@ unix {
         else:             LIBDIR_ = $$_PRO_FILE_PWD_/../lib/Linux/i386
 
         # dynamic library extension
-        EXT_        = so
+        EXT_D        = so
     }
 
 } else {
     # Windows MinGW stuff...
     SYSTEM_PREFIX_  = C:/Program Files
     # dynamic library extensions
-    EXT_            = dll
+    EXT_D            = dll
     # static library extensions
-    S_EXT_          = a
+    EXT_S          = a
 
     # base names
     LIB_PNG       = png16
@@ -187,8 +197,8 @@ ZLIB_LIBDIR         = -L$${LIBDIR_}
 
 OSMESA_INC          = $${LIBINC_}
 OSMESA_LIBDIR       = -L$${LIBDIR_}
-OSMESA_LDLIBS       = $${LIBDIR_}/lib$${LIB_OSMESA}.$${S_EXT_} \
-                      $${LIBDIR_}/lib$${LIB_GLU}.$${S_EXT_}
+OSMESA_LDLIBS       = $${LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_S} \
+                      $${LIBDIR_}/lib$${LIB_GLU}.$${EXT_S}
 
 MINIZIP_INC         = $${LIBINC_}
 MINIZIP_LIBDIR      = -L$${LIBDIR_}
@@ -277,9 +287,9 @@ unix {
         SYS_LIBDIR_X11_ = $${SYSTEM_PREFIX_}/X11/lib
     } else: exists($${SYSTEM_PREFIX_}/lib/$$QT_ARCH-linux-gnu) {     # Debian
         SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/lib/$$QT_ARCH-linux-gnu
-    } else: exists($${SYSTEM_PREFIX_}/lib$$ARCH/) {                  # RedHat (64bit)
-        SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/lib$$ARCH
-    } else {                                                         # Arch, RedHat (32bit)
+    } else: exists($${SYSTEM_PREFIX_}/lib$$LIB_ARCH) {               # RedHat, Arch - lIB_ARCH is empyt for 32bit
+        SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/lib$$LIB_ARCH
+    } else {                                                         # Arch - acutally should never get here:-)
         SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/lib
     }
 
@@ -288,10 +298,10 @@ unix {
         # detect system libraries
         _LIB_OSMESA = OSMesa
         _LIB_PNG    = png
-        USE_SYSTEM_OSMESA:exists($${SYS_LIBDIR_}/lib$${_LIB_OSMESA}.$${EXT_}):_OSM_CUI: USE_SYSTEM_OSMESA_LIB = YES
-        USE_SYSTEM_PNG:!USE_3RD_PARTY_PNG:exists($${SYS_LIBDIR_}/lib$${_LIB_PNG}.$${EXT_}): USE_SYSTEM_PNG_LIB = YES
-        USE_SYSTEM_JPEG:exists($${SYS_LIBDIR_}/lib$${LIB_JPEG}.$${EXT_}): USE_SYSTEM_JPEG_LIB = YES
-        USE_SYSTEM_Z:exists($${SYS_LIBDIR_}/libz.$${EXT_}): USE_SYSTEM_Z_LIB = YES
+        USE_SYSTEM_OSMESA:exists($${SYS_LIBDIR_}/lib$${_LIB_OSMESA}.$${EXT_D}):_OSM_CUI: USE_SYSTEM_OSMESA_LIB = YES
+        USE_SYSTEM_PNG:!USE_3RD_PARTY_PNG:exists($${SYS_LIBDIR_}/lib$${_LIB_PNG}.$${EXT_D}): USE_SYSTEM_PNG_LIB = YES
+        USE_SYSTEM_JPEG:exists($${SYS_LIBDIR_}/lib$${LIB_JPEG}.$${EXT_D}): USE_SYSTEM_JPEG_LIB = YES
+        USE_SYSTEM_Z:exists($${SYS_LIBDIR_}/libz.$${EXT_D}): USE_SYSTEM_Z_LIB = YES
 
         # override 3rd party library paths
         contains(USE_SYSTEM_OSMESA_LIB, YES): _OSM_CUI {
@@ -306,13 +316,13 @@ unix {
             macx {
                 OSMESA_INC          = $${SYS_LIBINC_X11_}
                 OSMESA_LIBDIR       = -L$${SYS_LIBDIR_X11_}
-                OSMESA_LDLIBS       = $${SYS_LIBDIR_X11_}/lib$${LIB_OSMESA}.$${EXT_} \
-                                      $${SYS_LIBDIR_X11_}/lib$${LIB_GLU}.$${EXT_}
+                OSMESA_LDLIBS       = $${SYS_LIBDIR_X11_}/lib$${LIB_OSMESA}.$${EXT_D} \
+                                      $${SYS_LIBDIR_X11_}/lib$${LIB_GLU}.$${EXT_D}
             } else {
                 OSMESA_INC          = $${SYS_LIBINC_}
                 OSMESA_LIBDIR       = -L$${SYS_LIBDIR_}
-                OSMESA_LDLIBS       = $${SYS_LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_} \
-                                      $${SYS_LIBDIR_}/lib$${LIB_GLU}.$${EXT_}
+                OSMESA_LDLIBS       = $${SYS_LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_D} \
+                                      $${SYS_LIBDIR_}/lib$${LIB_GLU}.$${EXT_D}
             }
         }
 
@@ -329,7 +339,7 @@ unix {
             # reset individual library entry
             PNG_INC       = $${SYS_LIBINC_}
             PNG_LIBDIR    = -L$${SYS_LIBDIR_}
-            PNG_LDLIBS    = $${SYS_LIBDIR_}/lib$${LIB_PNG}.$${EXT_}
+            PNG_LDLIBS    = $${SYS_LIBDIR_}/lib$${LIB_PNG}.$${EXT_D}
         }
 
         contains(USE_SYSTEM_JPEG_LIB, YES) {
@@ -343,7 +353,7 @@ unix {
             # reset individual library entry
             JPEG_INC      = $${SYS_LIBINC_}
             JPEG_LIBDIR   = -L$${SYS_LIBDIR_}
-            JPEG_LDLIBS   = $${SYS_LIBDIR_}/lib$${LIB_JPEG}.$${EXT_}
+            JPEG_LDLIBS   = $${SYS_LIBDIR_}/lib$${LIB_JPEG}.$${EXT_D}
         }
 
         contains(USE_SYSTEM_Z_LIB, YES) {
@@ -357,7 +367,7 @@ unix {
             # reset individual library entry
             ZLIB_INC      = $${SYS_LIBINC_}
             ZLIB_LIBDIR   = -L$${SYS_LIBDIR_}
-            ZLIB_LDLIBS   = $${SYS_LIBDIR_}/lib$${LIB_Z}.$${EXT_}
+            ZLIB_LDLIBS   = $${SYS_LIBDIR_}/lib$${LIB_Z}.$${EXT_D}
         }
     }
 
@@ -408,19 +418,25 @@ unix {
         macx {
             OSMESA_INC          = $${SYS_LIBINC_X11_}
             OSMESA_LIBDIR       = -L$${SYS_LIBDIR_X11_}
-            OSMESA_LDLIBS       = $${SYS_LIBDIR_X11_}/lib$${LIB_OSMESA}.$${EXT_} \
-                                  $${SYS_LIBDIR_X11_}/lib$${LIB_GLU}.$${EXT_}
+            OSMESA_LDLIBS       = $${SYS_LIBDIR_X11_}/lib$${LIB_OSMESA}.$${EXT_D} \
+                                  $${SYS_LIBDIR_X11_}/lib$${LIB_GLU}.$${EXT_D}
         } else {
             USE_OSMESA_STATIC {
                 OSMESA_INC          = $$system($${3RD_PREFIX}/mesa/osmesa-config --cflags)
                 isEmpty(OSMESA_INC): message("~~~ OSMESA - ERROR OSMesa include path not found ~~~")
                 OSMESA_LDLIBS       = $$system($${3RD_PREFIX}/mesa/osmesa-config --libs)
                 isEmpty(OSMESA_LDLIBS): message("~~~ OSMESA - ERROR OSMesa library not defined ~~~")
+            } else: exists ($${OSMESA_LOCAL_PREFIX}/lib$$LIB_ARCH) {
+                message("~~~ OSMESA - Using local libraries at $${OSMESA_LOCAL_PREFIX}/lib$$LIB_ARCH ~~~")
+                OSMESA_INC          = $${OSMESA_LOCAL_PREFIX}/include}
+                OSMESA_LIBDIR       = -L$${OSMESA_LOCAL_PREFIX}/lib$$LIB_ARCH
+                OSMESA_LDLIBS       = $${OSMESA_LOCAL_PREFIX}/lib$$LIB_ARCH/lib$${LIB_OSMESA}.$${EXT_D} \
+                                      $${OSMESA_LOCAL_PREFIX}/lib$$LIB_ARCH/lib$${LIB_GLU}.$${EXT_D}
             } else {
                 OSMESA_INC          = $${SYS_LIBINC_}
                 OSMESA_LIBDIR       = -L$${SYS_LIBDIR_}
-                OSMESA_LDLIBS       = $${SYS_LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_} \
-                                      $${SYS_LIBDIR_}/lib$${LIB_GLU}.$${EXT_}
+                OSMESA_LDLIBS       = $${SYS_LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_D} \
+                                      $${SYS_LIBDIR_}/lib$${LIB_GLU}.$${EXT_D}
             }
         }
 
@@ -433,7 +449,7 @@ unix {
             # reset individual library entry
             TINYXML_INC         = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/tinyxml
             TINYXML_LIBDIR      = -L$${3RD_PARTY_PREFIX_}/tinyxml/$$DESTDIR
-            TINYXML_LDLIBS      = $${3RD_PARTY_PREFIX_}/tinyxml/$$DESTDIR/lib$${LIB_TINYXML}.$${S_EXT_}
+            TINYXML_LDLIBS      = $${3RD_PARTY_PREFIX_}/tinyxml/$$DESTDIR/lib$${LIB_TINYXML}.$${EXT_S}
             # update libs path
             LIBS_INC           += $${TINYXML_INC}
             #LIBS_DIR           += $${TINYXML_LIBDIR}
@@ -446,7 +462,7 @@ unix {
             # reset individual library entry
             GL2PS_INC         = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/libgl2ps
             GL2PS_LIBDIR      = -L$${3RD_PARTY_PREFIX_}/gl2ps/$$DESTDIR
-            GL2PS_LDLIBS      = $${3RD_PARTY_PREFIX_}/gl2ps/$$DESTDIR/lib$${LIB_GL2PS}.$${S_EXT_}
+            GL2PS_LDLIBS      = $${3RD_PARTY_PREFIX_}/gl2ps/$$DESTDIR/lib$${LIB_GL2PS}.$${EXT_S}
             # update libs path
             LIBS_INC         += $${GL2PS_INC}
             #LIBS_DIR         += $${GL2PS_LIBDIR}
@@ -459,7 +475,7 @@ unix {
             # reset individual library entry
             PNG_INC         = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/libpng
             PNG_LIBDIR      = -L$${3RD_PARTY_PREFIX_}/libpng/$$DESTDIR
-            PNG_LDLIBS      = $${3RD_PARTY_PREFIX_}/libpng/$$DESTDIR/lib$${LIB_PNG}.$${S_EXT_}
+            PNG_LDLIBS      = $${3RD_PARTY_PREFIX_}/libpng/$$DESTDIR/lib$${LIB_PNG}.$${EXT_S}
             # update libs path
             LIBS_INC       += $${PNG_INC}
             #LIBS_DIR       += $${PNG_LIBDIR}
@@ -471,7 +487,7 @@ unix {
             # reset individual library entry
             JPEG_INC        = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/libJPEG
             JPEG_LIBDIR     = -L$${3RD_PARTY_PREFIX_}/libJPEG/$$DESTDIR
-            JPEG_LDLIBS     = $${3RD_PARTY_PREFIX_}/libJPEG/$$DESTDIR/lib$${LIB_JPEG}.$${S_EXT_}
+            JPEG_LDLIBS     = $${3RD_PARTY_PREFIX_}/libJPEG/$$DESTDIR/lib$${LIB_JPEG}.$${EXT_S}
             # update libs path
             LIBS_INC       += $${JPEG_INC}
             #LIBS_DIR       += $${JPEG_LIBDIR}
@@ -483,7 +499,7 @@ unix {
             # reset individual library entry
             3DS_INC         = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/lib3ds
             3DS_LIBDIR      = -L$${3RD_PARTY_PREFIX_}/lib3ds/$$DESTDIR
-            3DS_LDLIBS      = $${3RD_PARTY_PREFIX_}/lib3ds/$$DESTDIR/lib$${LIB_3DS}.$${S_EXT_}
+            3DS_LDLIBS      = $${3RD_PARTY_PREFIX_}/lib3ds/$$DESTDIR/lib$${LIB_3DS}.$${EXT_S}
             # update libs path
             LIBS_INC       += $${3DS_INC}
             #LIBS_DIR       += $${3DS_LIBDIR}
