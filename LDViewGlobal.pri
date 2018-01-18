@@ -33,9 +33,12 @@ isEmpty(3RD_PREFIX): 3RD_PREFIX = $$_PRO_FILE_PWD_/$$section(3RD_ARG, =, 1, 1)
 
 # same more funky stuff to get the local library prefix - all this just to build on OBS' RHEL
 OSMESA_ARG = $$find(CONFIG, USE_OSMESA_LOCAL.*)
-!isEmpty(OSMESA_ARG): CONFIG -= $$OSMESA_ARG
-CONFIG += $$section(OSMESA_ARG, =, 0, 0)
-isEmpty(OSMESA_LOCAL_PREFIX): OSMESA_LOCAL_PREFIX = $$section(OSMESA_ARG, =, 1, 1)
+!isEmpty(OSMESA_ARG) {
+    CONFIG -= $$OSMESA_ARG
+    CONFIG += $$section(OSMESA_ARG, =, 0, 0)
+    isEmpty(OSMESA_LOCAL_PREFIX): OSMESA_LOCAL_PREFIX = $$section(OSMESA_ARG, =, 1, 1)
+}
+
 
 # Open Build Service overrides
 BUILD_TINYXML {
@@ -427,7 +430,7 @@ unix {
                 isEmpty(OSMESA_INC): message("~~~ OSMESA - ERROR OSMesa include path not found ~~~")
                 OSMESA_LDLIBS       = $$system($${3RD_PREFIX}/mesa/osmesa-config --libs)
                 isEmpty(OSMESA_LDLIBS): message("~~~ OSMESA - ERROR OSMesa library not defined ~~~")
-            } else: exists ($${OSMESA_LOCAL_PREFIX}/lib$${LIB_ARCH}) {
+            } else: !isEmpty(OSMESA_LOCAL_PREFIX): exists($${OSMESA_LOCAL_PREFIX}/lib$${LIB_ARCH}) {
                 message("~~~ OSMESA - Using local libraries at $${OSMESA_LOCAL_PREFIX}/lib$${LIB_ARCH} ~~~")
                 OSMESA_INC          = $${OSMESA_LOCAL_PREFIX}/include
                 OSMESA_LIBDIR       = -L$${OSMESA_LOCAL_PREFIX}/lib$${LIB_ARCH}
