@@ -36,7 +36,8 @@ OSMESA_ARG = $$find(CONFIG, USE_OSMESA_LOCAL.*)
 !isEmpty(OSMESA_ARG) {
     CONFIG -= $$OSMESA_ARG
     CONFIG += $$section(OSMESA_ARG, =, 0, 0)
-    isEmpty(OSMESA_LOCAL_PREFIX): OSMESA_LOCAL_PREFIX = $$section(OSMESA_ARG, =, 1, 1)
+    isEmpty(OSMESA_LOCAL_PREFIX_): OSMESA_LOCAL_PREFIX_ = $$section(OSMESA_ARG, =, 1, 1)
+    !exists($${OSMESA_LOCAL_PREFIX_}): message("~~~ ERROR - OSMesa path not found ~~~")
 }
 
 
@@ -426,26 +427,21 @@ unix {
                                   $${SYS_LIBDIR_X11_}/lib$${LIB_GLU}.$${EXT_D}
         } else {
             USE_OSMESA_STATIC {
-                OSMESA_INC          = $$system($${3RD_PREFIX}/mesa/osmesa-config --cflags)
-                isEmpty(OSMESA_INC): !isEmpty(OSMESA_LOCAL_PREFIX): exists($${OSMESA_LOCAL_PREFIX}/lib$${LIB_ARCH}) {
-                    message("~~~ OSMESA - Using local libraries at $${OSMESA_LOCAL_PREFIX}/lib$${LIB_ARCH} ~~~")
-                    OSMESA_INC      = $${OSMESA_LOCAL_PREFIX}/include
-                    OSMESA_LOCAL    = 1
-                }
-                OSMESA_LDLIBS       = $$system($${3RD_PREFIX}/mesa/osmesa-config --libs)
-                isEmpty(OSMESA_LDLIBS): equals (OSMESA_LOCAL, 1): \
-                OSMESA_LDLIBS       = $${OSMESA_LOCAL_PREFIX}/lib$${LIB_ARCH}/lib$${LIB_OSMESA}.$${EXT_D} \
-                                      $${OSMESA_LOCAL_PREFIX}/lib$${LIB_ARCH}/lib$${LIB_GLU}.$${EXT_D}
-                OSMESA_LIBDIR       = -L$${OSMESA_LOCAL_PREFIX}/lib$${LIB_ARCH}
-
+                OSMESA_INC      = $$system($${3RD_PREFIX}/mesa/osmesa-config --cflags)
                 isEmpty(OSMESA_INC): message("~~~ OSMESA - ERROR OSMesa include path not found ~~~")
+                OSMESA_LDLIBS   = $$system($${3RD_PREFIX}/mesa/osmesa-config --libs)
                 isEmpty(OSMESA_LDLIBS): message("~~~ OSMESA - ERROR OSMesa library not defined ~~~")
-
+            } else: USE_OSMESA_LOCAL {
+                message("~~~ OSMESA - Using local libraries at $${OSMESA_LOCAL_PREFIX_}/lib$$LIB_ARCH ~~~")
+                OSMESA_INC      = $${OSMESA_LOCAL_PREFIX_}/include
+                OSMESA_LIBDIR   = -L$${OSMESA_LOCAL_PREFIX_}/lib$${LIB_ARCH}
+                OSMESA_LDLIBS   = $${OSMESA_LOCAL_PREFIX_}/lib$${LIB_ARCH}/lib$${LIB_OSMESA}.$${EXT_D} \
+                                  $${OSMESA_LOCAL_PREFIX_}/lib$${LIB_ARCH}/lib$${LIB_GLU}.$${EXT_D}
             } else {
-                OSMESA_INC          = $${SYS_LIBINC_}
-                OSMESA_LIBDIR       = -L$${SYS_LIBDIR_}
-                OSMESA_LDLIBS       = $${SYS_LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_D} \
-                                      $${SYS_LIBDIR_}/lib$${LIB_GLU}.$${EXT_D}
+                OSMESA_INC      = $${SYS_LIBINC_}
+                OSMESA_LIBDIR   = -L$${SYS_LIBDIR_}
+                OSMESA_LDLIBS   = $${SYS_LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_D} \
+                                  $${SYS_LIBDIR_}/lib$${LIB_GLU}.$${EXT_D}
             }
         }
 
