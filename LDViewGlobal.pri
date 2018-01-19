@@ -427,15 +427,20 @@ unix {
         } else {
             USE_OSMESA_STATIC {
                 OSMESA_INC          = $$system($${3RD_PREFIX}/mesa/osmesa-config --cflags)
-                isEmpty(OSMESA_INC): message("~~~ OSMESA - ERROR OSMesa include path not found ~~~")
+                isEmpty(OSMESA_INC): !isEmpty(OSMESA_LOCAL_PREFIX): exists($${OSMESA_LOCAL_PREFIX}/lib$${LIB_ARCH}) {
+                    message("~~~ OSMESA - Using local libraries at $${OSMESA_LOCAL_PREFIX}/lib$${LIB_ARCH} ~~~")
+                    OSMESA_INC      = $${OSMESA_LOCAL_PREFIX}/include
+                    OSMESA_LOCAL    = 1
+                }
                 OSMESA_LDLIBS       = $$system($${3RD_PREFIX}/mesa/osmesa-config --libs)
-                isEmpty(OSMESA_LDLIBS): message("~~~ OSMESA - ERROR OSMesa library not defined ~~~")
-            } else: !isEmpty(OSMESA_LOCAL_PREFIX): exists($${OSMESA_LOCAL_PREFIX}/lib$${LIB_ARCH}) {
-                message("~~~ OSMESA - Using local libraries at $${OSMESA_LOCAL_PREFIX}/lib$${LIB_ARCH} ~~~")
-                OSMESA_INC          = $${OSMESA_LOCAL_PREFIX}/include
-                OSMESA_LIBDIR       = -L$${OSMESA_LOCAL_PREFIX}/lib$${LIB_ARCH}
+                isEmpty(OSMESA_LDLIBS): equals (OSMESA_LOCAL, 1): \
                 OSMESA_LDLIBS       = $${OSMESA_LOCAL_PREFIX}/lib$${LIB_ARCH}/lib$${LIB_OSMESA}.$${EXT_D} \
                                       $${OSMESA_LOCAL_PREFIX}/lib$${LIB_ARCH}/lib$${LIB_GLU}.$${EXT_D}
+                OSMESA_LIBDIR       = -L$${OSMESA_LOCAL_PREFIX}/lib$${LIB_ARCH}
+
+                isEmpty(OSMESA_INC): message("~~~ OSMESA - ERROR OSMesa include path not found ~~~")
+                isEmpty(OSMESA_LDLIBS): message("~~~ OSMESA - ERROR OSMesa library not defined ~~~")
+
             } else {
                 OSMESA_INC          = $${SYS_LIBINC_}
                 OSMESA_LIBDIR       = -L$${SYS_LIBDIR_}

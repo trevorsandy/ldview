@@ -166,11 +166,16 @@ USE_OSMESA_STATIC {
     NO_GALLIUM {
       message("~~~ LLVM not needed - Gallium driver not used ~~~")
     } else {
-      exists (/usr/bin/llvm-config) {
-        LLVM_LDFLAGS     = $$system(/usr/bin/llvm-config --ldflags)
+      LLVM_PREFIX=$${SYSTEM_PREFIX_}
+      equals (OSMESA_LOCAL, 1) {
+        message("~~~ LLVM - Using local libraries at $${OSMESA_LOCAL_PREFIX}/lib$${LIB_ARCH} ~~~")
+        LLVM_PREFIX=$${OSMESA_LOCAL_PREFIX}
+      }
+      exists($${LLVM_PREFIX}/bin/llvm-config) {
+        LLVM_LDFLAGS     = $$system($${LLVM_PREFIX}/bin/llvm-config --ldflags)
         isEmpty(LLVM_LDFLAGS): message("~~~ LLVM - ERROR llvm ldflags not found ~~~")
         else: LLVM_LIBS += $${LLVM_LDFLAGS}
-        LLVM_LIB_NAME    = $$system(/usr/bin/llvm-config --libs engine mcjit)
+        LLVM_LIB_NAME    = $$system($${LLVM_PREFIX}/bin/llvm-config --libs engine mcjit)
         isEmpty(LLVM_LIBS): message("~~~ LLVM - ERROR llvm library not found ~~~")
         else: LLVM_LIBS += $${LLVM_LIB_NAME}
 
