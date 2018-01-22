@@ -46,6 +46,7 @@ unix {
     } else:USE_SYSTEM_LIBS {
         exists($${SYSTEM_PREFIX_}/X11/include/GL/osmesa.h): message("~~~ NOTICE: Using X11 SYSTEM OSMESA library ~~~")
         else:exists($${SYSTEM_PREFIX_}/include/GL/osmesa.h): message("~~~ NOTICE: Using SYSTEM OSMESA library ~~~")
+        else:exists($${OSMESA_LOCAL_PREFIX_}/include/GL/osmesa.h): message("~~~ NOTICE: Using LOCAL OSMESA library ~~~")
     } else:USE_3RD_PARTY_LIBS:contains(USE_SYSTEM_OSMESA_LIB, YES) {
         exists($${SYSTEM_PREFIX_}/X11/include/GL/osmesa.h): message("~~~ NOTICE: Using X11 SYSTEM OSMESA library ~~~")
         else:exists($${SYSTEM_PREFIX_}/include/GL/osmesa.h): message("~~~ NOTICE: Using SYSTEM OSMESA library ~~~")
@@ -166,11 +167,7 @@ USE_OSMESA_STATIC {
     NO_GALLIUM {
       message("~~~ LLVM not needed - Gallium driver not used ~~~")
     } else {
-      LLVM_PREFIX_=$${SYSTEM_PREFIX_}
-      USE_OSMESA_LOCAL {
-        message("~~~ LLVM - Using local libraries at $${OSMESA_LOCAL_PREFIX_}/lib$${LIB_ARCH} ~~~")
-        LLVM_PREFIX_=$${OSMESA_LOCAL_PREFIX_}
-      }
+      isEmpty(LLVM_PREFIX_): LLVM_PREFIX_ = $${SYSTEM_PREFIX_}
       exists($${LLVM_PREFIX_}/bin/llvm-config) {
         LLVM_LDFLAGS   = $$system($${LLVM_PREFIX_}/bin/llvm-config --ldflags)
         LLVM_LIBS     += $${LLVM_LDFLAGS}

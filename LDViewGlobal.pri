@@ -219,8 +219,8 @@ LIBS_PRI            = -l$${LIB_PNG} \
 unix: USE_OSMESA_STATIC: \
 USE_SYSTEM_LIBS {
   OSMESA_LDFLAGS = $$system($${3RD_PREFIX}/mesa/osmesa-config --ldflags)
-  isEmpty(OSMESA_LDFLAGS): message("~~~ OSMESA - ERROR OSMesa ldflags not defined ~~~")
-  else: LIBS_PRI += $${OSMESA_LDFLAGS}
+  !isEmpty(OSMESA_LDFLAGS): LIBS_PRI += $${OSMESA_LDFLAGS}
+  else: message("~~~ OSMESA - ERROR OSMesa ldflags not defined ~~~")
 }
 
 # conditional libraries
@@ -431,12 +431,14 @@ unix {
                 isEmpty(OSMESA_INC): message("~~~ OSMESA - ERROR OSMesa include path not found ~~~")
                 OSMESA_LDLIBS   = $$system($${3RD_PREFIX}/mesa/osmesa-config --libs)
                 isEmpty(OSMESA_LDLIBS): message("~~~ OSMESA - ERROR OSMesa library not defined ~~~")
+                LIBS_INC       += $${OSMESA_INC}
             } else: USE_OSMESA_LOCAL {
                 message("~~~ OSMESA - Using local libraries at $${OSMESA_LOCAL_PREFIX_}/lib$$LIB_ARCH ~~~")
                 OSMESA_INC      = $${OSMESA_LOCAL_PREFIX_}/include
                 OSMESA_LIBDIR   = -L$${OSMESA_LOCAL_PREFIX_}/lib$${LIB_ARCH}
                 OSMESA_LDLIBS   = $${OSMESA_LOCAL_PREFIX_}/lib$${LIB_ARCH}/lib$${LIB_OSMESA}.$${EXT_D} \
                                   $${OSMESA_LOCAL_PREFIX_}/lib$${LIB_ARCH}/lib$${LIB_GLU}.$${EXT_D}
+                LIBS_INC       += $${OSMESA_INC}
             } else {
                 OSMESA_INC      = $${SYS_LIBINC_}
                 OSMESA_LIBDIR   = -L$${SYS_LIBDIR_}
