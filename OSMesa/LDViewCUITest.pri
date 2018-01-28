@@ -19,7 +19,7 @@ unix {
                       $$escape_expand(\n\t)                                                                             \
                            @cd $${OUT_PWD}/$${DESTDIR} && ./$${TARGET} $$_PRO_FILE_PWD_/../8464.mpd                     \
                            -SaveSnapshot=/tmp/8464i.png -IniFile=$${INI_FILE} -Info=1 -SaveWidth=128                    \
-                           -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0 -LDConfig=$${LDRAW_PATH}\LDConfig_TLG.ldr    \
+                           -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0 -LDConfig=$${LDRAW_PATH}/LDConfig_TLG.ldr    \
                       $$escape_expand(\n\t)                                                                             \
                            @file /tmp/8464i.png                                                                         \
                       $$escape_expand(\n\t)                                                                             \
