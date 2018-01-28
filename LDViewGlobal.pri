@@ -11,7 +11,7 @@
 # CONFIG+=BUILD_GUI_ONLY
 # CONFIG+=BUILD_CUI_ONLY
 # CONFIG+=USE_OSMESA_STATIC
-# CONFIG+=USE_OSMESA_LOCAL   # use local OSmesa nd LLVM libraries - for OBS images w/o OSMesa stuff (e.g. RHEL)
+# CONFIG+=USE_OSMESA_LOCAL   # use local OSmesa and LLVM libraries - for OBS images w/o OSMesa stuff (e.g. RHEL)
 # CONFIG+=USE_SYSTEM_PNG     # override USE_3RD_PARTY_LIBS for libPng
 # CONFIG+=USE_SYSTEM_JPEG    # override USE_3RD_PARTY_LIBS for libJpeg
 # CONFIG+=USE_SYSTEM_Z       # override USE_3RD_PARTY_LIBS for libz
@@ -55,7 +55,7 @@ if (contains(HOST, Ubuntu):contains(HOST, 14.04.5):USE_SYSTEM_LIBS|BUILD_PNG) {
     USE_3RD_PARTY_PNG = YES
 }
 
-# system lib3ds dpoes not appear to have lib3ds.h - so always use 3rd party version
+# system lib3ds does not appear to have lib3ds.h - so always use 3rd party version
 USE_3RD_PARTY_3DS = YES
 
 # GUI/CUI switch
@@ -433,7 +433,6 @@ unix {
                 isEmpty(OSMESA_LDLIBS): message("~~~ OSMESA - ERROR OSMesa library not defined ~~~")
                 LIBS_INC       += $${OSMESA_INC}
             } else: USE_OSMESA_LOCAL {
-                message("~~~ OSMESA - Using local libraries at $${OSMESA_LOCAL_PREFIX_}/lib$$LIB_ARCH ~~~")
                 OSMESA_INC      = $${OSMESA_LOCAL_PREFIX_}/include
                 OSMESA_LIBDIR   = -L$${OSMESA_LOCAL_PREFIX_}/lib$${LIB_ARCH}
                 OSMESA_LDLIBS   = $${OSMESA_LOCAL_PREFIX_}/lib$${LIB_ARCH}/lib$${LIB_OSMESA}.$${EXT_D} \

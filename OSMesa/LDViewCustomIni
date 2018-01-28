@@ -1,5 +1,4 @@
 [General]
-; === LDView Global
 AutoCrop=1
 BackgroundColor3=00a2b6ce
 ExamineMode=0
@@ -11,13 +10,17 @@ JPGProgressive=0
 JPGQuality=55
 JPGSubSampling=2
 LDrawDir=
+ProcessLDConfig=1
 SaveActualSize=1
 SaveAlpha=1
 SaveDigits=1
 SaveImageType=1
 SaveSeries=1
 SaveSteps=0
-; === PovExporter
+
+[ExtraSearchDirs]
+
+[PovExporter]
 Ambient=0.4
 BottomInclude=
 ChromeBril=5
