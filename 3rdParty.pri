@@ -15,7 +15,7 @@ unix:!macx:HOST = $$system(. /etc/os-release 2>/dev/null; [ -n \"$PRETTY_NAME\" 
 macx:HOST = $$system(echo `sw_vers -productName` `sw_vers -productVersion`)
 
 # platform switch
-contains(QT_ARCH, x86_64) {
+if (contains(QT_ARCH, x86_64)|contains(QT_ARCH, arm64)) {
     ARCH  = 64
 } else {
     ARCH  = 32

@@ -63,8 +63,11 @@ contains(DEFINES, _QT):     CONFIG += _QT_GUI
 contains(DEFINES, _OSMESA): CONFIG += _OSM_CUI
 
 # platform switch
-contains(QT_ARCH, x86_64): ARCH = 64
-else:                      ARCH = 32
+if (contains(QT_ARCH, x86_64)|contains(QT_ARCH, arm64)) {
+    ARCH = 64
+} else {
+    ARCH = 32
+}
 # for libraries
 equals(ARCH, 64): LIB_ARCH = 64
 else:             LIB_ARCH =
