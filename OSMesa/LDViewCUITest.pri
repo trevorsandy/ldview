@@ -18,17 +18,19 @@ unix {
                            @if [ -f /tmp/8464i.png ] ; then rm -f /tmp/8464i.png ; fi                                   \
                       $$escape_expand(\n\t)                                                                             \
                            @cd $${OUT_PWD}/$${DESTDIR} && ./$${TARGET} $$_PRO_FILE_PWD_/../8464.mpd                     \
-                           -SaveSnapshot=/tmp/8464i.png -IniFile=$${INI_FILE} -Info=1 -SaveWidth=128                    \
-                           -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0 -LDConfig=$${LDRAW_PATH}/LDCfgalt.ldr        \
+                           -SaveSnapshot=/tmp/8464i.png -IniFile=$${INI_FILE} -Info=1                                   \
+                           -SaveWidth=1024 -SaveHeight=1024 -ShowErrors=0 -SaveActualSize=0                             \
+                           -LDConfig=$${LDRAW_PATH}/LDCfgalt.ldr                                                        \
                       $$escape_expand(\n\t)                                                                             \
-                           @file /tmp/8464i.png                                                                         \
-                      $$escape_expand(\n\t)                                                                             \
-                           @for a in eog gthumb ; do                                                                    \
+                           @if [ -f /tmp/8464i.png ] ; then                                                             \
+                             file /tmp/8464i.png ;                                                                      \
+                             for a in eog gthumb ; do                                                                   \
                                if which $$a >/dev/null 2>/dev/null ; then                                               \
-                                   $$a /tmp/8464i.png ;                                                                 \
-                                   break ;                                                                              \
+                                 $$a /tmp/8464i.png;                                                                    \
+                                 break ;                                                                                \
                                fi                                                                                       \
-                           done                                                                                         \
+                             done                                                                                       \
+                           fi                                                                                           \
                       $$escape_expand(\n\t)                                                                             \
                            @echo && echo "Project MESSAGE: Command line INI test completed."
 
@@ -76,17 +78,18 @@ unix {
                            @export GALLIUM_DRIVER=$$GAL_DRIVER                                                           \
                        $$escape_expand(\n\t)                                                                             \
                            @cd $${OUT_PWD}/$${DESTDIR} && ./$${TARGET} $$_PRO_FILE_PWD_/../8464.mpd                      \
-                           -SaveSnapshot=/tmp/8464.png -IniFile=$${INI_FILE} -Info=1 -SaveWidth=128                      \
-                           -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0                                               \
+                           -SaveSnapshot=/tmp/8464.png -IniFile=$${INI_FILE} -Info=1                                     \
+                           -SaveWidth=1024 -SaveHeight=1024 -ShowErrors=0 -SaveActualSize=0                              \
                        $$escape_expand(\n\t)                                                                             \
-                           @file /tmp/8464.png                                                                           \
-                       $$escape_expand(\n\t)                                                                             \
-                           @for a in eog gthumb ; do                                                                     \
+                           @if [ -f /tmp/8464.png ] ; then                                                              \
+                             file /tmp/8464.png ;                                                                       \
+                             for a in eog gthumb ; do                                                                    \
                                if which $$a >/dev/null 2>/dev/null ; then                                                \
-                                   $$a /tmp/8464.png ;                                                                   \
-                                   break ;                                                                               \
+                                 $$a /tmp/8464.png;                                                                     \
+                                 break ;                                                                                 \
                                fi                                                                                        \
-                           done
+                             done                                                                                        \
+                           fi
     contains(CLEAN_LDVIEWRC, YES) {
         QMAKE_POST_LINK += $$escape_expand(\n\t)                                                                         \
                                 @rm -rf $$(HOME)/.ldviewrc                                                               \

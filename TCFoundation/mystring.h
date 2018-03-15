@@ -22,7 +22,6 @@
 #endif // _OSMESA
 
 #ifdef TC_NO_UNICODE
-#define ucsprintf sprintf
 #define ucstrcmp strcmp
 #define ucstrstr strstr
 #define ucstrcpy strcpy
@@ -164,6 +163,8 @@ TCExport UCSTR mbstoucstring(const char *src, int length = -1);
 TCExport char *ucstringtombs(CUCSTR src, int length = -1);
 TCExport char *ucstringtoutf8(CUCSTR src, int length = -1);
 TCExport UCSTR utf8toucstring(const char *src, int length = -1);
+TCExport bool utf8towstring(std::wstring& dst, const std::string &src);
+TCExport bool utf8towstring(std::wstring& dst, const char *src, int length = -1);
 
 #ifdef WIN32
 
@@ -185,6 +186,9 @@ TCExport std::string ftostr(double value, int precision = 6);
 TCExport ucstring ftoucstr(double value, int precision = 6);
 TCExport std::string ltostr(long value);
 TCExport ucstring ltoucstr(long value);
+
+TCExport bool base64Decode(const std::string& input, std::vector<TCByte>& decodedBytes);
+TCExport bool isInBase64Charset(char character);
 
 TCExport std::string formatString(const char *format, ...);
 

@@ -1,6 +1,23 @@
 #ifndef __TCDEFINES_H__
 #define __TCDEFINES_H__
 
+#include <string>
+
+#define PNGDATA_1X 41
+#define PNGDATA_2X 42
+
+// MSVC SUCKS! We should not have to check the fricken MS compiler version
+// before defining nullptr when __cplusplus <= 199711, but they don't give
+// a sane __cplusplus, so we have to just ignore that and go by MSVC
+// compiler version. Once again, MSVC SUCKS!
+#if defined(_MSC_VER)
+#  if _MSC_VER < 1800 // 1800 is Visual Studio 2013.
+#    define nullptr NULL
+#  endif
+#elif __cplusplus <= 199711L
+#  define nullptr NULL
+#endif
+
 #ifdef COCOA
 // The following is necessary to get rid of some truly screwed up warnings that
 // show up when compiling on the Mac.
@@ -8,6 +25,10 @@
 #endif // COCOA
 
 #ifdef WIN32
+
+#define RT_PNGDATA_1X MAKEINTRESOURCE(PNGDATA_1X)
+#define RT_PNGDATA_2X MAKEINTRESOURCE(PNGDATA_2X)
+
 // The following shouldn't be necessary here, but due to bugs in Microsoft's
 // precompiled headers, it is.  The warning being disabled below is the one
 // that warns about identifiers longer than 255 characters being truncated to
@@ -108,11 +129,13 @@ typedef float TCFloat32;
 typedef char UCCHAR;
 typedef char * UCSTR;
 typedef const char * CUCSTR;
+typedef std::string UCSTRING;
 #define _UC(x) x
 #else // TC_NO_UNICODE
 typedef wchar_t UCCHAR;
 typedef wchar_t * UCSTR;
 typedef const wchar_t * CUCSTR;
+typedef std::wstring UCSTRING;
 #define _UC(x) L ## x
 #endif // TC_NO_UNICODE
 

@@ -561,16 +561,7 @@ void TREMainModel::compile(void)
 			}
 //			TCProgressAlert::send("LDrawModelViewer", "Done.", 2.0f);
 		}
-		m_vertexStore->deactivate();
-		m_coloredVertexStore->deactivate();
-		if (m_studVertexStore != NULL)
-		{
-			m_studVertexStore->deactivate();
-		}
-		if (m_coloredStudVertexStore != NULL)
-		{
-			m_coloredStudVertexStore->deactivate();
-		}
+		TREVertexStore::deactivateActiveVertexStore();
 	}
 }
 
@@ -1266,16 +1257,7 @@ void TREMainModel::drawSolid(void)
 		}
 		deactivateBFC();
 	}
-	m_vertexStore->deactivate();
-	m_coloredVertexStore->deactivate();
-	if (m_studVertexStore != NULL)
-	{
-		m_studVertexStore->deactivate();
-	}
-	if (m_coloredStudVertexStore != NULL)
-	{
-		m_coloredStudVertexStore->deactivate();
-	}
+	TREVertexStore::deactivateActiveVertexStore();
 }
 
 void TREMainModel::drawTexmappedInternal(
@@ -1368,18 +1350,16 @@ void TREMainModel::drawTexmapped(bool transparent)
 				POLYGON_OFFSET_UNITS);
 			enable(GL_POLYGON_OFFSET_FILL);
 		}
-		m_coloredVertexStore->activate(false);
+		m_texmapVertexStore->activate(false);
 		glPushAttrib(GL_ENABLE_BIT | GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glDisable(GL_COLOR_MATERIAL);
 		glDepthFunc(GL_LEQUAL);
 		configTexmaps();
 		drawTexmappedInternal(true, true, transparent);
 		disableTexmaps();
 		glPopAttrib();
-		m_coloredVertexStore->deactivate();
+		m_texmapVertexStore->deactivate();
 	}
 }
 
@@ -1496,6 +1476,7 @@ void TREMainModel::setLightingFlag(bool value)
 	m_coloredVertexStore->setLightingFlag(value);
 	m_coloredStudVertexStore->setLightingFlag(value);
 	m_transVertexStore->setLightingFlag(value);
+	m_texmapVertexStore->setLightingFlag(value);
 }
 
 void TREMainModel::setTwoSidedLightingFlag(bool value)
@@ -1506,6 +1487,7 @@ void TREMainModel::setTwoSidedLightingFlag(bool value)
 	m_coloredVertexStore->setTwoSidedLightingFlag(value);
 	m_coloredStudVertexStore->setTwoSidedLightingFlag(value);
 	m_transVertexStore->setTwoSidedLightingFlag(value);
+	m_texmapVertexStore->setTwoSidedLightingFlag(value);
 }
 
 void TREMainModel::setShowAllConditionalFlag(bool value)
@@ -1516,6 +1498,7 @@ void TREMainModel::setShowAllConditionalFlag(bool value)
 	m_coloredVertexStore->setShowAllConditionalFlag(value);
 	m_coloredStudVertexStore->setShowAllConditionalFlag(value);
 	m_transVertexStore->setShowAllConditionalFlag(value);
+	m_texmapVertexStore->setShowAllConditionalFlag(value);
 }
 
 void TREMainModel::setConditionalControlPointsFlag(bool value)
@@ -1526,6 +1509,7 @@ void TREMainModel::setConditionalControlPointsFlag(bool value)
 	m_coloredVertexStore->setConditionalControlPointsFlag(value);
 	m_coloredStudVertexStore->setConditionalControlPointsFlag(value);
 	m_transVertexStore->setConditionalControlPointsFlag(value);
+	m_texmapVertexStore->setConditionalControlPointsFlag(value);
 }
 
 TCFloat TREMainModel::getMaxRadiusSquared(const TCVector &center)
@@ -1824,37 +1808,34 @@ void TREMainModel::addTransferTriangle(
 		}
 		m_transStepCounts[m_transferStep] += 3;
 	}
-	else
+	else // type == TREShapeGroup::TTTexmapped
 	{
-		int shapeIndex = bfc ? 1 : 0;
+		int shapeIndex;
 		bool mirror = bfc && TCVector::determinant(matrix) < 0.0f;
-		TexmapInfo texmapInfo = m_transferTexmapInfo;
-		TREModel::TexmapInfo::GeomInfo *geomInfo =
-			bfc ? &m_mainTexmapInfos.back().bfc :
-			&m_mainTexmapInfos.back().standard;
+		TexmapInfo& texmapInfo = m_mainTexmapInfos.back();
+		TREModel::TexmapInfo::GeomInfo *geomInfo = bfc ? &texmapInfo.bfc :
+			&texmapInfo.standard;
+		TCVector finalTextureCoords[3];
 
-		if (type == TREShapeGroup::TTTexmapped)
+		if (TREShapeGroup::isTransparent(color, false))
 		{
-			if (TREShapeGroup::isTransparent(color, false))
-			{
-				shapeIndex = 2;
-				geomInfo = &m_mainTexmapInfos.back().transparent;
-			}
-			else
-			{
-				shapeIndex = bfc ? 1 : 0;
-			}
+			shapeIndex = 2;
+			geomInfo = &m_mainTexmapInfos.back().transparent;
 		}
+		else
+		{
+			shapeIndex = bfc ? 1 : 0;
+		}
+		texmapInfo.calcTextureCoords(vertices, finalTextureCoords);
 		if (m_texmappedShapes[shapeIndex] == NULL)
 		{
 			m_texmappedShapes[shapeIndex] = new TRETexmappedShapeGroup;
 			m_texmappedShapes[shapeIndex]->setModel(this);
-			m_texmappedShapes[shapeIndex]->setVertexStore(m_coloredVertexStore);
+			m_texmappedShapes[shapeIndex]->setVertexStore(m_texmapVertexStore);
 		}
-		//geomInfo->colored.triangleCount++;
 		if (mirror)
 		{
-			TCVector *mirroredVertices = new TCVector[3];
+			TCVector mirroredVertices[3];
 			TCVector *mirroredNormals = NULL;
 			int i;
 
@@ -1871,14 +1852,15 @@ void TREMainModel::addTransferTriangle(
 					mirroredNormals[2 - i] = -normals[i];
 				}
 			}
-			m_texmappedShapes[shapeIndex]->addTriangle(color, mirroredVertices,
-				mirroredNormals);
-			delete[] mirroredVertices;
+			std::swap(finalTextureCoords[0], finalTextureCoords[2]);
+			m_texmappedShapes[shapeIndex]->addTriangle(0xFFFFFFFF,
+				mirroredVertices, mirroredNormals, finalTextureCoords);
 			delete[] mirroredNormals;
 		}
 		else
 		{
-			m_texmappedShapes[shapeIndex]->addTriangle(color, vertices, normals);
+			m_texmappedShapes[shapeIndex]->addTriangle(0xFFFFFFFF, vertices,
+				normals, finalTextureCoords);
 		}
 		int indexCount =
 			m_texmappedShapes[shapeIndex]->getIndexCount(TRESTriangle);
@@ -2527,7 +2509,7 @@ void TREMainModel::transferSmoothNormals(
 				}
 				if (!found && shapeSize == 4)
 				{
-					found = transferSmoothNormals(triangles, vertexStore,
+					transferSmoothNormals(triangles, vertexStore,
 						indices, dstVertexStore, dstIndices, i + 3, i + 2, i + 1, matrix);
 					if (shapeSize == 4)
 					{
@@ -2683,10 +2665,11 @@ void TREMainModel::startTexture(
 	int type,
 	const std::string &filename,
 	TCImage *image,
-	const TCVector *points)
+	const TCVector *points,
+	const TCFloat *extra)
 {
-	getCurGeomModel()->startTexture(type, filename, image, points);
-	TREModel::startTexture(type, filename, image, points);
+	getCurGeomModel()->startTexture(type, filename, image, points, extra);
+	TREModel::startTexture(type, filename, image, points, extra);
 }
 
 TREModel *TREMainModel::getCurGeomModel(void)
@@ -3053,17 +3036,7 @@ void TREMainModel::setTransferTexmapInfo(
 	const TCFloat *matrix)
 {
 	TexmapInfo transferTexmapInfo = texmapInfo;
-	if (matrix != NULL)
-	{
-		//TCFloat inverse[16];
-
-		//TCVector::invertMatrix(matrix, inverse);
-		for (size_t i = 0; i < 3; i++)
-		{
-			transferTexmapInfo.points[i] =
-				transferTexmapInfo.points[i].transformPoint(matrix);
-		}
-	}
+	transferTexmapInfo.transform(matrix);
 	if (m_mainTexmapInfos.size() == 0 ||
 		!m_mainTexmapInfos.back().texmapEquals(transferTexmapInfo))
 	{

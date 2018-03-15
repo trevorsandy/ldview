@@ -35,7 +35,6 @@ static TCImage *resizeCornerImage = NULL;
 		modelViewer->openGlWillEnd();
 	}
 	TCObject::release(modelViewer);
-	//[lastMoveTime release];
 	[super dealloc];
 }
 
@@ -67,82 +66,52 @@ static TCImage *resizeCornerImage = NULL;
 	}
 }
 
-- (TCImage *)tcImageFromPngData:(NSData *)pngImageData
+- (TCImage *)tcImageFromNSImage:(NSImage *)image
 {
-	if (pngImageData)
+	if (image == nil)
 	{
-		TCImage *tcImage = new TCImage;
-		
-		tcImage->setFlipped(true);
-		tcImage->setLineAlignment(4);
-		tcImage->setDataFormat(TCRgba8);
-		if (tcImage->loadData((TCByte *)[pngImageData bytes], [pngImageData length]))
-		{
-			return tcImage;
-		}
+		return NULL;
 	}
-	return NULL;
-}
+	TCImage *tcImage = NULL;
+	// Dimensions - source image determines context size
+	
+	NSSize imageSize = image.size;
+	NSRect imageRect = [self convertRectToBacking:NSMakeRect(0, 0, imageSize.width, imageSize.height)];
+	imageSize.width = imageRect.size.width;
+	imageSize.height = imageRect.size.height;
 
-- (TCImage *)tcImageFromBitmapRep:(NSBitmapImageRep *)imageRep
-{
-	if ([imageRep bitsPerPixel] == 32 && ![imageRep isPlanar])
-	{
-		TCImage *tcImage = new TCImage;
-		TCByte *dstData;
-		int dstRowSize;
-		int width = (int)[imageRep pixelsWide];
-		int height = (int)[imageRep pixelsHigh];
-		int dstOfs;
-		int x, y;
-		CGFloat components[4];
-		CGFloat r, g, b, a;
-		BOOL useDeviceColor = NO;
-		int numComponents;
-		
-		tcImage->setFlipped(true);
-		tcImage->setLineAlignment(4);
-		tcImage->setDataFormat(TCRgba8);
-		tcImage->setSize(width, height);
-		tcImage->allocateImageData();
-		dstData = tcImage->getImageData();
-		dstRowSize = tcImage->getRowSize();
-		memset(dstData, 0, dstRowSize * height);
-		numComponents = (int)[[[imageRep colorAtX:0 y:0] colorUsingColorSpace:[NSColorSpace deviceRGBColorSpace]] numberOfComponents];
-		if (numComponents == 4)
-		{
-			useDeviceColor = YES;
-		}
-		for (y = 0; y < height; y++)
-		{
-			dstOfs = 0;
-			TCByte *row = &dstData[(height - y - 1) * dstRowSize];
-			for (x = 0; x < width; x++)
-			{
-				NSColor *color = [imageRep colorAtX:x y:y];
-				if (useDeviceColor)
-				{
-					NSColor *devColor = [color colorUsingColorSpace:[NSColorSpace deviceRGBColorSpace]];
-
-					[devColor getComponents:components];
-					row[dstOfs++] = (TCByte)(components[0] * 255.0f + 0.5);
-					row[dstOfs++] = (TCByte)(components[1] * 255.0f + 0.5);
-					row[dstOfs++] = (TCByte)(components[2] * 255.0f + 0.5);
-					row[dstOfs++] = (TCByte)(components[3] * 255.0f + 0.5);
-				}
-				else
-				{
-					[color getRed:&r green:&g blue:&b alpha:&a];
-					row[dstOfs++] = (TCByte)(r * 255.0f + 0.5);
-					row[dstOfs++] = (TCByte)(g * 255.0f + 0.5);
-					row[dstOfs++] = (TCByte)(b * 255.0f + 0.5);
-					row[dstOfs++] = (TCByte)(a * 255.0f + 0.5);
-				}
-			}
-		}
-		return tcImage;
-	}
-	return NULL;
+	// Create a context to hold the image data
+	
+	CGColorSpaceRef colorSpace = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
+	
+	tcImage = new TCImage;
+	tcImage->setFlipped(false);
+	tcImage->setLineAlignment(4);
+	tcImage->setDataFormat(TCRgba8);
+	tcImage->setSize((int)imageSize.width, (int)imageSize.height);
+	tcImage->allocateImageData();
+	TCByte* pixels = tcImage->getImageData();
+	memset(pixels, 1, (int)imageSize.height * tcImage->getRowSize());
+	CGContextRef ctx = CGBitmapContextCreate(pixels,
+											 imageSize.width,
+											 imageSize.height,
+											 8,
+											 tcImage->getRowSize(),
+											 colorSpace,
+											 kCGImageAlphaPremultipliedLast);
+	CGColorSpaceRelease(colorSpace);
+	
+	// Wrap graphics context
+	
+	NSGraphicsContext* gctx = [NSGraphicsContext graphicsContextWithCGContext:ctx flipped:NO];
+	// Make our bitmap context current and render the NSImage into it
+	
+	NSGraphicsContext *origCtx = [NSGraphicsContext currentContext];
+	[NSGraphicsContext setCurrentContext:gctx];
+	[image drawInRect:imageRect];
+	[NSGraphicsContext setCurrentContext:origCtx];
+	CGContextRelease(ctx);
+	return tcImage;
 }
 
 - (void)loadResizeCornerImage:(TCImage *)tcImage
@@ -155,13 +124,15 @@ static TCImage *resizeCornerImage = NULL;
 		int dstRowSize;
 		int srcWidth = tcImage->getWidth();
 		int srcHeight = tcImage->getHeight();
-		int shiftBytes = (16 - srcWidth) * 4;
+		int dstWidth = srcWidth < 16 ? 16 : 32;
+		int dstHeight = srcHeight < 16 ? 16 : 32;
+		int shiftBytes = (dstWidth - srcWidth) * 4;
 
 		resizeCornerImage = new TCImage;
 		resizeCornerImage->setDataFormat(TCRgba8);
 		resizeCornerImage->setFlipped(true);
 		resizeCornerImage->setLineAlignment(4);
-		resizeCornerImage->setSize(16, 16);
+		resizeCornerImage->setSize(dstWidth, dstHeight);
 		resizeCornerImage->allocateImageData();
 		dstData = resizeCornerImage->getImageData();
 		dstRowSize = resizeCornerImage->getRowSize();
@@ -169,7 +140,8 @@ static TCImage *resizeCornerImage = NULL;
 		for (int i = 0; i < srcHeight; i++)
 		{
 			int rowOfs = dstRowSize * i;
-			memcpy(&dstData[rowOfs + shiftBytes], &srcData[srcRowSize * i], 4 * 15);
+			int srcRow = tcImage->getFlipped() ? i : (srcHeight - i - 1);
+			memcpy(&dstData[rowOfs + shiftBytes], &srcData[srcRowSize * srcRow], 4 * srcWidth);
 			for (int x = 3; x < dstRowSize; x += 4)
 			{
 				dstData[rowOfs + x] = (TCByte)((double)dstData[rowOfs + x] * 0.667);
@@ -182,32 +154,11 @@ static TCImage *resizeCornerImage = NULL;
 {
 	if (!resizeCornerImage && !loadResizeCornerImageTried)
 	{
-		NSImage *resizeCornerNSImage = [NSImage imageNamed:@"NSGrayResizeCorner"];
 		TCImage *tcImage = NULL;
 
 		loadResizeCornerImageTried = YES;
-		if (resizeCornerNSImage)
-		{
-			NSImageRep *imageRep = [[resizeCornerNSImage representations] objectAtIndex:0];
-
-            if ([imageRep isKindOfClass:[NSBitmapImageRep class]])
-            {
-                NSBitmapImageRep *bmImageRep = (NSBitmapImageRep *)imageRep;
-                if ([bmImageRep pixelsWide] <= 16 && [bmImageRep pixelsHigh] <= 16)
-                {
-                    tcImage = [self tcImageFromBitmapRep:bmImageRep];
-                    if (!tcImage)
-                    {
-                        tcImage = [self tcImageFromPngData:[bmImageRep representationUsingType:NSPNGFileType properties:[NSDictionary dictionary]]];
-                    }
-                }
-            }
-		}
-		if (!tcImage)
-		{
-			tcImage = [self tcImageFromPngData:[NSData dataWithContentsOfFile:
-				[[NSBundle mainBundle] pathForResource:@"MyResizeCorner" ofType:@"png"]]];
-		}
+		NSImage *resizeImage = [NSImage imageNamed:@"MyResizeCorner"];
+		tcImage = [self tcImageFromNSImage:resizeImage];
 		if (tcImage)
 		{
 			[self loadResizeCornerImage:tcImage];
@@ -219,11 +170,19 @@ static TCImage *resizeCornerImage = NULL;
 - (void)setupWithFrame:(NSRect)frame
 {
 	NSData *fontData = [NSData dataWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"SansSerif" ofType:@"fnt"]];
-	[self loadResizeCornerImage];
+	// macOS doesn't want resize corners anymore, so don't load it. Note that
+	// having it work right when a window moves from a Retina display to a non-
+	// Retina display also takes extra work.
+//	[self loadResizeCornerImage];
 	redisplayRequested = NO;
 	modelViewer = new LDrawModelViewer((int)frame.size.width,
 		(int)frame.size.height);
 	modelViewer->setFontData((TCByte *)[fontData bytes], [fontData length]);
+	NSString *font2xPath = [[NSBundle mainBundle] pathForResource:@"SanSerif@2x" ofType:@"png"];
+	if (font2xPath)
+	{
+		modelViewer->setupFont2x([font2xPath UTF8String]);
+	}
 	inputHandler = modelViewer->getInputHandler();
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= 1060
 	if ([self respondsToSelector:@selector(setAcceptsTouchEvents:)])
@@ -298,9 +257,12 @@ static TCImage *resizeCornerImage = NULL;
 
 - (void)reshape
 {
-	NSRect frame = [self frame];
-	modelViewer->setWidth((int)frame.size.width);
-	modelViewer->setHeight((int)frame.size.height);
+	NSRect bounds = [self bounds];
+	NSRect backingBounds = [self convertRectToBacking:bounds];
+	CGFloat scaleFactor = backingBounds.size.width / bounds.size.width;
+	modelViewer->setScaleFactor(scaleFactor);
+	modelViewer->setWidth((int)bounds.size.width);
+	modelViewer->setHeight((int)bounds.size.height);
 }
 
 - (LDrawModelViewer *)modelViewer
@@ -338,21 +300,6 @@ static TCImage *resizeCornerImage = NULL;
 	NSPoint loc = [event locationInWindow];
 	
 	inputHandler->mouseDown([self convertKeyModifiers:[event modifierFlags]], LDInputHandler::MBLeft, (int)loc.x, (int)-loc.y);
-//	[self rotationUpdate];
-//	mouseDownModifierFlags = [event modifierFlags];
-//	if (mouseDownModifierFlags & NSControlKeyMask)
-//	{
-//		[self rightMouseDown:event];
-//	}
-//	else
-//	{
-//		lButtonDown = YES;
-//		lastMouseLocation = [event locationInWindow];
-//		lastFrameMouseLocation = lastMouseLocation;
-//		modelViewer->setRotationSpeed(0.0);
-//		rotationSpeed = 0.0f;
-//		//NSLog(@"Stopped?\n");
-//	}
 }
 
 - (void)rightMouseDown:(NSEvent *)event
@@ -360,16 +307,6 @@ static TCImage *resizeCornerImage = NULL;
 	NSPoint loc = [event locationInWindow];
 	
 	inputHandler->mouseDown([self convertKeyModifiers:[event modifierFlags]], LDInputHandler::MBRight, (int)loc.x, (int)-loc.y);
-	//	[self rotationUpdate];
-	//	rightMouseDownModifierFlags = [event modifierFlags];
-	//	if (!lButtonDown)
-	//	{
-	//		if (viewMode == LDVViewExamine)
-	//		{
-	//			originalZoomY = [event locationInWindow].y;
-	//			rButtonDown = YES;
-	//		}
-	//	}
 }
 
 - (void)otherMouseDown:(NSEvent *)event
@@ -384,18 +321,6 @@ static TCImage *resizeCornerImage = NULL;
 	NSPoint loc = [event locationInWindow];
 	
 	inputHandler->mouseUp([self convertKeyModifiers:[event modifierFlags]], LDInputHandler::MBLeft, (int)loc.x, (int)-loc.y);
-//	//NSLog(@"mouseUp: (%g, %g)\n", lastMouseLocation.x, lastMouseLocation.y);
-//	if (mouseDownModifierFlags & NSControlKeyMask)
-//	{
-//		[self rightMouseUp:event];
-//	}
-//	else
-//	{
-//		lButtonDown = NO;
-//		[self rotationUpdate];
-//		modelViewer->setCameraXRotate(0.0f);
-//		modelViewer->setCameraYRotate(0.0f);
-//	}
 }
 
 - (void)rightMouseUp:(NSEvent *)event
@@ -403,12 +328,6 @@ static TCImage *resizeCornerImage = NULL;
 	NSPoint loc = [event locationInWindow];
 	
 	inputHandler->mouseUp([self convertKeyModifiers:[event modifierFlags]], LDInputHandler::MBRight, (int)loc.x, (int)-loc.y);
-	//	[self rotationUpdate];
-	//	if (rButtonDown)
-	//	{
-	//		rButtonDown = NO;
-	//		modelViewer->setZoomSpeed(0.0f);
-	//	}
 }
 
 - (void)otherMouseUp:(NSEvent *)event
@@ -416,12 +335,6 @@ static TCImage *resizeCornerImage = NULL;
 	NSPoint loc = [event locationInWindow];
 	
 	inputHandler->mouseUp([self convertKeyModifiers:[event modifierFlags]], LDInputHandler::MBMiddle, (int)loc.x, (int)-loc.y);
-	//	[self rotationUpdate];
-	//	if (rButtonDown)
-	//	{
-	//		rButtonDown = NO;
-	//		modelViewer->setZoomSpeed(0.0f);
-	//	}
 }
 
 - (void)mouseDragged:(NSEvent *)event
@@ -429,28 +342,6 @@ static TCImage *resizeCornerImage = NULL;
 	NSPoint loc = [event locationInWindow];
 	
 	inputHandler->mouseMove([self convertKeyModifiers:[event modifierFlags]], (int)loc.x, (int)-loc.y);
-	//	if (mouseDownModifierFlags & NSControlKeyMask)
-	//	{
-	//		[self rightMouseDragged:event];
-	//	}
-	//	else
-	//	{
-	//		[self rotationUpdate];
-	//		//[lastMoveTime release];
-	//		//lastMoveTime = [[NSDate alloc] init];
-	//		NSPoint mouseLocation = [event locationInWindow];
-	//		if (viewMode == LDVViewExamine)
-	//		{
-	//			if (mouseDownModifierFlags & NSCommandKeyMask)
-	//			{
-	//				[self updatePanXY:mouseLocation];
-	//			}
-	//			else
-	//			{
-	//				[self updateSpinRateXY:mouseLocation];
-	//			}
-	//		}
-	//	}
 }
 
 - (void)rightMouseDragged:(NSEvent *)event
@@ -458,16 +349,6 @@ static TCImage *resizeCornerImage = NULL;
 	NSPoint loc = [event locationInWindow];
 	
 	inputHandler->mouseMove([self convertKeyModifiers:[event modifierFlags]], (int)loc.x, (int)-loc.y);
-	//	[self rotationUpdate];
-	//	if (rightMouseDownModifierFlags & NSAlternateKeyMask)
-	//	{
-	//		modelViewer->setClipZoom(true);
-	//	}
-	//	else
-	//	{
-	//		modelViewer->setClipZoom(false);
-	//	}
-	//	[self updateZoom:[event locationInWindow].y];
 }
 
 - (void)otherMouseDragged:(NSEvent *)event
@@ -475,16 +356,6 @@ static TCImage *resizeCornerImage = NULL;
 	NSPoint loc = [event locationInWindow];
 	
 	inputHandler->mouseMove([self convertKeyModifiers:[event modifierFlags]], (int)loc.x, (int)-loc.y);
-	//	[self rotationUpdate];
-	//	if (rightMouseDownModifierFlags & NSAlternateKeyMask)
-	//	{
-	//		modelViewer->setClipZoom(true);
-	//	}
-	//	else
-	//	{
-	//		modelViewer->setClipZoom(false);
-	//	}
-	//	[self updateZoom:[event locationInWindow].y];
 }
 
 - (LDInputHandler::KeyCode)convertKeyCode:(NSEvent *)theEvent
@@ -578,6 +449,9 @@ static TCImage *resizeCornerImage = NULL;
 			case LDInputHandler::KCEnd:
 				[modelWindow changeStep:2];
 				return;
+			case LDInputHandler::KCEscape:
+				[modelWindow escapePressed];
+				return;
             default:
                 // Do nothing
                 break;
@@ -590,64 +464,6 @@ static TCImage *resizeCornerImage = NULL;
 {
 	inputHandler->keyUp([self convertKeyModifiers:[theEvent modifierFlags]], [self convertKeyCode:theEvent]);
 }
-
-//- (void)updateZoom:(float)yPos
-//{
-//	float magnitude = yPos - originalZoomY;
-//
-//	modelViewer->setZoomSpeed(-magnitude / 2.0f);
-//}
-
-//- (void)updatePanXY:(NSPoint)mouseLocation
-//{
-//	float deltaX = mouseLocation.x - lastMouseLocation.x;
-//	float deltaY = mouseLocation.y - lastMouseLocation.y;
-//	
-//	lastMouseLocation = mouseLocation;
-//	modelViewer->panXY((int)deltaX, (int)-deltaY);
-//}
-
-//- (void)updateSpinRateXY:(NSPoint)mouseLocation
-//{
-//	float deltaX = mouseLocation.x - lastMouseLocation.x;
-//	float deltaY = mouseLocation.y - lastMouseLocation.y;
-//	float magnitude = (float)sqrt(deltaX * deltaX + deltaY * deltaY);
-//
-//	//NSLog(@"lastMouseLocation: (%g, %g); mouseLocation: (%g, %g)", lastMouseLocation.x, lastMouseLocation.y, mouseLocation.x, mouseLocation.y);
-//	lastMouseLocation = mouseLocation;
-//	rotationSpeed = magnitude / 10.0f;
-//	if (fEq(rotationSpeed, 0.0f))
-//	{
-//		rotationSpeed = 0.0f;
-//		modelViewer->setXRotate(1.0f);
-//		modelViewer->setYRotate(1.0f);
-//	}
-//	else
-//	{
-//		modelViewer->setXRotate(-deltaY);
-//		modelViewer->setYRotate(deltaX);
-//	}
-//	modelViewer->setRotationSpeed(rotationSpeed);
-//}
-
-//- (void)updateSpinRate
-//{
-//	NSEvent *mouseUpEvent = [[self window] nextEventMatchingMask:NSLeftMouseUpMask untilDate:nil inMode:NSDefaultRunLoopMode dequeue:NO];
-//	
-//	// if mouseUpEvent has a value, then there's a mouse up in the queue, and we
-//	// don't want to stop our spinning.
-//	if (lButtonDown && !mouseUpEvent)
-//	{
-//		[self updateSpinRateXY:lastMouseLocation];
-////		if ([[NSDate date] timeIntervalSinceReferenceDate] -
-////			[lastMoveTime timeIntervalSinceReferenceDate] > -0.1 ||
-////			(lastFrameMouseLocation.x == lastMouseLocation.x &&
-////			 lastFrameMouseLocation.y == lastMouseLocation.y))
-////		{
-////			[self updateSpinRateXY:lastMouseLocation];
-////		}
-//	}
-//}
 
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= 1060
 
@@ -912,7 +728,6 @@ static TCImage *resizeCornerImage = NULL;
 			glClearColor(r, g, b, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT);
 			[[self openGLContext] flushBuffer];
-			//[[NSColor colorWithCalibratedRed:r green:g blue:b alpha:1.0f] set];
 		}
 		else
 		{
@@ -924,40 +739,29 @@ static TCImage *resizeCornerImage = NULL;
 	[[self openGLContext] makeCurrentContext];
 	redrawRequested = false;
 	modelViewer->update();
-	if (fps != 0.0f)
-	{
-		modelViewer->drawFPS(fps);
-	}
+	modelViewer->drawFPS(fps);
 	if (resizeCornerImage && ![modelWindow showStatusBar])
 	{
+		NSRect backingRect = [self convertRectToBacking:rect];
 		glPushAttrib(GL_COLOR_BUFFER_BIT | GL_ENABLE_BIT | GL_TEXTURE_BIT);
 		[self prepResizeCornerTexture];
 		glEnable(GL_TEXTURE_2D);
 		modelViewer->orthoView();
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glTranslatef(rect.size.width - 16.0, 0.0f, 0.0f);
+		glTranslatef(backingRect.size.width - resizeCornerImage->getWidth(), 0.0f, 0.0f);
 		glBegin(GL_QUADS);
 		glTexCoord2f(0.0f, 0.0f);
 		glVertex2f(0.0f, 0.0f);
 		glTexCoord2f(1.0f, 0.0f);
-		glVertex2f(16.0f, 0.0f);
+		glVertex2f((float)resizeCornerImage->getWidth(), 0.0f);
 		glTexCoord2f(1.0f, 1.0f);
-		glVertex2f(16.0f, 16.0f);
+		glVertex2f((float)resizeCornerImage->getWidth(), (float)resizeCornerImage->getHeight());
 		glTexCoord2f(0.0f, 1.0f);
-		glVertex2f(0.0f, 16.0f);
+		glVertex2f(0.0f, (float)resizeCornerImage->getHeight());
 		glEnd();
 		glPopAttrib();
 	}
-	//glFinish();
-//	[self updateSpinRate];
-//	lastFrameMouseLocation = lastMouseLocation;
-//	if (rotationSpeed > 0.0f || !fEq(modelViewer->getZoomSpeed(), 0.0f))
-//	{
-//		[self rotationUpdate];
-//		[modelWindow performSelectorOnMainThread:@selector(updateFps) withObject:nil waitUntilDone:NO];
-//	}
-//	else
 	if (redrawRequested)
 	{
 		[modelWindow performSelectorOnMainThread:@selector(updateFps) withObject:nil waitUntilDone:NO];
@@ -970,8 +774,6 @@ static TCImage *resizeCornerImage = NULL;
 		}
 		//[modelWindow clearFps];
 	}
-	//long swapInterval;
-	//[[self openGLContext] getValues:&swapInterval forParameter:NSOpenGLCPSwapInterval];
 	[[self openGLContext] flushBuffer];
 	[modelWindow updateStatusLatLon];
 }
@@ -1000,7 +802,6 @@ static TCImage *resizeCornerImage = NULL;
 	}
 }
 
-//- (BOOL)validateMenuItem:(id <NSMenuItem>)menuItem
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem
 {
 	return modelViewer != NULL && modelViewer->getFilename() != NULL;
@@ -1053,41 +854,38 @@ static TCImage *resizeCornerImage = NULL;
 	}
 }
 
-//- (void)peekMouseUpAlertCallback:(TCAlert *)alert
-//{
-//	if (false && alert->getSender() == inputHandler)
-//	{
-//		if ([[self window] nextEventMatchingMask:NSLeftMouseUpMask untilDate:nil inMode:NSDefaultRunLoopMode dequeue:NO] != nil)
-//		{
-//			inputHandler->setMouseUpPending(true);
-//		}
-//		else
-//		{
-//			inputHandler->setMouseUpPending(false);
-//		}
-//	}
-//}
-
 - (IBAction)viewMode:(id)sender
 {
-	[self setFlyThroughMode:[[sender cell] tagForSegment:[sender selectedSegment]] == LDInputHandler::VMFlyThrough];
+	LDInputHandler::ViewMode viewMode;
+	switch ([[sender cell] tagForSegment:[sender selectedSegment]])
+	{
+		case 1:
+			viewMode = LDInputHandler::VMFlyThrough;
+			break;
+		case 2:
+			viewMode = LDInputHandler::VMWalk;
+			break;
+		default:
+			viewMode = LDInputHandler::VMExamine;
+			break;
+	}
+	[self setViewMode:viewMode];
 }
 
-- (void)setFlyThroughMode:(bool)flyThroughMode
+- (void)setViewMode:(long)newViewMode
 {
-	LDInputHandler::ViewMode newViewMode = LDInputHandler::VMExamine;
-
-	if (flyThroughMode)
-	{
-		newViewMode = LDInputHandler::VMFlyThrough;
-	}
-	inputHandler->setViewMode(newViewMode);
+	inputHandler->setViewMode((LDInputHandler::ViewMode)newViewMode);
 	TCUserDefaults::setLongForKey(newViewMode, VIEW_MODE_KEY, false);
 }
 
-- (bool)flyThroughMode
+- (bool)examineMode
 {
-	return inputHandler->getViewMode() == LDInputHandler::VMFlyThrough;
+	return inputHandler->getViewMode() == LDInputHandler::VMExamine;
+}
+
+- (long)viewMode
+{
+	return inputHandler->getViewMode();
 }
 
 - (void)setKeepRightSideUp:(bool)keepRightSideUp
@@ -1108,273 +906,6 @@ static TCImage *resizeCornerImage = NULL;
 	
 	[printOperation runOperation];
 	[printAccessoryViewOwner release];
-}
-
-- (NSOpenGLContext *)setupFullScreenContextForDisplay:(CGDirectDisplayID)displayID
-{
-	CGDisplayErr err;
-	NSOpenGLContext *fullScreenContext;
-	CGOpenGLDisplayMask displayMask = CGDisplayIDToOpenGLDisplayMask(displayID);
-	int attrs[] =
-	{
-		NSOpenGLPFAFullScreen,
-		NSOpenGLPFAScreenMask, static_cast<int>(displayMask),
-		NSOpenGLPFADoubleBuffer,
-		NSOpenGLPFAColorSize, 16,
-		NSOpenGLPFAAlphaSize, 4,
-		NSOpenGLPFADepthSize, 16,
-		NSOpenGLPFAMaximumPolicy,
-		NSOpenGLPFANoRecovery,
-		0
-	};
-	NSOpenGLPixelFormat *pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:(NSOpenGLPixelFormatAttribute *)attrs];
-	
-	fullScreenContext = [[NSOpenGLContext alloc] initWithFormat:pixelFormat shareContext:sharedContext];
-	[pixelFormat release];
-	pixelFormat = nil;
-	if (fullScreenContext == nil)
-	{
-        NSLog(@"Failed to create fullScreenContext");
-        return nil;
-	}
-	err = CGDisplayCapture(displayID);
-	if (err != CGDisplayNoErr)
-	{
-        [fullScreenContext release];
-        fullScreenContext = nil;
-        return nil;
-	}
-	[fullScreenContext setFullScreen];
-	[fullScreenContext makeCurrentContext];
-	return [fullScreenContext autorelease];
-}
-
-//- (id <NSMenuItem>)searchForKeyEquivalent:(unichar)keyEquivalent modifierFlags:(unsigned int)modifierFlags inMenu:(NSMenu *)menu
-- (NSMenuItem *)searchForKeyEquivalent:(unichar)keyEquivalent modifierFlags:(unsigned int)modifierFlags inMenu:(NSMenu *)menu
-{
-	int count = (int)[menu numberOfItems];
-	int i;
-
-	for (i = 0; i < count; i++)
-	{
-		NSMenuItem * item = [menu itemAtIndex:i];
-		
-		if ([item hasSubmenu])
-		{
-			NSMenuItem * found = [self searchForKeyEquivalent:keyEquivalent modifierFlags:modifierFlags inMenu:[item submenu]];
-			if (found != nil)
-			{
-				return found;
-			}
-		}
-		else
-		{
-			NSString *itemKeyEquivalent = [item keyEquivalent];
-
-			if ([itemKeyEquivalent length] > 0 && [itemKeyEquivalent characterAtIndex:0] == keyEquivalent && [item keyEquivalentModifierMask] == modifierFlags)
-			{
-				return item;
-			}
-		}
-	}
-	return nil;
-}
-
-- (NSMenuItem *)searchForKeyEquivalent:(unichar)keyEquivalent modifierFlags:(unsigned int)modifierFlags
-{
-	NSMenu *mainMenu = [NSApp mainMenu];
-
-	if (modifierFlags & NSShiftKeyMask)
-	{
-		keyEquivalent = toupper(keyEquivalent);
-		modifierFlags = modifierFlags & ~NSShiftKeyMask;
-	}
-	return [self searchForKeyEquivalent:keyEquivalent modifierFlags:modifierFlags inMenu:mainMenu];
-}
-
-//- (void)applicationDidResignActive:(NSNotification *)aNotification
-//{
-//	fullScreen = false;
-//}
-
-- (void)fullScreenKeyDown:(NSEvent *)event
-{
-	unsigned int modifierFlags = [event modifierFlags] & 0xFFFF0000;
-
-	switch ([self convertKeyCode:event])
-	{
-		case LDInputHandler::KCEscape:
-			if (modifierFlags == 0)
-			{
-				fullScreen = false;
-			}
-			break;
-		case LDInputHandler::KCReturn:
-			if (modifierFlags == NSCommandKeyMask)
-			{
-				fullScreen = false;
-			}
-			break;
-		default:
-			NSMenuItem *item = [self searchForKeyEquivalent:[[event charactersIgnoringModifiers] characterAtIndex:0] modifierFlags:modifierFlags];
-
-			if (item != nil)
-			{
-				SEL action = [item action];
-
-				if (action == @selector(terminate:) || action == @selector(hide:))
-				{
-					fullScreen = false;
-					[NSApp performSelector:action withObject:item afterDelay:0.0f];
-				}
-				else if (action == @selector(zoomToFit:))
-				{
-					[self performSelector:action withObject:item];
-				}
-				else if (action == @selector(performClose:) || action == @selector(performMiniaturize:))
-				{
-					fullScreen = false;
-					[[self window] performSelector:action withObject:item afterDelay:0.0f];
-				}
-				else if (action == @selector(viewingAngle:))
-				{
-					[self setViewingAngle:(int)[item tag]];
-				}
-				else if (action == @selector(examineMode:) || action == @selector(flyThroughMode:))
-				{
-					desiredFlyThrough = action == @selector(flyThroughMode:);
-				}
-			}
-			break;
-	}
-}
-
-- (bool)fullScreen
-{
-	return fullScreen;
-}
-
-- (void)fullScreenRunLoop:(NSOpenGLContext *)fullScreenContext
-{
-	NSRect screenRect = [[[self window] screen] frame];
-	NSWorkspace *workspace = [NSWorkspace sharedWorkspace];
-	NSString *bundleIdentifier = [[NSBundle mainBundle] bundleIdentifier];
-
-	while (fullScreen)
-	{
-		NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-		NSEvent *event;
-		int i;
-
-		// Check for and process input events.
-		for (i = 0; i < 2 && (event = [NSApp nextEventMatchingMask:NSAnyEventMask untilDate:[NSDate distantPast] inMode:NSDefaultRunLoopMode dequeue:YES]) != nil; i++)
-		{
-			switch ([event type])
-			{
-				case NSKeyDown:
-					[self fullScreenKeyDown:event];
-					if (!fullScreen)
-					{
-						[pool release];
-						return;
-					}
-						[self keyDown:event];
-					break;
-				case NSKeyUp:
-					[self keyUp:event];
-					if (desiredFlyThrough != [[self modelWindow] flyThroughMode])
-					{
-						[[self modelWindow] setFlyThroughMode:desiredFlyThrough];
-					}
-					break;
-                default:
-                    // Do nothing.
-                    break;
-			}
-			if (NSPointInRect([NSEvent mouseLocation], screenRect))
-			{
-				switch ([event type])
-				{
-					case NSLeftMouseDown:
-						[self mouseDown:event];
-						break;
-					case NSLeftMouseUp:
-						[self mouseUp:event];
-						break;
-					case NSLeftMouseDragged:
-						[self mouseDragged:event];
-						break;
-					case NSRightMouseDown:
-						[self rightMouseDown:event];
-						break;
-					case NSRightMouseUp:
-						[self rightMouseUp:event];
-						break;
-					case NSRightMouseDragged:
-						[self rightMouseDragged:event];
-						break;
-					case NSOtherMouseDown:
-						[self otherMouseDown:event];
-						break;
-					case NSOtherMouseUp:
-						[self otherMouseUp:event];
-						break;
-					case NSOtherMouseDragged:
-						[self otherMouseDragged:event];
-						break;
-					case NSScrollWheel:
-						[self scrollWheel:event];
-						break;
-                    default:
-                        // Do nothing.
-                        break;
-				}
-			}
-		}
-		[fullScreenContext makeCurrentContext];
-		modelViewer->update();
-		[fullScreenContext flushBuffer];
-		// Note: [NSApp isActive] doesn't work, probably due to the lack of
-		// system run loop processing.
-		if (![[[workspace activeApplication] objectForKey:@"NSApplicationBundleIdentifier"] isEqualToString:bundleIdentifier])
-		{
-			fullScreen = false;
-		}
-		[pool release];
-	}
-}
-
-- (void)doFullScreen
-{
-	CGDirectDisplayID displayID = (CGDirectDisplayID)[[[[[self window] screen] deviceDescription] objectForKey:@"NSScreenNumber"] unsignedIntValue];
-	NSOpenGLContext *fullScreenContext = [self setupFullScreenContextForDisplay:displayID];
-	
-	if (fullScreenContext)
-	{
-		GLint viewport[4];
-		
-		glGetIntegerv(GL_VIEWPORT, viewport);
-		modelViewer->setWidth(viewport[2]);
-		modelViewer->setHeight(viewport[3]);
-		modelViewer->setup();
-		[self fullScreenRunLoop:fullScreenContext];
-		[fullScreenContext clearDrawable];
-		CGDisplayRelease(displayID);
-		CGReleaseAllDisplays();
-		modelViewer->setWidth((int)[self frame].size.width);
-		modelViewer->setHeight((int)[self frame].size.height);
-		[self rotationUpdate];
-	}
-}
-
-- (IBAction)toggleFullScreen:(id)sender
-{
-	fullScreen = !fullScreen;
-	if (fullScreen)
-	{
-		// If we go immediately, the menu is still left haning.
-		[self performSelector:@selector(doFullScreen) withObject:nil afterDelay:0.0f];
-	}
 }
 
 @end

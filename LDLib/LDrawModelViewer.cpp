@@ -42,6 +42,15 @@
 #endif // COCOA
 #endif // !USE_STD_CHRONO
 
+#ifdef USE_STD_CHRONO
+//#define TIME_MODEL_LOAD
+#endif // USE_STD_CHRONO
+
+#ifdef TIME_MODEL_LOAD
+#include <iostream>
+#include <ctime>
+#endif // TIME_MODEL_LOAD
+
 #ifdef WIN32
 #if defined(_MSC_VER) && _MSC_VER >= 1400 && defined(_DEBUG)
 #define new DEBUG_CLIENTBLOCK
@@ -56,7 +65,6 @@ float fmodf(float x, float y)
 #endif
 
 #define FONT_CHAR_WIDTH 8
-#define FONT_CHAR_HEIGHT 16
 #define FONT_IMAGE_WIDTH 128
 #define FONT_IMAGE_HEIGHT 256
 #define FONT_NUM_CHARACTERS 256
@@ -64,7 +72,7 @@ float fmodf(float x, float y)
 
 LDrawModelViewer::StandardSizeList LDrawModelViewer::standardSizes;
 
-LDrawModelViewer::LDrawModelViewer(int width, int height)
+LDrawModelViewer::LDrawModelViewer(TCFloat width, TCFloat height)
 	:mainTREModel(NULL),
 	mainModel(NULL),
 	whiteLightDirModel(NULL),
@@ -74,6 +82,7 @@ LDrawModelViewer::LDrawModelViewer(int width, int height)
 	programPath(NULL),
 	width(width),
 	height(height),
+	scaleFactor(1.0f),
 	pixelAspectRatio(1.0f),
 	cullBackFaces(0),
 	viewMode(VMExamine),
@@ -123,7 +132,8 @@ LDrawModelViewer::LDrawModelViewer(int width, int height)
 	curveQuality(2),
 	textureFilterType(GL_LINEAR_MIPMAP_LINEAR),
 	distanceMultiplier(DEF_DISTANCE_MULT),
-	fontImage(NULL),
+	fontImage1x(NULL),
+	fontImage2x(NULL),
 	aspectRatio(1.0f),
 	currentFov(45.0f),
 	fov(45.0f),
@@ -261,16 +271,18 @@ void LDrawModelViewer::dealloc(void)
 	TCObject::release(highlightModel);
 	TCObject::release(exporter);
 	mainTREModel = NULL;
-	delete filename;
+	delete[] filename;
 	filename = NULL;
-	delete programPath;
+	delete[] programPath;
 	programPath = NULL;
-	delete rotationMatrix;
+	delete[] rotationMatrix;
 	rotationMatrix = NULL;
-	delete defaultRotationMatrix;
+	delete[] defaultRotationMatrix;
 	defaultRotationMatrix = NULL;
-	TCObject::release(fontImage);
-	fontImage = NULL;
+	TCObject::release(fontImage1x);
+	fontImage1x = NULL;
+	TCObject::release(fontImage2x);
+	fontImage2x = NULL;
 	TCObject::release(extraSearchDirs);
 	extraSearchDirs = NULL;
 	delete cameraData;
@@ -289,7 +301,7 @@ LDInputHandler *LDrawModelViewer::getInputHandler(void)
 
 void LDrawModelViewer::setFilename(const char* value)
 {
-	delete filename;
+	delete[] filename;
 	filename = copyString(value);
 	mpdName = "";
 	if (filename != NULL)
@@ -317,7 +329,7 @@ void LDrawModelViewer::setFilename(const char* value)
 
 void LDrawModelViewer::setProgramPath(const char *value)
 {
-	delete programPath;
+	delete[] programPath;
 	programPath = copyString(value);
 	stripTrailingPathSeparators(programPath);
 }
@@ -336,13 +348,13 @@ void LDrawModelViewer::applyTile(void)
 		GLfloat xScale, yScale;
 		GLfloat xOffset, yOffset;
 
-		tileLeft = (int)(xTile * width);
-		tileBottom = (int)((numYTiles - yTile - 1) * height);
-		xScale = (GLfloat)(width * numXTiles) / (GLfloat)width;
-		yScale = (GLfloat)(height * numYTiles) / (GLfloat)height;
-		xOffset = (-2.0f * tileLeft) / (width * numXTiles) +
+		tileLeft = (int)(xTile * scale(width));
+		tileBottom = (int)((numYTiles - yTile - 1) * scale(height));
+		xScale = (GLfloat)((width * numXTiles) / width);
+		yScale = (GLfloat)((height * numYTiles) / height);
+		xOffset = (-2.0f * tileLeft) / (scale(width) * numXTiles) +
 			(1 - 1.0f / numXTiles);
-		yOffset = (-2.0f * tileBottom) / (height * numYTiles) +
+		yOffset = (-2.0f * tileBottom) / (scale(height) * numYTiles) +
 			(1 - 1.0f / numYTiles);
 		glScalef(xScale, yScale, 1.0f);
 		treGlTranslatef(xOffset, yOffset, 0.0f);
@@ -392,15 +404,15 @@ void LDrawModelViewer::setFov(TCFloat value)
 
 TCFloat LDrawModelViewer::getHFov(void)
 {
-	int actualWidth = width / (int)getStereoWidthModifier();
+	TCFloat actualWidth = width / getStereoWidthModifier();
 
 	return (TCFloat)(2.0 * rad2deg(atan(tan(deg2rad(fov / 2.0)) *
-		(actualWidth * numXTiles) / (double)height * numYTiles)));
+		(actualWidth * numXTiles) / height * numYTiles)));
 }
 
 void LDrawModelViewer::updateCurrentFov(void)
 {
-	int actualWidth = width / (int)getStereoWidthModifier();
+	TCFloat actualWidth = width / getStereoWidthModifier();
 
 	currentFov = TCUserDefaults::floatForKey("HFOV", -1, false);
 	if (currentFov == -1)
@@ -415,31 +427,31 @@ void LDrawModelViewer::updateCurrentFov(void)
 			// From Lars Hassing:
 			// Vertical FOV = 2*atan(tan(hfov/2)/(width/height))
 			currentFov = (TCFloat)(2.0 * rad2deg(atan(tan(deg2rad(fov / 2.0)) *
-				(double)height * numYTiles / (actualWidth * numXTiles))));
+				height * numYTiles / (actualWidth * numXTiles))));
 
 			if (currentFov > 179.0f)
 			{
 				currentFov = 179.0f;
 			}
-			aspectRatio = (TCFloat)height / actualWidth;
+			aspectRatio = height / actualWidth;
 		}
 		else
 		{
-			aspectRatio = (TCFloat)actualWidth / height;
+			aspectRatio = actualWidth / height;
 		}
 	}
 	else
 	{
 		fov = (TCFloat)(2.0 * rad2deg(atan(tan(deg2rad(currentFov / 2.0)) *
-			(double)height * numYTiles / (actualWidth * numXTiles))));
+			height * numYTiles / (actualWidth * numXTiles))));
 		if (actualWidth * numXTiles > height * numYTiles)
 		{
 			currentFov = fov;
-			aspectRatio = (TCFloat)actualWidth / height;
+			aspectRatio = actualWidth / height;
 		}
 		else
 		{
-			aspectRatio = (TCFloat)height / actualWidth;
+			aspectRatio = height / actualWidth;
 		}
 	}
 }
@@ -485,25 +497,22 @@ void LDrawModelViewer::perspectiveView(bool resetViewport)
 	TCFloat nClip;
 	TCFloat fClip;
 	TCFloat clipRadius = getClipRadius();
-	int actualWidth = width / (int)getStereoWidthModifier();
+	int actualWidth = (int)scale(width) / (int)getStereoWidthModifier();
 	TCFloat zDistance = getZDistance();
-	TCFloat aspectAdjust = (TCFloat)tan(1.0f);
+	//TCFloat aspectAdjust = (TCFloat)tan(1.0f);
 
 	if (flags.forceZoomToFit)
 	{
 		zoomToFit();
 	}
-//	zDistance = camera.getPosition().length();
 	updateCurrentFov();
 	if (resetViewport)
 	{
-		glViewport(0, 0, actualWidth, height);
+		glViewport(0, 0, actualWidth, (GLsizei)scale(height));
 		flags.needsResize = false;
 	}
-//	printf("aspectRatio1: %f ", aspectRatio);
-	aspectRatio = (TCFloat)(1.0f / tan(1.0f / aspectRatio)) * aspectAdjust;
+	//aspectRatio = (TCFloat)(1.0f / tan(1.0f / aspectRatio)) * aspectAdjust;
 	aspectRatio = 1.0f;
-//	printf("aspectRatio2: %f\n", aspectRatio);
 	nClip = zDistance - clipRadius * aspectRatio + clipAmount * aspectRatio *
 		clipRadius;
 	if (nClip < clipSize / 1000.0f)
@@ -582,8 +591,9 @@ TCFloat LDrawModelViewer::calcDefaultDistance(void)
 
 	if (margin != 0.0f)
 	{
-		int actualWidth = width / (int)getStereoWidthModifier() * numXTiles;
-		int actualHeight = height * numYTiles;
+		int actualWidth = (int)scale(width) / (int)getStereoWidthModifier() *
+			numXTiles;
+		int actualHeight = (int)scale(height) * numYTiles;
 
 		if (actualWidth < actualHeight)
 		{
@@ -713,7 +723,7 @@ void LDrawModelViewer::setDefaultRotationMatrix(const TCFloat *value)
 		if (!defaultRotationMatrix || memcmp(defaultRotationMatrix, value,
 			16 * sizeof(TCFloat)) != 0)
 		{
-			delete defaultRotationMatrix;
+			delete[] defaultRotationMatrix;
 			defaultRotationMatrix = new TCFloat[16];
 			memcpy(defaultRotationMatrix, value, 16 * sizeof(TCFloat));
 			flags.needsSetup = true;
@@ -721,7 +731,7 @@ void LDrawModelViewer::setDefaultRotationMatrix(const TCFloat *value)
 	}
 	else if (defaultRotationMatrix)
 	{
-		delete defaultRotationMatrix;
+		delete[] defaultRotationMatrix;
 		defaultRotationMatrix = NULL;
 		flags.needsSetup = true;
 	}
@@ -1108,8 +1118,17 @@ bool LDrawModelViewer::loadLDLModel(void)
 		mpdChildIndex = 0;
 		flags.needsResetMpd = false;
 	}
+#ifdef TIME_MODEL_LOAD
+	auto start = std::chrono::high_resolution_clock::now();
+#endif // TIME_MODEL_LOAD
 	if (mainModel->load(filename))
 	{
+#ifdef TIME_MODEL_LOAD
+		auto end = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double> elapsed_seconds = end-start;
+		std::cout << "\n\nModel load of " << filename << " took " <<
+			elapsed_seconds.count() << "s\n\n\n";
+#endif // TIME_MODEL_LOAD
 		return calcSize();
 	}
 	else
@@ -1502,7 +1521,7 @@ void LDrawModelViewer::setupLighting(void)
 		{
 			const TCULongList &lightColors = mainTREModel->getLightColors();
 			TCULongList::const_iterator itColor = lightColors.begin();
-			float scale = 1.0f / 255.0f;
+			float lightScale = 1.0f / 255.0f;
 			float atten = (float)sqr(size);
 			int start = 0;
 
@@ -1519,11 +1538,11 @@ void LDrawModelViewer::setupLighting(void)
 				float brightness;
 
 				memcpy(rgb, &color, 4);
-				brightness = std::max(std::max(rgb[0] * scale,
-					rgb[1] * scale), rgb[2] * scale) * (1.0f - minBrightness) +
+				brightness = std::max(std::max(rgb[0] * lightScale,
+					rgb[1] * lightScale), rgb[2] * lightScale) * (1.0f - minBrightness) +
 					minBrightness;
-				setupLight(GL_LIGHT0 + i, TCVector(rgb[0] * scale,
-					rgb[1] * scale, rgb[2] * scale));
+				setupLight(GL_LIGHT0 + i, TCVector(rgb[0] * lightScale,
+					rgb[1] * lightScale, rgb[2] * lightScale));
 				glLightf(GL_LIGHT0 + i, GL_CONSTANT_ATTENUATION, 0.5f);
 				glLightf(GL_LIGHT0 + i, GL_LINEAR_ATTENUATION, 0.0f);//1.0f / size);
 				glLightf(GL_LIGHT0 + i, GL_QUADRATIC_ATTENUATION, 2.0f / atten /
@@ -1561,14 +1580,14 @@ void LDrawModelViewer::setFontData(TCByte *fontData, long length)
 		int rowSize;
 		int imageSize;
 
-		fontImage = new TCImage;
-		fontImage->setFlipped(true);
-		fontImage->setLineAlignment(4);
-		fontImage->setDataFormat(TCRgba8);
-		fontImage->setSize(FONT_IMAGE_WIDTH, FONT_IMAGE_HEIGHT);
-		fontImage->allocateImageData();
-		imageData = fontImage->getImageData();
-		rowSize = fontImage->getRowSize();
+		fontImage1x = new TCImage;
+		fontImage1x->setFlipped(true);
+		fontImage1x->setLineAlignment(4);
+		fontImage1x->setDataFormat(TCRgba8);
+		fontImage1x->setSize(FONT_IMAGE_WIDTH, FONT_IMAGE_HEIGHT);
+		fontImage1x->allocateImageData();
+		imageData = fontImage1x->getImageData();
+		rowSize = fontImage1x->getRowSize();
 		imageSize = rowSize * FONT_IMAGE_HEIGHT;
 		for (i = 0; i < imageSize; i++)
 		{
@@ -1606,9 +1625,9 @@ void LDrawModelViewer::setFontData(TCByte *fontData, long length)
 }
 
 // Loads a font file in the format of VGA text-mode font data.
-void LDrawModelViewer::loadVGAFont(char *fontFilename)
+void LDrawModelViewer::loadVGAFont(const char *fontFilename)
 {
-	if (!fontImage)
+	if (fontImage1x == NULL)
 	{
 		FILE *fontFile = fopen(fontFilename, "rb");
 
@@ -1625,20 +1644,88 @@ void LDrawModelViewer::loadVGAFont(char *fontFilename)
 	}
 }
 
-void LDrawModelViewer::setupFont(char *fontFilename)
+void LDrawModelViewer::setFont2x(TCImage *image)
+{
+	if (fontImage2x == NULL)
+	{
+		fontImage2x = TCObject::retain(image);
+	}
+}
+
+void LDrawModelViewer::setRawFont2xData(const TCByte *data, long length)
+{
+	if (fontImage2x == NULL)
+	{
+		int rowSize;
+		const int fontWidth = 256;
+		const int fontHeight = 512;
+		
+		fontImage2x = new TCImage;
+		fontImage2x->setFlipped(true);
+		fontImage2x->setLineAlignment(4);
+		fontImage2x->setDataFormat(TCRgba8);
+		fontImage2x->setSize(fontWidth, fontHeight);
+		fontImage2x->allocateImageData();
+		rowSize = fontImage2x->getRowSize();
+		if (length == rowSize * fontHeight)
+		{
+			TCByte *imageData = fontImage2x->getImageData();
+			int i;
+			
+			for (i = 0; i < fontHeight; ++i)
+			{
+				memcpy(imageData + rowSize * (fontHeight - 1 - i),
+					   data + rowSize * i, rowSize);
+			}
+		}
+		else
+		{
+			fontImage2x->release();
+			fontImage2x = NULL;
+		}
+	}
+}
+
+void LDrawModelViewer::setupFont2x(const char *fontFilename)
+{
+	if (fontImage2x == NULL)
+	{
+		fontImage2x = new TCImage;
+		fontImage2x->setFlipped(true);
+		fontImage2x->setLineAlignment(4);
+		if (!fontImage2x->loadFile(fontFilename))
+		{
+			fontImage2x->release();
+		}
+	}
+	setupFont(NULL);
+}
+
+void LDrawModelViewer::setupFont(const char *fontFilename)
 {
 //	printf("LDrawModelViewer::setupFont\n");
 	if (fontFilename)
 	{
 		loadVGAFont(fontFilename);
 	}
-	if (fontImage)
+	TCImage *fontImage = fontImage1x;
+	TCFloat fontScale = scaleFactor;
+	if (scaleFactor >= 1.5 && fontImage2x != NULL)
+	{
+		fontImage = fontImage2x;
+		fontScale = scaleFactor / 2.0;
+	}
+	if (fontImage != NULL)
 	{
 		int i;
+		int fontImageWidth = fontImage->getWidth();
+		int fontImageHeight = fontImage->getHeight();
+		int fontCharWidth = fontImageWidth / 16;
+		int fontCharHeight = fontImageHeight / 16;
 
 		glGenTextures(1, &fontTextureID);
 		glBindTexture(GL_TEXTURE_2D, fontTextureID);
-		glTexImage2D(GL_TEXTURE_2D, 0, 4, FONT_IMAGE_WIDTH, FONT_IMAGE_HEIGHT,
+		glTexImage2D(GL_TEXTURE_2D, 0, 4, fontImageWidth, fontImageHeight,
 			0, GL_RGBA, GL_UNSIGNED_BYTE, fontImage->getImageData());
 		if (fontListBase)
 		{
@@ -1651,12 +1738,12 @@ void LDrawModelViewer::setupFont(char *fontFilename)
 			TCFloat wx, hy;
 			TCFloat tx, ty;
 
-			cx = (TCFloat)(i % 16) * FONT_CHAR_WIDTH /
-				(TCFloat)(FONT_IMAGE_WIDTH);
-			cy = (TCFloat)(i / 16) * FONT_CHAR_HEIGHT /
-				(TCFloat)(FONT_IMAGE_HEIGHT);
-			wx = (TCFloat)FONT_CHAR_WIDTH / FONT_IMAGE_WIDTH;
-			hy = (TCFloat)FONT_CHAR_HEIGHT / FONT_IMAGE_HEIGHT;
+			cx = (TCFloat)(i % 16) * fontCharWidth /
+				(TCFloat)(fontImageWidth);
+			cy = (TCFloat)(i / 16) * fontCharHeight /
+				(TCFloat)(fontImageHeight);
+			wx = (TCFloat)fontCharWidth / fontImageWidth;
+			hy = (TCFloat)fontCharHeight / fontImageHeight;
 			glNewList(fontListBase + i, GL_COMPILE);
 				glBegin(GL_QUADS);
 					tx = cx;
@@ -1666,17 +1753,18 @@ void LDrawModelViewer::setupFont(char *fontFilename)
 					tx = cx + wx;
 					ty = 1.0f - cy - hy;
 					treGlTexCoord2f(tx, ty);			// Bottom Right
-					glVertex2i(FONT_CHAR_WIDTH, 0);
+					glVertex2i(fontCharWidth * fontScale, 0);
 					tx = cx + wx;
 					ty = 1 - cy;
 					treGlTexCoord2f(tx, ty);			// Top Right
-					glVertex2i(FONT_CHAR_WIDTH, FONT_CHAR_HEIGHT);
+					glVertex2i(fontCharWidth * fontScale,
+						fontCharHeight * fontScale);
 					tx = cx;
 					ty = 1 - cy;
 					treGlTexCoord2f(tx , ty);			// Top Left
-					glVertex2i(0, FONT_CHAR_HEIGHT);
+					glVertex2i(0, fontCharHeight * fontScale);
 				glEnd();
-				glTranslated(FONT_CHAR_WIDTH + 1, 0, 0);
+				glTranslated((fontCharWidth + 1) * fontScale, 0, 0);
 			glEndList();
 		}
 	}
@@ -1694,7 +1782,7 @@ void LDrawModelViewer::setupTextures(void)
 		sprintf(textureFilename, "%s/SansSerif.fnt", programPath);
 		setupFont(textureFilename);
 	}
-	else if (fontImage)
+	else if (fontImage1x != NULL)
 	{
 		setupFont(NULL);
 	}
@@ -1754,7 +1842,8 @@ void LDrawModelViewer::drawBoundingBox(void)
 
 void LDrawModelViewer::orthoView(void)
 {
-	int actualWidth = width;
+	int actualWidth = (int)scale(width);
+	int actualHeight = (int)scale(height);
 	const char *glVendor = "";
 	const GLubyte *origVendorString = glGetString(GL_VENDOR);
 
@@ -1764,20 +1853,17 @@ void LDrawModelViewer::orthoView(void)
 	}
 	if (stereoMode == LDVStereoCrossEyed || stereoMode == LDVStereoParallel)
 	{
-		glViewport(0, 0, width, height);
-//		actualWidth = width / 2;
+		glViewport(0, 0, actualWidth, actualHeight);
 	}
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluOrtho2D(0.0, actualWidth, 0.0, height);
-//	gluOrtho2D(-0.5, actualWidth - 0.5, -0.5, height - 0.5);
+	gluOrtho2D(0.0, actualWidth, 0.0, actualHeight);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	if (strncmp(glVendor, "ATI Technologies Inc.", 3) != 0)
 	{
 		// This doesn't work right on ATI video cards, so skip.
 		treGlTranslatef(0.375f, 0.375f, 0.0f);
-		//debugPrintf("Not an ATI.\n");
 	}
 }
 
@@ -1815,7 +1901,7 @@ void LDrawModelViewer::drawString(TCFloat xPos, TCFloat yPos, char* string)
 		glColor3ub(255, 255, 255);
 	}
 	orthoView();
-	treGlTranslatef(xPos, yPos, 0);
+	treGlTranslatef(xPos * scaleFactor, yPos * scaleFactor, 0);
 	glPushAttrib(GL_ENABLE_BIT | GL_POLYGON_BIT | GL_TEXTURE_BIT);
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_TEXTURE_2D);
@@ -1836,12 +1922,11 @@ void LDrawModelViewer::drawString(TCFloat xPos, TCFloat yPos, char* string)
 
 void LDrawModelViewer::drawFPS(TCFloat fps)
 {
-	if (mainTREModel)
+	if (mainTREModel && fps > 0.0f)
 	{
 		char fpsString[1024];
 		int lightingEnabled = glIsEnabled(GL_LIGHTING);
 		int zBufferEnabled = glIsEnabled(GL_DEPTH_TEST);
-		//TCFloat xMult = (TCFloat)width / (TCFloat)height;
 
 		if (lightingEnabled)
 		{
@@ -1851,22 +1936,7 @@ void LDrawModelViewer::drawFPS(TCFloat fps)
 		{
 			glDisable(GL_DEPTH_TEST);
 		}
-		if (fps > 0.0f)
-		{
-			sprintf(fpsString, "%4.4f", fps);
-		}
-		else
-		{
-			// NOTE: Unicode NOT supported for this string.
-			strcpy(fpsString, ls("FPSSpinPromptGL"));
-/*
-			for (int i = 0; i < 128; i++)
-			{
-				fpsString[i] = i + 64;//28;
-			}
-			fpsString[i] = 0;
-*/
-		}
+		sprintf(fpsString, "%4.4f", fps);
 		drawString(2.0f, 0.0f, fpsString);
 		if (lightingEnabled)
 		{
@@ -2215,7 +2285,26 @@ void LDrawModelViewer::setTextureFilterType(int value)
 	}
 }
 
-void LDrawModelViewer::setWidth(int value)
+void LDrawModelViewer::setScaleFactor(TCFloat value)
+{
+	if (value != scaleFactor)
+	{
+		if (fontListBase)
+		{
+			glDeleteLists(fontListBase, 128);
+			fontListBase = 0;
+		}
+		scaleFactor = value;
+		flags.needsResize = true;
+		if (mainTREModel)
+		{
+			mainTREModel->setEdgeLineWidth(getScaledHighlightLineWidth());
+		}
+		requestRedraw();
+	}
+}
+
+void LDrawModelViewer::setWidth(TCFloat value)
 {
 	if (value != width)
 	{
@@ -2224,7 +2313,7 @@ void LDrawModelViewer::setWidth(int value)
 	}
 }
 
-void LDrawModelViewer::setHeight(int value)
+void LDrawModelViewer::setHeight(TCFloat value)
 {
 	if (value != height)
 	{
@@ -2283,6 +2372,11 @@ void LDrawModelViewer::setCutawayMode(LDVCutawayMode mode)
 	cutawayMode = mode;
 }
 
+TCFloat32 LDrawModelViewer::getScaledCutawayLineWidth(void) const
+{
+	return std::max(1.0f, scale(cutawayLineWidth));
+}
+
 void LDrawModelViewer::setCutawayLineWidth(TCFloat32 value)
 {
 	cutawayLineWidth = value;
@@ -2336,6 +2430,11 @@ void LDrawModelViewer::setSortTransparent(bool value)
 	}
 }
 
+TCFloat32 LDrawModelViewer::getScaledHighlightLineWidth(void) const
+{
+	return std::max(1.0f, scale(highlightLineWidth));
+}
+
 void LDrawModelViewer::setHighlightLineWidth(TCFloat32 value)
 {
 	if (value != highlightLineWidth)
@@ -2343,9 +2442,14 @@ void LDrawModelViewer::setHighlightLineWidth(TCFloat32 value)
 		highlightLineWidth = value;
 		if (mainTREModel)
 		{
-			mainTREModel->setEdgeLineWidth(value);
+			mainTREModel->setEdgeLineWidth(getScaledHighlightLineWidth());
 		}
 	}
+}
+
+TCFloat32 LDrawModelViewer::getScaledWireframeLineWidth(void) const
+{
+	return std::max(1.0f, scale(wireframeLineWidth));
 }
 
 void LDrawModelViewer::setWireframeLineWidth(TCFloat32 value)
@@ -2455,7 +2559,58 @@ void LDrawModelViewer::updateCameraPosition(void)
 	factor = 1.0f / multiplier;
 #endif // None of the above
 #endif // !USE_STD_CHRONO
-	camera.move(cameraMotion * size / 100.0f * factor * multiplier);
+	if (viewMode == VMWalk)
+	{
+		TCVector upVector(0.0f, -1.0f, 0.0f);
+		TCVector tempMotion(0.0f, 0.0f, 0.0f);
+		TCFloat matrix[16];
+		TCFloat inverseMatrix[16];
+		TCVector::invertMatrix(camera.getFacing().getMatrix(), inverseMatrix);
+		TCVector::multMatrix(inverseMatrix, rotationMatrix, matrix);
+		TCVector tempVector = upVector.transformNormal(matrix);
+		TCFloat motionAmount = 20.0f * (TCFloat)sqrt(fov / 45.0f);
+
+//		TCFloat identity[16];
+//		memcpy(identity, TCVector::sm_identityMatrix, sizeof(TCVector::sm_identityMatrix));
+//		TCVector::calcRotationMatrix(cameraXRotate, cameraYRotate, identity);
+
+		TCFloat identity[16] =
+		{
+			1.0, 0.0, 0.0, 0.0,
+			0.0, 1.0, 0.0, 0.0,
+			0.0, 0.0, 1.0, 0.0,
+			0.0, 0.0, 0.0, 1.0
+		};
+		TCVector::calcRotationMatrix(cameraXRotate, cameraYRotate, identity);
+		TCVector whateverVector = upVector.transformNormal(identity);
+
+		if (cameraMotion[2] > 0.0f)
+		{
+			tempMotion[1] += -tempVector[2];
+			tempMotion[2] += tempVector[1];
+		}
+		else if (cameraMotion[2] < 0.0f)
+		{
+			tempMotion[1] += tempVector[2];
+			tempMotion[2] += -tempVector[1];
+		}
+		if (cameraMotion[1] > 0.0f)
+		{
+			tempMotion[1] += (1 - tempVector[2]);
+			tempMotion[2] += (1 - tempVector[1]);
+		}
+		else if (cameraMotion[1] < 0.0f)
+		{
+			tempMotion[1] += -(1 - tempVector[2]);
+			tempMotion[2] += -(1 - tempVector[1]);
+		}
+		tempMotion[0] = cameraMotion[0];
+		camera.move(tempMotion * motionAmount * factor * multiplier);
+	}
+	else
+	{
+		camera.move(cameraMotion * size / 100.0f * factor * multiplier);
+	}
 	camera.rotate(TCVector(cameraXRotate, cameraYRotate, cameraZRotate) *
 		factor * multiplier * 1.5f);
 }
@@ -2615,9 +2770,9 @@ void LDrawModelViewer::clearBackground(void)
 		glDepthMask(1);
 		glBegin(GL_QUADS);
 		glVertex3i(-1, -1, -1);
-		glVertex3i(width + 1, -1, -1);
-		glVertex3i(width + 1, height + 1, -1);
-		glVertex3i(-1, height + 1, -1);
+		glVertex3i((GLint)scale(width) + 1, -1, -1);
+		glVertex3i((GLint)scale(width) + 1, (GLint)scale(height) + 1, -1);
+		glVertex3i(-1, (GLint)scale(height) + 1, -1);
 		glEnd();
 		glDepthFunc(oldDepthFunc);
 		if (oldBlendEnabled)
@@ -2643,7 +2798,7 @@ void LDrawModelViewer::clearBackground(void)
 	if (flags.drawWireframe)
 	{
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		lineWidth(wireframeLineWidth);
+		lineWidth(getScaledWireframeLineWidth());
 		if (flags.useWireframeFog)
 		{
 			glEnable(GL_FOG);
@@ -2655,7 +2810,7 @@ void LDrawModelViewer::clearBackground(void)
 	}
 	else
 	{
-		lineWidth(highlightLineWidth);
+		lineWidth(getScaledHighlightLineWidth());
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		glDisable(GL_FOG);
 	}
@@ -2744,11 +2899,11 @@ void LDrawModelViewer::drawToClipPlaneUsingStencil(TCFloat eyeXOffset)
 	glStencilFunc(GL_ALWAYS, 1, ~0u);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	lineWidth(cutawayLineWidth);
+	lineWidth(getScaledCutawayLineWidth());
 	glDisable(GL_FOG);
 	glLoadIdentity();
 	projectCamera(TCVector(-eyeXOffset - xPan, -yPan, 0.0f));
-	if (viewMode == VMFlyThrough || examineMode == EMFree)
+	if (viewMode == VMFlyThrough || viewMode == VMWalk || examineMode == EMFree)
 	{
 		if (rotationMatrix)
 		{
@@ -2874,7 +3029,7 @@ void LDrawModelViewer::drawToClipPlaneUsingDestinationAlpha(TCFloat eyeXOffset)
 	enable(GL_BLEND);
 	blendFunc(GL_DST_ALPHA, GL_ONE_MINUS_DST_ALPHA);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	lineWidth(cutawayLineWidth);
+	lineWidth(getScaledCutawayLineWidth());
 	glDisable(GL_FOG);
 	glLoadIdentity();
 	projectCamera(TCVector(-eyeXOffset - xPan, -yPan, 0.0f));
@@ -2913,7 +3068,7 @@ void LDrawModelViewer::drawToClipPlaneUsingNoEffect(TCFloat eyeXOffset)
 	glClear(GL_DEPTH_BUFFER_BIT);
 //	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	lineWidth(cutawayLineWidth);
+	lineWidth(getScaledCutawayLineWidth());
 	glDisable(GL_FOG);
 	glLoadIdentity();
 	projectCamera(TCVector(-eyeXOffset - xPan, -yPan, 0.0f));
@@ -3050,7 +3205,7 @@ bool LDrawModelViewer::getLDGLiteCommandLine(char *commandString,
 		}
 		sprintf(buf, "ldglite -J -v%d,%d "
 			"-cc%.4f,%.4f,%.4f -co%.4f,%.4f,%.4f "
-			"-cu0,1,0 %s \"%s\"", width, height,
+			"-cu0,1,0 %s \"%s\"", (int)scale(width), (int)scale(height),
 			cameraPoint[0], cameraPoint[1], cameraPoint[2],
 			lookAt[0], lookAt[1], lookAt[2],
 			matrixString, filename);
@@ -3071,7 +3226,7 @@ bool LDrawModelViewer::getLDrawCommandLine(char *shortFilename,
 		TCFloat matrix[16];
 		int i;
 		TCVector point;
-		TCFloat scaleFactor = 500.0f;
+		TCFloat lScaleFactor = 500.0f;
 		TCFloat distance = (camera.getPosition()).length();
 //		TCFloat distance = (camera.getPosition() - center).length();
 
@@ -3098,9 +3253,9 @@ bool LDrawModelViewer::getLDrawCommandLine(char *shortFilename,
 		sprintf(buf, "ldraw -s%.4g -o%d,%d "
 			"-a%.4g,%.4g,%.4g,%.4g,%.4g,%.4g,%.4g,%.4g,%.4g "
 			"%s",
-			scaleFactor / distance,
-			(int)(point[0] * scaleFactor / distance),
-			(int)(point[1] * scaleFactor / distance),
+			lScaleFactor / distance,
+			(int)(point[0] * lScaleFactor / distance),
+			(int)(point[1] * lScaleFactor / distance),
 			matrix[0], matrix[4], matrix[8],
 			matrix[1], matrix[5], matrix[9],
 			matrix[2], matrix[6], matrix[10],
@@ -3135,7 +3290,7 @@ void LDrawModelViewer::applyModelRotation(void)
 	{
 		if (!flags.paused)
 		{
-			if (viewMode == VMFlyThrough || examineMode == EMFree)
+			if (viewMode == VMFlyThrough || viewMode == VMWalk || examineMode == EMFree)
 			{
 				TCFloat matrix[16];
 				TCVector rotation = TCVector(xRotate, yRotate, zRotate);
@@ -3248,7 +3403,7 @@ void LDrawModelViewer::update(void)
 	{
 		setupRotationMatrix();
 	}
-	if (flags.keepRightSideUp && viewMode == VMFlyThrough)
+	if ((flags.keepRightSideUp && viewMode == VMFlyThrough) || viewMode == VMWalk)
 	{
 		rightSideUp(false);
 	}
@@ -3259,21 +3414,9 @@ void LDrawModelViewer::update(void)
 		return;
 	}
 	mainTREModel->setSaveAlphaFlag(flags.saveAlpha);
-/*
-	if (!mainTREModel->getCompiled() && (mainTREModel->getCompileAllFlag() ||
-		mainTREModel->getCompilePartsFlag()))
-	{
-		if (!mainTREModel->getCompiling())
-		{
-			drawString(2.0f, height - 16.0f, "Model Compile Canceled");
-		}
-		return;
-	}
-*/
 	if (stereoMode == LDVStereoCrossEyed || stereoMode == LDVStereoParallel)
 	{
 		TCFloat distance = (camera.getPosition()).length();
-//		TCFloat distance = (camera.getPosition() - center).length();
 
 		eyeXOffset = stereoEyeSpacing * 2.0f / (TCFloat)pow((double)distance,
 			0.25);
@@ -3285,23 +3428,6 @@ void LDrawModelViewer::update(void)
 	if (rotationMatrix)
 	{
 		applyModelRotation();
-//		if (!flags.paused)
-//		{
-//			TCFloat matrix[16];
-//			TCVector rotation = TCVector(xRotate, yRotate, zRotate);
-//
-//			camera.getFacing().getInverseMatrix(matrix);
-//			glPushMatrix();
-//			glLoadIdentity();
-//			rotation = rotation.mult(matrix);
-////			printf("[%f %f %f] [%f %f %f]\n", xRotate, yRotate, zRotate,
-////				rotation[0], rotation[1], rotation[2]);
-////			treGlRotatef(rotationSpeed, xRotate, yRotate, zRotate);
-//			treGlRotatef(rotationSpeed, rotation[0], rotation[1], rotation[2]);
-//			treGlMultMatrixf(rotationMatrix);
-//			treGlGetFloatv(GL_MODELVIEW_MATRIX, rotationMatrix);
-//			glPopMatrix();
-//		}
 	}
 	updateCameraPosition();
 	zoom(zoomSpeed, false);
@@ -3318,11 +3444,12 @@ void LDrawModelViewer::update(void)
 	if (stereoMode == LDVStereoCrossEyed || stereoMode == LDVStereoParallel)
 	{
 		eyeXOffset = -eyeXOffset;
-		glViewport(width / 2, 0, width / 2, height);
+		GLint eyeWidth = (GLint)(scale(width) / 2);
+		glViewport(eyeWidth, 0, eyeWidth, (GLsizei)scale(height));
 		if (flags.slowClear)
 		{
 			clearBackground();
-			glViewport(width / 2, 0, width / 2, height);
+			glViewport(eyeWidth, 0, eyeWidth, (GLsizei)scale(height));
 		}
 		if (flags.drawWireframe && flags.removeHiddenLines)
 		{
@@ -3334,7 +3461,7 @@ void LDrawModelViewer::update(void)
 			drawModel(eyeXOffset);
 		}
 		drawAxes(false);
-		glViewport(0, 0, width / 2, height);
+		glViewport(0, 0, eyeWidth, (GLsizei)scale(height));
 	}
 	flags.updating = false;
 	if ((!fEq(rotationSpeed, 0.0f) ||
@@ -3397,7 +3524,7 @@ void LDrawModelViewer::removeHiddenLines(TCFloat eyeXOffset)
 	}
 	drawModel(eyeXOffset);
 	// Not sure why the following is necessary.
-	lineWidth(wireframeLineWidth);
+	lineWidth(getScaledWireframeLineWidth());
 	if (flags.usePolygonOffset)
 	{
 		glPolygonOffset(0.0f, 0.0f);
@@ -3629,16 +3756,16 @@ void LDrawModelViewer::drawAxes(bool atOrigin)
 		}
 		else
 		{
-			int actualWidth = width;
+			int actualWidth = (int)scale(width);
 
 			if (stereoMode == LDVStereoCrossEyed || stereoMode == LDVStereoParallel)
 			{
-				actualWidth /= 2;
+				actualWidth = (int)(scale(width) / 2);
 			}
 			glPushAttrib(GL_LIGHTING_BIT | GL_VIEWPORT_BIT);
 			glMatrixMode(GL_PROJECTION);
 			glLoadIdentity();
-			glOrtho(0.0f, actualWidth, 0.0f, height, -25.0f, 25.0f);
+			glOrtho(0.0f, actualWidth, 0.0f, (int)scale(height), -25.0f, 25.0f);
 			glMatrixMode(GL_MODELVIEW);
 			glLoadIdentity();
 			glTranslatef(30.0f, 30.0f, 0.0f);
@@ -3737,11 +3864,11 @@ void LDrawModelViewer::panXY(int xValue, int yValue)
 
 	if (width > height)
 	{
-		adjustment = (TCFloat)width;
+		adjustment = scale(width);
 	}
 	else
 	{
-		adjustment = (TCFloat)height;
+		adjustment = scale(height);
 	}
 //	xPan += xValue / (TCFloat)pow(distance, 0.001);
 //	yPan -= yValue / (TCFloat)pow(distance, 0.001);
@@ -3843,7 +3970,7 @@ void LDrawModelViewer::findFileAlertCallback(LDLFindFileAlert *alert)
 	{
 		primitive = true;
 		found = true;
-		delete url;
+		delete[] url;
 		url = copyString(primitiveUrlBase, len + 2);
 	}
 	if (canCheckForUnofficialPart(lfilename, found))
@@ -3865,7 +3992,7 @@ void LDrawModelViewer::findFileAlertCallback(LDLFindFileAlert *alert)
 			sucprintf(message, COUNT_OF(message), ls(_UC("TryingToDownload")),
 				ucFilename);
 		}
-		delete ucFilename;
+		delete[] ucFilename;
 		TCProgressAlert::send("LDrawModelViewer", message, -1.0f, &abort, this);
 		strcat(url, lfilename);
 		webClient = new TCWebClient(url);
@@ -3876,7 +4003,7 @@ void LDrawModelViewer::findFileAlertCallback(LDLFindFileAlert *alert)
 			if (lastModified)
 			{
 				webClient->setLastModifiedString(lastModified);
-				delete lastModified;
+				delete[] lastModified;
 			}
 		}
 		if (primitive)
@@ -3918,7 +4045,7 @@ void LDrawModelViewer::findFileAlertCallback(LDLFindFileAlert *alert)
 			{
 				// We don't know if it's a primitive or a part.  The part
 				// download failed, so try as a primitive.
-				delete url;
+				delete[] url;
 				url = copyString(primitiveUrlBase, len + 2);
 				strcat(url, lfilename);
 				webClient->release();
@@ -3962,10 +4089,10 @@ void LDrawModelViewer::findFileAlertCallback(LDLFindFileAlert *alert)
 		setUnofficialPartPrimitive(lfilename, primitive);
 	}
 	delete[] key;
-	delete lfilename;
-	delete url;
-	delete partOutputFilename;
-	delete primitiveOutputFilename;
+	delete[] lfilename;
+	delete[] url;
+	delete[] partOutputFilename;
+	delete[] primitiveOutputFilename;
 }
 
 LDPartsList *LDrawModelViewer::getPartsList(void)
@@ -4042,40 +4169,13 @@ void LDrawModelViewer::rightSideUp(bool shouldRequestRedraw /*= true*/)
 		TCVector tempVector = upVector.transformNormal(matrix);
 		float lzRotate = 0.0;
 
-		if (tempVector[0] == 0.0)
+		if (tempVector[0] == 0.0 && tempVector[1] == 0.0)
 		{
-			lzRotate = (float)(M_PI / 2.0);
-			if (tempVector[1] > 0)
-			{
-				lzRotate = -lzRotate;
-			}
+			lzRotate = 0;
 		}
 		else
 		{
-			double ratio = tempVector[1] / tempVector[0];
-
-			if (tempVector[1] >= 0.0)
-			{
-				if (tempVector[0] >= 0.0)
-				{
-					lzRotate = (float)(M_PI / 2.0 - atan(ratio));
-				}
-				else
-				{
-					lzRotate = (float)(M_PI + M_PI / 2.0 + atan(-ratio));
-				}
-			}
-			else
-			{
-				if (tempVector[0] >= 0.0)
-				{
-					lzRotate = (float)(M_PI / 2.0 + atan(-ratio));
-				}
-				else
-				{
-					lzRotate = (float)(M_PI + M_PI / 2.0 - atan(ratio));
-				}
-			}
+			lzRotate = atan2(tempVector[0], tempVector[1]);
 		}
 		camera.rotate(TCVector(0.0f, 0.0f, lzRotate));
 		if (shouldRequestRedraw)
@@ -4176,46 +4276,57 @@ void LDrawModelViewer::cleanupFloats(TCFloat *array, int count)
 	}
 }
 
+// Note: static method
+bool LDrawModelViewer::checkAspect(
+	TCFloat width,
+	TCFloat height,
+	int aspectW,
+	int aspectH)
+{
+	return fabs(width * aspectH / aspectW - height) < 1e-5;
+}
+
+// Note: static method
 ucstring LDrawModelViewer::getAspectString(
-	int width,
-	int height,
+	TCFloat width,
+	TCFloat height,
 	CUCSTR separator,
 	bool standardOnly /*= false*/)
 {
 	ucstring aspect;
 	ucstring denom;
 
-	if (width * 100 / 235 == height)
+	if (checkAspect(width, height, 235, 100))
 	{
 		aspect = _UC("2.35");
 		denom = _UC("1");
 	}
-	else if (width * 9 / 16 == height)
+	else if (checkAspect(width, height, 16, 9))
 	{
 		aspect = _UC("16");
 		denom = _UC("9");
 	}
-	else if (width * 3 / 5 == height)
+	else if (checkAspect(width, height, 5, 3))
 	{
 		aspect = _UC("5");
 		denom = _UC("3");
 	}
-	else if (width * 10 / 16 == height)
+	else if (checkAspect(width, height, 16, 10))
 	{
 		aspect = _UC("16");
 		denom = _UC("10");
 	}
-	else if (width * 2 / 3 == height)
+	else if (checkAspect(width, height, 3, 2))
 	{
 		aspect = _UC("3");
 		denom = _UC("2");
 	}
-	else if (width * 3 / 4 == height)
+	else if (checkAspect(width, height, 4, 3))
 	{
 		aspect = _UC("4");
 		denom = _UC("3");
 	}
-	else if (width * 4 / 5 == height)
+	else if (checkAspect(width, height, 5, 4))
 	{
 		aspect = _UC("5");
 		denom = _UC("4");
@@ -4226,7 +4337,7 @@ ucstring LDrawModelViewer::getAspectString(
 	}
 	else
 	{
-		aspect = ftoucstr((double)width / (double)height);
+		aspect = ftoucstr(width / height);
 	}
 	if (denom.length() > 0)
 	{
@@ -4462,13 +4573,11 @@ bool LDrawModelViewer::mouseMove(int x, int y)
 	return true;
 }
 
-#define myMin(a, b) ((a) < (b) ? (a) : (b))
-
 void LDrawModelViewer::mouseMoveLight(int deltaX, int deltaY)
 {
 	TCFloat matrix[16];
-	double scale = myMin(width, height) / 10.0;
-	double angle = deltaX / scale;
+	double lightScale = std::min(scale(width), scale(height)) / 10.0;
+	double angle = deltaX / lightScale;
 	TCVector newLightVector;
 
 	TCVector::initIdentityMatrix(matrix);
@@ -4477,7 +4586,7 @@ void LDrawModelViewer::mouseMoveLight(int deltaX, int deltaY)
 	matrix[8] = (float)sin(angle);
 	matrix[10] = (float)cos(angle);
 	newLightVector = lightVector.transformPoint(matrix);
-	angle = deltaY / scale;
+	angle = deltaY / lightScale;
 	TCVector::initIdentityMatrix(matrix);
 	matrix[5] = (float)cos(angle);
 	matrix[6] = (float)sin(angle);
@@ -4517,7 +4626,7 @@ UCSTR LDrawModelViewer::getOpenGLDriverInfo(int &numExtensions)
 		stripCRLF(temp);
 		numExtensions = countStringLines(temp);
 		extensionsList = mbstoucstring(temp);
-		delete temp;
+		delete[] temp;
 	}
 	else
 	{
@@ -4528,10 +4637,10 @@ UCSTR LDrawModelViewer::getOpenGLDriverInfo(int &numExtensions)
 	message = new UCCHAR[len];
 	sucprintf(message, len, ls(_UC("OpenGlInfo")), vendorString, rendererString,
 		versionString, extensionsList);
-	delete vendorString;
-	delete rendererString;
-	delete versionString;
-	delete extensionsList;
+	delete[] vendorString;
+	delete[] rendererString;
+	delete[] versionString;
+	delete[] extensionsList;
 	return message;
 }
 
@@ -4583,15 +4692,22 @@ TCFloat LDrawModelViewer::getWideLineMargin(void)
 {
 	TCFloat margin = 0.0f;
 
-	if (flags.showsHighlightLines && highlightLineWidth > 1.0f)
+	if (flags.showsHighlightLines)
 	{
-		margin = highlightLineWidth / 2.0f;
-	}
-	if (flags.drawWireframe && wireframeLineWidth > 1.0)
-	{
-		if (wireframeLineWidth / 2.0f > margin)
+		if (getScaledHighlightLineWidth() >= 2.0f)
 		{
-			margin = wireframeLineWidth / 2.0f;
+			margin = getScaledHighlightLineWidth() / 2.0f;
+		}
+		else
+		{
+			margin = 1.0f;
+		}
+	}
+	if (flags.drawWireframe && getScaledWireframeLineWidth() > 1.0)
+	{
+		if (getScaledWireframeLineWidth() / 2.0f > margin)
+		{
+			margin = getScaledWireframeLineWidth() / 2.0f;
 		}
 	}
 	return margin;
@@ -4623,8 +4739,8 @@ void LDrawModelViewer::zoomToFit(void)
 		autoCamera->setCamera(camera);
 		autoCamera->setCameraGlobe(cameraGlobe);
 		autoCamera->setDistanceMultiplier(distanceMultiplier);
-		autoCamera->setWidth(width * numXTiles / getStereoWidthModifier());
-		autoCamera->setHeight((TCFloat)(height * numYTiles));
+		autoCamera->setWidth(scale(width) * numXTiles / getStereoWidthModifier());
+		autoCamera->setHeight(scale(height) * numYTiles);
 		autoCamera->setMargin(getWideLineMargin() * 2.0f);
 		autoCamera->setFov(fov);
 		autoCamera->setStep(step);
@@ -4731,9 +4847,9 @@ void LDrawModelViewer::lineWidth(GLfloat lwidth)
 {
 	if (getGl2ps())
 	{
-		gl2psLineWidth(lwidth);
+		gl2psLineWidth(scale(lwidth));
 	}
-	glLineWidth(lwidth);
+	glLineWidth(scale(lwidth));
 }
 
 void LDrawModelViewer::setMpdChildIndex(int index)
@@ -4872,8 +4988,8 @@ int LDrawModelViewer::exportCurModel(
 			{
 				exporter->setBoundingBox(boundingMin, boundingMax);
 				exporter->setCenter(center);
-				exporter->setWidth((TCFloat)width);
-				exporter->setHeight((TCFloat)height);
+				exporter->setWidth(width);
+				exporter->setHeight(height);
 				exporter->setRadius(size / 2.0f);
 				exporter->setBackgroundColor(backgroundR, backgroundG,
 					backgroundB);
@@ -4944,7 +5060,7 @@ std::string LDrawModelViewer::getCurFilename(void) const
 		retValue += modelName;
 		temp = cleanedUpPath(retValue.c_str());
 		retValue = temp;
-		delete temp;
+		delete[] temp;
 		return retValue;
 	}
 }
@@ -4967,34 +5083,6 @@ void LDrawModelViewer::addStandardSize(int width, int height)
 		buf += aspectString.c_str();
 		buf += _UC(")");
 	}
-	//if (width * 100 / 235 == height)
-	//{
-	//	ucstrcat(buf, _UC(" (2.35:1)"));
-	//}
-	//else if (width * 9 / 16 == height)
-	//{
-	//	ucstrcat(buf, _UC(" (16:9)"));
-	//}
-	//else if (width * 3 / 5 == height)
-	//{
-	//	ucstrcat(buf, _UC(" (5:3)"));
-	//}
-	//else if (width * 10 / 16 == height)
-	//{
-	//	ucstrcat(buf, _UC(" (16:10)"));
-	//}
-	//else if (width * 2 / 3 == height)
-	//{
-	//	ucstrcat(buf, _UC(" (3:2)"));
-	//}
-	//else if (width * 3 / 4 == height)
-	//{
-	//	ucstrcat(buf, _UC(" (4:3)"));
-	//}
-	//else if (width * 4 / 5 == height)
-	//{
-	//	ucstrcat(buf, _UC(" (5:4)"));
-	//}
 	standardSizes.back().name = buf;
 }
 
@@ -5016,7 +5104,6 @@ void LDrawModelViewer::initStandardSizes(void)
 		addStandardSize(800, 480);
 		addStandardSize(800, 600);
 		addStandardSize(1024, 576);
-		//addStandardSize(1024, 756);
 		addStandardSize(1024, 768);
 		addStandardSize(1152, 864);
 		addStandardSize(1280, 544);
@@ -5024,7 +5111,6 @@ void LDrawModelViewer::initStandardSizes(void)
 		addStandardSize(1280, 768);
 		addStandardSize(1280, 960);
 		addStandardSize(1280, 1024);
-		//addStandardSize(1280, 1075);
 		addStandardSize(1600, 1200);
 		addStandardSize(1680, 1050);
 		addStandardSize(1920, 817);
@@ -5562,7 +5648,7 @@ void LDrawModelViewer::highlightPathsChanged(void)
 //						exportFilename = exportFilename.substr(0,
 //							exportFilename.rfind('.'));
 //					}
-//					delete baseFilename;
+//					delete[] baseFilename;
 //					exportFilename += mpdName;
 //					exportFilename += exportExt;
 //				}
@@ -5574,7 +5660,7 @@ void LDrawModelViewer::highlightPathsChanged(void)
 //					if (tempFilename != NULL)
 //					{
 //						exportFilename = tempFilename;
-//						delete tempFilename;
+//						delete[] tempFilename;
 //					}
 //					if (exportFilename.size() > 0 && !commandLineType)
 //					{
@@ -5600,7 +5686,7 @@ void LDrawModelViewer::highlightPathsChanged(void)
 //				}
 //			}
 //		}
-//		delete exportsDir;
+//		delete[] exportsDir;
 //		unhandledArgs->release();
 //	}
 //	return retValue;

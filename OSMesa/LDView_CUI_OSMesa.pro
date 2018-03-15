@@ -44,9 +44,9 @@ unix {
     exists($${OSMESA_INC}/GL/osmesa.h):!USE_SYSTEM_LIBS {
         message("~~~ NOTICE: Using LDView Pre-defined OSMESA library ~~~")
     } else:USE_SYSTEM_LIBS {
-        exists($${SYSTEM_PREFIX_}/X11/include/GL/osmesa.h): message("~~~ NOTICE: Using X11 SYSTEM OSMESA library ~~~")
+        exists($${OSMESA_LOCAL_PREFIX_}/include/GL/osmesa.h): message("~~~ NOTICE: Using LOCAL OSMESA library ~~~")
         else:exists($${SYSTEM_PREFIX_}/include/GL/osmesa.h): message("~~~ NOTICE: Using SYSTEM OSMESA library ~~~")
-        else:exists($${OSMESA_LOCAL_PREFIX_}/include/GL/osmesa.h): message("~~~ NOTICE: Using LOCAL OSMESA library ~~~")
+        else:exists($${SYSTEM_PREFIX_}/X11/include/GL/osmesa.h): message("~~~ NOTICE: Using X11 SYSTEM OSMESA library ~~~")
     } else:USE_3RD_PARTY_LIBS:contains(USE_SYSTEM_OSMESA_LIB, YES) {
         exists($${SYSTEM_PREFIX_}/X11/include/GL/osmesa.h): message("~~~ NOTICE: Using X11 SYSTEM OSMESA library ~~~")
         else:exists($${SYSTEM_PREFIX_}/include/GL/osmesa.h): message("~~~ NOTICE: Using SYSTEM OSMESA library ~~~")
@@ -182,7 +182,7 @@ USE_OSMESA_STATIC {
     }
 }
 
-LIBS               += $${LDLIBS} $${LIBDIRS} $${LIBS_DIR} $${LIBS_}
+LIBS               += $${LDLIBS} $${LIBDIRS} $${LIBS_DIR} $${_LIBS} $${LIBS_}
 
 ini.target = LDViewMessages.ini
 ini.depends = $$_PRO_FILE_PWD_/../LDViewMessages.ini $$_PRO_FILE_PWD_/../LDExporter/LDExportMessages.ini

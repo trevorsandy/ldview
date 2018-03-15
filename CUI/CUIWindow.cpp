@@ -1,9 +1,11 @@
 #include "CUIWindow.h"
+#include "CUIScaler.h"
 #include "CUIWindowResizer.h"
 #include <assert.h>
 #include <commctrl.h>
 #include <TCFoundation/mystring.h>
 #include <TCFoundation/TCUserDefaults.h>
+#include <TCFoundation/TCImage.h>
 #include <stdio.h>
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400 && defined(_DEBUG)
@@ -48,7 +50,8 @@ CUIWindow::CUIWindow(void)
 		   numChildren(0),
 		   hBackgroundBrush(NULL),
 		   paintStruct(NULL),
-		   autosaveName(NULL)
+		   autosaveName(NULL),
+		   scaler(NULL)
 {
 	init();
 }
@@ -79,7 +82,8 @@ CUIWindow::CUIWindow(CUCSTR windowTitle, HINSTANCE hInstance, int x, int y,
 		   numChildren(0),
 		   hBackgroundBrush(NULL),
 		   paintStruct(NULL),
-		   autosaveName(NULL)
+		   autosaveName(NULL),
+		   scaler(NULL)
 {
 	init();
 }
@@ -109,7 +113,8 @@ CUIWindow::CUIWindow(CUIWindow* parentWindow, int x, int y, int width,
 		   numChildren(0),
 		   hBackgroundBrush(NULL),
 		   paintStruct(NULL),
-		   autosaveName(NULL)
+		   autosaveName(NULL),
+		   scaler(NULL)
 {
 	parentWindow->addChild(this);
 	init();
@@ -140,7 +145,8 @@ CUIWindow::CUIWindow(HWND hParentWindow, HINSTANCE hInstance, int x, int y,
 		   numChildren(0),
 		   hBackgroundBrush(NULL),
 		   paintStruct(NULL),
-		   autosaveName(NULL)
+		   autosaveName(NULL),
+		   scaler(NULL)
 {
 //	parentWindow->addChild(this);
 	init();
@@ -203,6 +209,7 @@ void CUIWindow::dealloc(void)
 		}
 	}
 	delete autosaveName;
+	TCObject::release(scaler);
 	TCObject::dealloc();
 }
 
@@ -437,9 +444,6 @@ LRESULT CUIWindow::doSize(WPARAM sizeType, int newWidth, int newHeight)
 			writeAutosaveInfo(saveX, saveY, saveWidth, saveHeight,
 				saveMaximized);
 		}
-		if (autosaveName != NULL)
-		{
-		}
 		return 0;
 	}
 }
@@ -468,13 +472,13 @@ LRESULT CUIWindow::doEraseBackground(RECT *)
 	return 0;
 }
 
-SIZE CUIWindow::getDecorationSize(void)
+SIZE CUIWindow::getDecorationSize(HMONITOR hMonitor /*= NULL*/)
 {
 	RECT windowRect = { 0, 0, 100, 100 };
 	WNDCLASSEX windowClass = getWindowClass();
 	SIZE size;
 
-	AdjustWindowRectEx(&windowRect, windowStyle,
+	CUIScaler::adjustWindowRectEx(hMonitor, &windowRect, windowStyle,
 		windowClass.lpszMenuName != NULL || hWindowMenu, exWindowStyle);
 	size.cx = windowRect.right - windowRect.left - 100;
 	size.cy = windowRect.bottom - windowRect.top - 100;
@@ -1485,10 +1489,30 @@ LRESULT CUIWindow::windowProc(HWND hWnd, UINT message, WPARAM wParam,
 		case WM_NOTIFY:
 			return doNotify((int)(short)LOWORD(wParam), (LPNMHDR)lParam);
 			break;
+		case WM_DPICHANGED:
+			return doDpiChanged((int)(short)LOWORD(wParam), (int)(short)HIWORD(wParam),
+				(RECT*)lParam);
+			break;
 		default:
 			break;
 	}
 	return DefWindowProc(hWnd, message, wParam, lParam);
+}
+
+LRESULT CUIWindow::doDpiChanged(int dpiX, int dpiY, RECT* proposedRect)
+{
+	initScaler();
+	scaler->setDpi(dpiX, dpiY);
+	if (handleDpiChange())
+	{
+		SetWindowPos(hWindow, NULL,
+			proposedRect->left,
+			proposedRect->top,
+			proposedRect->right - proposedRect->left,
+			proposedRect->bottom - proposedRect->top,
+			SWP_NOZORDER | SWP_NOACTIVATE);
+	}
+	return 0;
 }
 
 LRESULT CALLBACK CUIWindow::staticWindowProc(HWND hWnd, UINT message,
@@ -2075,14 +2099,29 @@ void CUIWindow::setTitle(CUCSTR value)
 
 BOOL CUIWindow::createMainWindow(void)
 {
-	SIZE decorationSize = getDecorationSize();
-	int dx = decorationSize.cx;
-	int dy = decorationSize.cy;
 	ucstring className;
 
 	mbstoucstring(className, windowClassName());
+	POINT point = { 0, 0 };
+	if (x != CW_USEDEFAULT)
+	{
+		point.x = x;
+		point.y = y;
+	}
+	HMONITOR hMonitor = MonitorFromPoint(point, MONITOR_DEFAULTTOPRIMARY);
+	SIZE decorationSize = getDecorationSize(hMonitor);
+	int dx = decorationSize.cx;
+	int dy = decorationSize.cy;
+	double scaleFactor = CUIScaler::getScaleFactor(hMonitor);
+	if (x != CW_USEDEFAULT)
+	{
+		x = (int)(x * scaleFactor);
+		y = (int)(y * scaleFactor);
+	}
+	int totalWidth = (int)(width * scaleFactor) + dx;
+	int totalHeight = (int)(height * scaleFactor) + dy;
 	hWindow = createWindowExUC(exWindowStyle, className.c_str(), windowTitle,
-		windowStyle, x, y, width + dx, height + dy, NULL, hWindowMenu,
+		windowStyle, x, y, totalWidth, totalHeight, NULL, hWindowMenu,
 		getLanguageModule(), this);
 	if (!hWindow)
 	{
@@ -2358,6 +2397,59 @@ int CUIWindow::messageBoxUC(
 }
 
 // Note: static method.
+DWORD CUIWindow::getModuleFileNameUC(
+	HMODULE hModule,
+	UCSTR lpFilename,
+	DWORD nSize)
+{
+#ifdef TC_NO_UNICODE
+	return ::GetModuleFileNameA(hModule, lpFilename, nSize);
+#else // TC_NO_UNICODE
+	return ::GetModuleFileNameW(hModule, lpFilename, nSize);
+#endif // TC_NO_UNICODE
+}
+
+// Note: static method.
+DWORD CUIWindow::getFileVersionInfoSizeUC(
+	CUCSTR lptstrFilename,
+	LPDWORD lpdwHandle)
+{
+#ifdef TC_NO_UNICODE
+	return ::GetFileVersionInfoSizeA(lptstrFilename, lpdwHandle);
+#else // TC_NO_UNICODE
+	return ::GetFileVersionInfoSizeW(lptstrFilename, lpdwHandle);
+#endif // TC_NO_UNICODE
+}
+
+// Note: static method.
+BOOL CUIWindow::getFileVersionInfoUC(
+	_In_ CUCSTR lptstrFilename,
+	_Reserved_ DWORD dwHandle,
+	_In_ DWORD dwLen,
+	_Out_writes_bytes_(dwLen) LPVOID lpData)
+{
+#ifdef TC_NO_UNICODE
+	return ::GetFileVersionInfoA(lptstrFilename, dwHandle, dwLen, lpData);
+#else // TC_NO_UNICODE
+	return ::GetFileVersionInfoW(lptstrFilename, dwHandle, dwLen, lpData);
+#endif // TC_NO_UNICODE
+}
+
+// Note: static method.
+BOOL CUIWindow::verQueryValueUC(
+	LPCVOID pBlock,
+	CUCSTR lpSubBlock,
+	LPVOID * lplpBuffer,
+	PUINT puLen)
+{
+#ifdef TC_NO_UNICODE
+	return ::VerQueryValueA(pBlock, lpSubBlock, lplpBuffer, puLen);
+#else // TC_NO_UNICODE
+	return ::VerQueryValueW(pBlock, lpSubBlock, lplpBuffer, puLen);
+#endif // TC_NO_UNICODE
+}
+
+// Note: static method.
 HWND CUIWindow::createStatusWindowUC(
 	LONG style,
 	CUCSTR lpszText,
@@ -2598,8 +2690,12 @@ void CUIWindow::writeAutosaveInfo(
 	if (autosaveName != NULL)
 	{
 		char info[1024];
+		float width, height;
+		float scaleFactor = (float)getScaleFactor();
 
-		sprintf(info, "%d %d %d %d %d", saveX, saveY, saveWidth, saveHeight,
+		width = saveWidth / scaleFactor;
+		height = saveHeight / scaleFactor;
+		sprintf(info, "%d %d %f %f %d", saveX, saveY, width, height,
 			saveMaximized);
 		TCUserDefaults::setStringForKey(info, autosaveName, false);
 	}
@@ -2620,9 +2716,12 @@ bool CUIWindow::readAutosaveInfo(
 
 		if (info != NULL)
 		{
-			if (sscanf(info, "%d %d %d %d %d", &saveX, &saveY, &saveWidth,
-				&saveHeight, &saveMaximized) == 5)
+			float width, height;
+			if (sscanf(info, "%d %d %f %f %d", &saveX, &saveY, &width, &height,
+				&saveMaximized) == 5)
 			{
+				saveWidth = scalePoints(width);
+				saveHeight = scalePoints(height);
 				retValue = true;
 			}
 			delete info;
@@ -2918,28 +3017,127 @@ HBITMAP CUIWindow::createDIBSection(
 	HDC hBitmapDC,
 	int bitmapWidth,
 	int bitmapHeight,
-	int hDPI,
-	int vDPI,
-	BYTE **bmBuffer)
+	BYTE **bmBuffer,
+	bool force32 /*= false*/)
 {
-	BITMAPINFO bmi;
-
-	bmi.bmiHeader.biSize = sizeof(bmi.bmiHeader);
-	bmi.bmiHeader.biWidth = bitmapWidth;
-	bmi.bmiHeader.biHeight = bitmapHeight;
-	bmi.bmiHeader.biPlanes = 1;
-	bmi.bmiHeader.biBitCount = 24;
-	bmi.bmiHeader.biCompression = BI_RGB;
-	bmi.bmiHeader.biSizeImage = 0;//roundUp(bitmapWidth * 3, 4) * bitmapHeight;
-	bmi.bmiHeader.biXPelsPerMeter = (long)(hDPI * 39.37);
-	bmi.bmiHeader.biYPelsPerMeter = (long)(vDPI * 39.37);
-	bmi.bmiHeader.biClrUsed = 0;
-	bmi.bmiHeader.biClrImportant = 0;
-	bmi.bmiColors[0].rgbRed = 0;
-	bmi.bmiColors[0].rgbGreen = 0;
-	bmi.bmiColors[0].rgbBlue = 0;
-	bmi.bmiColors[0].rgbReserved = 0;
-	return CreateDIBSection(hBitmapDC, &bmi, DIB_RGB_COLORS,
-		(void**)bmBuffer, NULL, 0);
+	return TCImage::createDIBSection(hBitmapDC, bitmapWidth, bitmapHeight, bmBuffer, force32);
 }
 
+double CUIWindow::getScaleFactor(
+	bool recalculate /*= false*/,
+	UINT *dpiX /*= NULL*/,
+	UINT *dpiY /*= NULL*/)
+{
+	initScaler();
+	return scaler->getScaleFactor(recalculate, dpiX, dpiY);
+}
+
+bool CUIWindow::getBitmapSize(HBITMAP hBitmap, SIZE& size)
+{
+	BITMAP bm;
+	if (GetObject(hBitmap, sizeof(BITMAP), &bm) != 0)
+	{
+		size.cx = bm.bmWidth;
+		size.cy = bm.bmHeight;
+		return true;
+	}
+	return false;
+}
+
+void CUIWindow::initScaler(void)
+{
+	if (scaler == NULL)
+	{
+		scaler = new CUIScaler(this);
+	}
+}
+
+int CUIWindow::scalePoints(int points)
+{
+	initScaler();
+	return scaler->scale(points);
+}
+
+int CUIWindow::unscalePixels(int pixels)
+{
+	initScaler();
+	return scaler->unscale(pixels);
+}
+
+HRESULT CUIWindow::setStatusBarParts(
+	HWND hStatusBar,
+	WPARAM numParts,
+	int *parts,
+	bool scale /*= true*/)
+{
+	if (scale)
+	{
+		for (WPARAM i = 0; i < numParts; ++i)
+		{
+			if (parts[i] != -1)
+			{
+				parts[i] = scalePoints(parts[i]);
+			}
+		}
+	}
+	return SendMessage(hStatusBar, SB_SETPARTS, numParts, (LPARAM)parts);
+}
+
+int CUIWindow::addImageToImageList(
+	HIMAGELIST hImageList,
+	int resourceId,
+	const SIZE& size,
+	double scaleFactor /*= 1.0*/)
+{
+	TCImage *image = TCImage::createFromResource(NULL, resourceId, 4, true, scaleFactor);
+	int retValue = addImageToImageList(hImageList, image, size);
+	TCObject::release(image);
+	return retValue;
+}
+
+int CUIWindow::addImageToImageList(HIMAGELIST hImageList, TCImage *image, const SIZE& size)
+{
+	if (image == NULL)
+	{
+		return -1;
+	}
+	int imageIndex = -1;
+	HBITMAP hBitmap;
+	HBITMAP hMask;
+	bool stretched = false;
+
+	image->getBmpAndMask(hBitmap, hMask, false, CUIScaler::use32bit());
+	if (image->getWidth() != size.cx || image->getHeight() != size.cy)
+	{
+		HBITMAP hScaleBitmap = NULL;
+		HBITMAP hScaleMask = NULL;
+		if (scaler->scaleBitmap(hBitmap, hScaleBitmap,
+			(double)size.cx / (double)image->getWidth()) &&
+			(hMask == NULL || scaler->scaleBitmap(hMask, hScaleMask)))
+		{
+			imageIndex = ImageList_Add(hImageList, hScaleBitmap, hScaleMask);
+			stretched = true;
+		}
+		if (hScaleBitmap != NULL)
+		{
+			DeleteObject(hScaleBitmap);
+		}
+		if (hScaleMask != NULL)
+		{
+			DeleteObject(hScaleMask);
+		}
+	}
+	if (!stretched)
+	{
+		imageIndex = ImageList_Add(hImageList, hBitmap, hMask);
+	}
+	if (hBitmap != NULL)
+	{
+		DeleteObject(hBitmap);
+	}
+	if (hMask != NULL)
+	{
+		DeleteObject(hMask);
+	}
+	return imageIndex;
+}

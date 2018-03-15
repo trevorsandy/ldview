@@ -100,6 +100,7 @@ TABLE.SampleData TD
 <ul>
 <li><a href="#ExamineMode">Examine Mode</a></li>
 <li><a href="#FlyMode">Fly-through Mode</a></li>
+<li><a href="#WalkMode">Walk Mode</a></li>
 </ul></li>
 <li><a href="#StepSupport">Step Support</a></li>
 <li><a href="#Menus">Menus</a>
@@ -128,6 +129,15 @@ TABLE.SampleData TD
 <li><a href="#GeneralColorsBox">Colors Box</a></li>
 <li><a href="#GeneralMiscBox">Misc Box</a></li>
 </ul></li>
+<li><a href="#GeometryTab">Geometry Tab</a>
+<ul>
+<li><a href="#GeometryModelBox">Model Box</a></li>
+<li><a href="#GeometryWireframeBox">Wireframe Box</a></li>
+<li><a href="#GeometryBFCBox">BFC Box</a></li>
+<li><a href="#GeometryEdgeLinesBox">Edge Lines Box</a></li>
+</ul></li>
+<li><a href="#LDrawTab">LDraw Tab (Mac Only)</a>
+</li>
 <li><a href="#GeometryTab">Geometry Tab</a>
 <ul>
 <li><a href="#GeometryModelBox">Model Box</a></li>
@@ -188,37 +198,36 @@ TABLE.SampleData TD
 </table>
 <p>
 <i>Please note</i>: this help file mostly documents the Windows version of
-LDView, with a few notes about the QT (Linux and Mac) version, and some
+LDView, with a few notes about the Qt (Linux) and Mac versions, and some
 specific notes on different conventions in the Mac version.  For the most part,
-the QT version has the same functionality as the Windows version, and looks and
-acts the same (aside from having a mostly native UI look).  However, certain
-features (such as FSAA support) are missing from the QT version, and other
-features (such as full screen support) are present with less functionality.  If
-you are using a non-Windows version of LDView, please don't expect 100% of the
-features documented here to be present (although a very high percentage are
-present).  Anywhere this document refers to the QT version of LDView, it is
-referring to the version made using the QT user interface library.  The QT-based
-version of LDView is currently only available in binary form as a Linux binary
-and a (Universal) Mac binary.  This version should work fine if compiled in
-other Unix-like operating systems, though (as long QT will compile on them).
+the Qt and Mac versions have the same functionality as the Windows version, and
+look and act the same (aside from having a mostly native UI look).  However,
+certain features (such as FSAA support) are missing from the Qt and Mac
+versions, and other features (such as full screen support) are present with less
+functionality.  If you are using a non-Windows version of LDView, please don't
+expect 100% of the features documented here to be present (although a very high
+percentage are present).  Anywhere this document refers to the Qt version of
+LDView, it is referring to the version made using the Qt user interface library.
+The Qt-based version of LDView is currently only available in binary form as
+various Linux binaries.  This version should work fine if compiled in other
+Unix-like operating systems, though (as long Qt is supported on them).
 </p>
 <p>
 LDView displays LDraw models, and consequently requires that LDraw be
 installed.  LDraw can be downloaded from
 <a href="http://www.ldraw.org/">ldraw.org</a>, along with the up-to-date parts
-library.  If you install LDraw in any directory other than C:\LDRAW
-(/usr/local/ldraw in the QT version), and don't already have an LDRAWDIR
-environment variable, you will be asked the first time LDView loads if you
-already have the LDraw library installed.  If you say that you do, you will be
-asked to select the directory in which LDraw is installed.  Until you select
-the LDraw directory, you will be unable to load a model.  If you respond that
-you don't already have LDraw installed, you will be asked if you want LDView to
-download it for you.
+library.  If you install LDraw in any directory other than one of places LDView
+looks by default, you will be asked the first time LDView loads if you already
+have the LDraw library installed.  If you say that you do, you will be asked to
+select the directory in which LDraw is installed.  Until you select the LDraw
+directory, you will be unable to load a model.  If you respond that you don't
+already have LDraw installed, you will be asked if you want LDView to download
+it for you.
 </p>
 <p>
 When you run LDView, it will open its main window and immediately present you
 with an open file dialog (assuming you didn't specify a file as part of the
-launch process).  Select the LDraw .ldr, .dat, or .mpd file you want to view.
+launch process).  Select the LDraw .ldr, .mpd, or .dat file you want to view.
 It will then display the file in the window.  Note that you can resize this
 window.  Also note that if you open a large model, it could take a substantial
 amount of time to load.  During this time, the status bar will indicate the
@@ -251,15 +260,15 @@ used instead.
 The menu layout on Mac OS X is also somewhat different.  The Preferences, About
 LDView, and Exit menu items have been moved to their standard location in the
 application (LDView) menu (with Exit being renamed to the standard of Quit
-LDView).  The recent files list has been placed in a
-standard Open Recent sub-menu of the File menu.  And the Edit menu has been
-removed, since the only item normally found there in LDView is Preferences.
+LDView).  The recent files list has been placed in a standard Open Recent
+sub-menu of the File menu.
 </p>
 <p>
 If your mouse only has one button, holding down Control while clicking is
 equivalent to using the right mouse button (as is standard).  Additionally, if
 you have a laptop with a touch pad that supports two-finger dragging to scroll,
-this is equivalent to using the mouse wheel (also as is standard).
+this is equivalent to using the mouse wheel (also as is standard). Pinch zooming
+also works on such touch pads.
 </p>
 <p>
 <a name="LDrawLibrary"></a>
@@ -332,10 +341,11 @@ warning will go away.
 	</tr>
 </table>
 <p>
-LDView has two different modes of user interaction:
-<a href="#ExamineMode">Examine Mode</a> and <a href="#FlyMode">Fly-through
-Mode</a>.  By default LDView is in Examine Mode.  You can switch modes by
-selecting the mode you want from the <a href="#ViewMenu">View Menu</a>.
+LDView has three different modes of user interaction:
+<a href="#ExamineMode">Examine Mode</a>, <a href="#FlyMode">Fly-through
+Mode</a>, and <a href="#WalkMode">Walk Mode</a>.  By default LDView is in
+Examine Mode.  You can switch modes by selecting the mode you want from the
+<a href="#ViewMenu">View Menu</a>.
 </p>
 <p>
 <font size="+2"><b><a name="ExamineMode">Examine Mode</a></b></font><br/>
@@ -386,7 +396,8 @@ model has to be rendered twice.
 <font size="+2"><b><a name="FlyMode">Fly-through Mode</a></b></font><br/>
 Click the left mouse button and move it around to turn the camera left, right,
 up, and down.  The further you move the mouse from the point you clicked, the
-faster the camera will turn.
+faster the camera will turn. You can also use the arrow keys to do the same
+thing.
 </p>
 <p>
 The camera can be moved using the keyboard.  At any time, you can hold down
@@ -466,8 +477,68 @@ shift to double the speed at which you move.  The movement keys are as follows:
 	</tr>
 </table>
 <p>
-<br/>
-<br/>
+<font size="+2"><b><a name="WalkMode">Walk Mode</a></b></font><br/>
+Click the left mouse button and move it around to turn the camera left, right,
+up, and down.  The further you move the mouse from the point you clicked, the
+faster the camera will turn. You can also use the arrow keys to do the same
+thing.
+</p>
+<p>
+The camera can be moved using the keyboard. Unlike in Fly-Through Mode, where
+the camera moves exactly in the direction it is pointed, in Walk Mode it
+maintains the same altitude while otherwise moving in the direction it is
+pointed. It also keeps the model right side up. The movement keys are as
+follows:
+</p>
+<table>
+	<tr>
+		<th align="right">Movement Direction</th>
+		<th>&#160;</th>
+		<th align="center">Key</th>
+		<th></th>
+	</tr>
+	<tr>
+		<td align="right">Forward:</td>
+		<td></td>
+		<td align="center">W</td>
+		<td></td>
+	</tr>
+	<tr>
+		<td align="right">Backward:</td>
+		<td></td>
+		<td align="center">S</td>
+		<td></td>
+	</tr>
+	<tr>
+		<td align="right">Left:</td>
+		<td></td>
+		<td align="center">A</td>
+		<td></td>
+	</tr>
+	<tr>
+		<td align="right">Right:</td>
+		<td></td>
+		<td align="center">D</td>
+		<td></td>
+	</tr>
+	<tr>
+		<td align="right">Up:</td>
+		<td></td>
+		<td align="center">R</td>
+		<td></td>
+	</tr>
+	<tr valign="top">
+		<td align="right">Down:</td>
+		<td></td>
+		<td align="center">F</td>
+		<td width="300"></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td colspan="4">&#160;</td>
+	</tr>
+</table>
+<p>
 <a name="StepSupport"></a>
 </p>
 <table bgcolor="#0080D0" width="100%" class="SectionHeader">
@@ -704,6 +775,10 @@ where there is no visible menu.
 		<td colspan="2">Zooms the model in to fill the current window.</td>
 	</tr>
 	<tr valign="top">
+		<td align="right" nowrap="nowrap">Right Side Up:</td>
+		<td colspan="2">Rotates the model so that it is right side up.</td>
+	</tr>
+	<tr valign="top">
 		<td align="right">Viewing Angles:</td>
 		<td colspan="2">Submenu containing preset viewing angles.</td>
 	</tr>
@@ -779,8 +854,7 @@ where there is no visible menu.
 	</tr>
 	<tr valign="top">
 		<td align="right" nowrap="nowrap">Examine Mode:</td>
-		<td colspan="2">Puts LDView in Examine Mode.  In examine mode, clicking
-		and dragging the left mouse button spins the model that is loaded.
+		<td colspan="2">Puts LDView in <a href="#ExamineMode">Examine Mode</a>.
 		This is the default mode.</td>
 	</tr>
 	<tr valign="top">
@@ -796,9 +870,17 @@ where there is no visible menu.
 	</tr>
 	<tr valign="top">
 		<td align="right" nowrap="nowrap">Fly-through Mode:</td>
-		<td colspan="2">Puts LDView in Fly-through Mode.  In fly-through mode,
-		clicking and dragging the left mouse button rotates the camera, and you
-		can use the W, A, S, D, Q, E, R, and F keys to move the camera.</td>
+		<td colspan="2">Puts LDView in <a href="#FlyMode">Fly-through
+		Mode</a>.</td>
+	</tr>
+	<tr valign="top">
+		<td align="right" nowrap="nowrap">Keep Right Side Up:</td>
+		<td colspan="2">Keeps the model right side up while in Fly-Through
+		Mode.</td>
+	</tr>
+	<tr valign="top">
+		<td align="right" nowrap="nowrap">Walk Mode:</td>
+		<td colspan="2">Puts LDView in <a href="#WalkMode">Walk Mode</a>.</td>
 	</tr>
 	<tr valign="top">
 		<td align="right" nowrap="nowrap">XX-Bit Modes:</td>
@@ -1158,7 +1240,7 @@ format for the export.  In Windows and on the Mac, there is an <i>Options</i>
 button next to the type selection. Some file types have export options, and some
 don't.  For those that do, the <i>Options</i> button is enabled.  For those that
 don't, it is disable.  Click on it to set the export options for the currently
-selected file type. The QT version of LDView has an <i>Export Options</i> menu
+selected file type. The Qt version of LDView has an <i>Export Options</i> menu
 item in the <i>File</i> menu that performs the same task as the <i>Options</i>
 button.  This dialog will only contain entries for those types that have
 options.
@@ -1713,6 +1795,37 @@ drop-down box.  Use the <i>Browse...</i> button to browse for a directory,
 or enter it in the field directly.</td>
 </tr>
 </table>
+
+<p>
+<font size="+2"><b><a name="LDrawTab">LDraw Tab (Mac Only)</a></b></font><br/>
+</p>
+<p>
+<i>Reset</i>:<br/>
+This resets all the LDraw preferences to their default values.  As with all
+other preference changes, you must hit OK or Apply for the reset values to go
+into effect.
+</p>
+<p>
+<i>LDraw Folder</i><br/>
+This allows you to manually select the LDraw folder. You can type in a path,
+or hit the <i>Browse...</i> button. If you type in a path that isn't an LDraw
+folder, you will get an error when you apply your preferences changes.
+</p>
+<p>
+<i>Extra Search Folders</i><br/>
+This is equivalent to the <a href="#ExtraDirs">Extra Dirs</a> functionality in
+Windows.
+</p>
+<p>
+<i>Use LDView to generate thumbnails for LDraw files</i> (Default:
+<i>On</i>):<br/>
+Enabling this option causes LDView to generate QuickLook thumbnails for LDraw
+files in Finder, as well as Open and Save panels in typical Mac applications. It
+can slow the system down if you view a folder full of LDraw models in Icon mode
+in Finder, so you may want to disable it if this is causing problems. Note that
+it only supports files with .ldr and .mpd file extensions (not the .dat
+extension originally used by LDraw, and still used for LDraw part files).
+</p>
 
 <p>
 <font size="+2"><b><a name="GeometryTab">Geometry Tab</a></b></font><br/>
@@ -2499,6 +2612,14 @@ an image type, use <a href="#SaveImageTypeSetting">-SaveImageType</a> or
 <a href="#SnapshotSuffixSetting">-SnapshotSuffix</a>.
 </p>
 <p>
+If you don't want to list all the model filenames on the command line, you can
+use -SaveSnapshotsList=&lt;List Filename&gt; to provide the filename of a file
+that contains a list of model filenames, one entry per line. Each entry in the
+list file will be treated as if you had specified it on the command line while
+using -SaveSnapshots=1. You do not have to specify -SaveSnapshots=1 if you
+specify a value for -SaveSnapshotsList.
+</p>
+<p>
 <font size="+2"><b><a name="ExportFilename">Specifying an Export
 Filename</a></b></font><br/>
 </p>
@@ -2545,15 +2666,27 @@ an export type, use <a href="#SaveExportTypeSetting">-SaveExportType</a> or
 <a href="#ExportSuffixSetting">-ExportSuffix</a>.
 </p>
 <p>
+If you don't want to list all the model filenames on the command line, you can
+use -ExportFilesList=&lt;List Filename&gt; to provide the filename of a file
+that contains a list of model filenames, one entry per line. Each entry in the
+list file will be treated as if you had specified it on the command line while
+using -ExportFiles=1. You do not have to specify -ExportFiles=1 if you specify
+a value for -ExportFilesList.
+</p>
+<p>
 <font size="+2"><b><a name="Verbose">Verbose Output</a></b></font><br/>
 </p>
 <p>
-In all environments other than Windows, LDView is capable of printing out
-errors and warnings when snapshots or exports are performed from the command
-line. By default, critical errors (like being unable to find the LDraw
-directory) will be the only ones printed. To show standard errors, use the -v
-command line option. To show warnings as well as standard errors, either repeat
-the -v option (-v -v), or use the -vv option.
+LDView is capable of printing out errors and warnings when snapshots or exports
+are performed from the command line. By default, errors are printed. To prevent
+non-critical errors from printing, use the -q command line option. To prevent
+all errors from printing, either repeat the -q option (-q -q), or use the -qq
+option. To show warnings as well as errors, use the -v option.
+</p>
+<p>
+In Windows, this only works if you run LDView.com from the command line (instead
+of LDView.exe or LDView64.exe). If you just use "LDView", LDView.com will be run
+automatically.
 </p>
 <p>
 <font size="+2"><b><a name="IniFile">Specifying an INI file</a></b></font><br/>
@@ -3049,15 +3182,16 @@ set-specific, while others aren't.
 			CutawayThickness
 		</td>
 		<td valign="top">
-			Integer<br/>
-			(1-5)
+			Decimal<br/>
+			(0-5)
 		</td>
 		<td valign="top">
 			NO
 		</td>
 		<td valign="top">
 			Equivalent to the <i>Thickness</i> slider in the
-			<i>Effects-&gt;Wireframe cutaway</i> box.
+			<i>Effects-&gt;Wireframe cutaway</i> box. See
+			<a href="#LineThicknesses">Note 6</a> about line thicknesses.
 		</td>
 	</tr>
 	<tr>
@@ -3214,15 +3348,16 @@ set-specific, while others aren't.
 			EdgeThickness
 		</td>
 		<td valign="top">
-			Integer<br/>
-			(1-5)
+			Decimal<br/>
+			(0-5)
 		</td>
 		<td valign="top">
 			NO
 		</td>
 		<td valign="top">
 			Equivalent to the <i>Thickness</i> slider in the <i>Geometry-&gt;Edge
-			Lines</i> box.
+			Lines</i> box. See <a href="#LineThicknesses">Note 6</a> about line
+			thicknesses.
 		</td>
 	</tr>
 	<tr>
@@ -3533,7 +3668,7 @@ set-specific, while others aren't.
 		<td valign="top">
 			Causes LDView to ignore the GL_EXT_framebuffer_object OpenGL
 			extension, even if it is supported by your video card.  Note that
-			this extension is only used in the QT version of LDView.
+			this extension is only used in the Qt version of LDView.
 		</td>
 	</tr>
 	<tr>
@@ -4444,6 +4579,27 @@ set-specific, while others aren't.
 	</tr>
 	<tr>
 		<td valign="top">
+			SaveScaleFactor
+		</td>
+		<td valign="top">
+			Decimal
+		</td>
+		<td valign="top">
+			YES
+		</td>
+		<td valign="top">
+			Only valid from the command line. Sets the scale factor used for
+			snapshot saves. This has a number of effects. First of all, the
+			generated image size will be multiplied by this factor. So, if you
+			request 1024x1024, you will get a 2048x2048 snapshot. Secondly, if
+			the output image format is PNG, the DPI of the generated image will
+			be set to 72 * this scale factor. Finally, line widths will be
+			multiplied by this scale factor, unless they are set to 0, in
+			which case they will be 1 pixel wide.
+		</td>
+	</tr>
+	<tr>
+		<td valign="top">
 			SaveSeries
 		</td>
 		<td valign="top">
@@ -4488,6 +4644,29 @@ set-specific, while others aren't.
 		<td valign="top">
 			Only valid from the command line.  Instructs LDView to create
 			multiple snapshots, one for each LDraw file on the command line.
+			The snapshots get the filename of the LDraw file with the extension
+			replaced with an appropriate one based on the output image file
+			type.  By default, images are stored in the same directory as the
+			model files.  However, this can be overridden with the
+			<a href="#SaveDirSetting">SaveDir</a> setting.  Use the
+			<a href="#SnapshotSuffixSetting">SnapshotSuffix</a> setting to
+			specify the image type.
+		</td>
+	</tr>
+	<tr>
+		<td valign="top">
+			<a name="SaveSnapshotsListSetting">SaveSnapshotsList</a>
+		</td>
+		<td valign="top">
+			String
+		</td>
+		<td valign="top">
+			YES
+		</td>
+		<td valign="top">
+			Only valid from the command line.  Instructs LDView to create
+			multiple snapshots, one for each LDraw file listed in the provided
+			list file. The list file shold contain one LDraw filename per line.
 			The snapshots get the filename of the LDraw file with the extension
 			replaced with an appropriate one based on the output image file
 			type.  By default, images are stored in the same directory as the
@@ -5510,15 +5689,16 @@ set-specific, while others aren't.
 			WireframeThickness
 		</td>
 		<td valign="top">
-			Integer<br/>
-			(1-5)
+			Decimal<br/>
+			(0-5)
 		</td>
 		<td valign="top">
 			NO
 		</td>
 		<td valign="top">
 			Equivalent to the <i>Thickness</i> slider in the
-			<i>Geometry-&gt;Wireframe</i> box.
+			<i>Geometry-&gt;Wireframe</i> box. See
+			<a href="#LineThicknesses">Note 6</a> about line thicknesses.
 		</td>
 	</tr>
 	<tr>
@@ -5774,6 +5954,21 @@ Note that the optional radius parameter of the -cg option isn't supported by
 to or farther from the model.  If you want to put the camera at a fixed
 difference, use the <a href="#CameraGlobe">-cg</a> option.
 </p></td>
+</tr>
+<tr>
+<td align="right" valign="top">6.</td>
+<td>
+<a name="LineThicknesses"></a>
+Specifying a line thickness of 0 results in a 1-pixel line thickness. All other
+line thicknesses are multiplied by the scale factor. In the Windows version of
+LDView running on Windows 10 Creators Update or later, and on the Mac version of
+LDView, the scale factor is set automatically based on the scale factor provided
+by the operating system for LDView's window. (Command line snapshots always have
+a default scale factor of 1.0.) For example, when the LDView window is in on a
+Retina display on a Mac, its scale factor is 2.0. Or if the LDView window is on
+the internal display of a high-DPI laptop which is set to 250% in Windows, the
+scale factor will be 2.5.
+</td>
 </tr>
 </table>
 <br/>

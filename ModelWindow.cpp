@@ -21,6 +21,7 @@
 #include <Commctrl.h>
 #include <LDLib/LDUserDefaultsKeys.h>
 #include <CUI/CUIWindowResizer.h>
+#include <CUI/CUIScaler.h>
 #include <TRE/TREMainModel.h>
 #include <TRE/TREGLExtensions.h>
 #include <windowsx.h>
@@ -147,7 +148,7 @@ warningCount(0)
 {
 	char *programPath = LDViewPreferences::getLDViewPath();
 	HRSRC hStudLogoResource = FindResource(NULL,
-		MAKEINTRESOURCE(IDR_STUDLOGO_PNG), RT_RCDATA);
+		MAKEINTRESOURCE(IDR_STUDLOGO_PNG), RT_PNGDATA_1X);
 	HRSRC hFontResource = FindResource(NULL, MAKEINTRESOURCE(IDR_SANS_FONT),
 		RT_RCDATA);
 
@@ -189,6 +190,13 @@ warningCount(0)
 				}
 			}
 		}
+	}
+	TCImage *fontImage2x = TCImage::createFromResource(NULL, IDR_SANS_FONT, 4,
+		true, 2.0);
+	if (fontImage2x != NULL)
+	{
+		modelViewer->setFont2x(fontImage2x);
+		fontImage2x->release();
 	}
 	windowStyle = windowStyle & ~WS_VISIBLE;
 	inputHandler = modelViewer->getInputHandler();
@@ -318,7 +326,9 @@ void ModelWindow::launchRemoteListener(void)
 	remoteCommandMap["highlight_line"] = RCHighlightLine;
 	remoteCommandMap["highlight_lines"] = RCHighlightLine;
 	remoteCommandMap["get_version"] = RCGetVersion;
-	ldviewVersion = ((LDViewWindow *)parentWindow)->getProductVersion();
+	char *tmpVersion = ucstringtoutf8(((LDViewWindow *)parentWindow)->getProductVersion());
+	ldviewVersion = tmpVersion;
+	delete[] tmpVersion;
 	exiting = false;
 	remoteMessageID = RegisterWindowMessage("LDViewRemoteControl");
 	try
@@ -931,7 +941,7 @@ LDInputHandler::KeyCode ModelWindow::convertKeyCode(TCULong osKeyCode)
 LRESULT ModelWindow::doLButtonDown(WPARAM keyFlags, int xPos, int yPos)
 {
 	if (inputHandler->mouseDown(convertKeyModifiers((TCULong)keyFlags),
-		LDInputHandler::MBLeft, xPos, yPos))
+		LDInputHandler::MBLeft, unscalePixels(xPos), unscalePixels(yPos)))
 	{
 		return 0;
 	}
@@ -940,7 +950,8 @@ LRESULT ModelWindow::doLButtonDown(WPARAM keyFlags, int xPos, int yPos)
 
 LRESULT ModelWindow::doLButtonUp(WPARAM keyFlags, int xPos, int yPos)
 {
-	if (inputHandler->mouseUp((TCULong)keyFlags, LDInputHandler::MBLeft, xPos, yPos))
+	if (inputHandler->mouseUp((TCULong)keyFlags, LDInputHandler::MBLeft,
+		unscalePixels(xPos), unscalePixels(yPos)))
 	{
 		return 0;
 	}
@@ -950,7 +961,7 @@ LRESULT ModelWindow::doLButtonUp(WPARAM keyFlags, int xPos, int yPos)
 LRESULT ModelWindow::doRButtonDown(WPARAM keyFlags, int xPos, int yPos)
 {
 	if (inputHandler->mouseDown(convertKeyModifiers((TCULong)keyFlags),
-		LDInputHandler::MBRight, xPos, yPos))
+		LDInputHandler::MBRight, unscalePixels(xPos), unscalePixels(yPos)))
 	{
 		return 0;
 	}
@@ -959,7 +970,8 @@ LRESULT ModelWindow::doRButtonDown(WPARAM keyFlags, int xPos, int yPos)
 
 LRESULT ModelWindow::doRButtonUp(WPARAM keyFlags, int xPos, int yPos)
 {
-	if (inputHandler->mouseUp((TCULong)keyFlags, LDInputHandler::MBRight, xPos, yPos))
+	if (inputHandler->mouseUp((TCULong)keyFlags, LDInputHandler::MBRight,
+		unscalePixels(xPos), unscalePixels(yPos)))
 	{
 		return 0;
 	}
@@ -969,7 +981,7 @@ LRESULT ModelWindow::doRButtonUp(WPARAM keyFlags, int xPos, int yPos)
 LRESULT ModelWindow::doMButtonDown(WPARAM keyFlags, int xPos, int yPos)
 {
 	if (inputHandler->mouseDown(convertKeyModifiers((TCULong)keyFlags),
-		LDInputHandler::MBMiddle, xPos, yPos))
+		LDInputHandler::MBMiddle, unscalePixels(xPos), unscalePixels(yPos)))
 	{
 		return 0;
 	}
@@ -978,7 +990,8 @@ LRESULT ModelWindow::doMButtonDown(WPARAM keyFlags, int xPos, int yPos)
 
 LRESULT ModelWindow::doMButtonUp(WPARAM keyFlags, int xPos, int yPos)
 {
-	if (inputHandler->mouseUp((TCULong)keyFlags, LDInputHandler::MBMiddle, xPos, yPos))
+	if (inputHandler->mouseUp((TCULong)keyFlags, LDInputHandler::MBMiddle,
+		unscalePixels(xPos), unscalePixels(yPos)))
 	{
 		return 0;
 	}
@@ -996,7 +1009,8 @@ LRESULT ModelWindow::doCaptureChanged(HWND /*hNewWnd*/)
 
 LRESULT ModelWindow::doMouseMove(WPARAM keyFlags, int xPos, int yPos)
 {
-	if (inputHandler->mouseMove(convertKeyModifiers((TCULong)keyFlags), xPos, yPos))
+	if (inputHandler->mouseMove(convertKeyModifiers((TCULong)keyFlags),
+		unscalePixels(xPos), unscalePixels(yPos)))
 	{
 		return 0;
 	}
@@ -1025,16 +1039,15 @@ LRESULT ModelWindow::doSize(WPARAM sizeType, int newWidth, int newHeight)
 	point.x = rect.left;
 	point.y = rect.top;
 	ScreenToClient(hParentWindow, &point);
-	if (modelViewer && !hPBufferGLRC)
-	{
-		modelViewer->setWidth(newWidth);
-		modelViewer->setHeight(newHeight);
-	}
 	if (hPBufferGLRC)
 	{
 		wglMakeCurrent(hdc, hglrc);
 	}
 	retValue = CUIOGLWindow::doSize(sizeType, newWidth, newHeight);
+	if (modelViewer && !hPBufferGLRC)
+	{
+		updateModelViewerSize();
+	}
 	if (hPBufferGLRC)
 	{
 		makeCurrent();
@@ -1735,12 +1748,13 @@ HTREEITEM ModelWindow::addErrorLine(HTREEITEM parent, char* line,
 		item.stateMask = TVIS_BOLD;
 		item.state = TVIS_BOLD;
 	}
-	if (imageIndex >= 0)
+	if (imageIndex < 0)
 	{
-        item.mask |= TVIF_IMAGE | TVIF_SELECTEDIMAGE; 
-        item.iImage = imageIndex; 
-        item.iSelectedImage = imageIndex; 
+		imageIndex = errorImageIndices[LDLELastError + 1];
 	}
+    item.mask |= TVIF_IMAGE | TVIF_SELECTEDIMAGE; 
+    item.iImage = imageIndex; 
+    item.iSelectedImage = imageIndex; 
 	insertStruct.itemex = item;
 	return TreeView_InsertItem(hErrorTree, &insertStruct);
 }
@@ -1782,7 +1796,7 @@ bool ModelWindow::addError(LDLError* error)
 		}
 		addErrorLine(parent, buf, error);
 		delete buf;
-		string = error->getFileLine();
+		string = error->getFormattedFileLine();
 		if (string)
 		{
 			int lineNumber = error->getLineNumber();
@@ -1901,90 +1915,43 @@ void ModelWindow::setupErrorWindow(void)
 	SendDlgItemMessage(hErrorWindow, IDC_SHOW_WARNINGS, BM_SETCHECK,
 		showWarnings, 0);
 	// Create the image list.
-	if ((himl = ImageList_Create(16, 16, ILC_COLOR | ILC_MASK, 8, 0)) == NULL)
+	UINT flags = CUIScaler::imageListCreateFlags();
+	double scaleFactor = getScaleFactor();
+	SIZE size = { (LONG)(16 * scaleFactor), (LONG)(16 * scaleFactor) };
+	if ((himl = ImageList_Create(size.cx, size.cy, flags, 12, 0)) == NULL)
 		return;
 
 	// Add the bitmaps.
-	hbmp = LoadBitmap(hInstance, MAKEINTRESOURCE(IDB_INFO));
-	hMask = LoadBitmap(hInstance, MAKEINTRESOURCE(IDB_INFO_MASK));
-	ImageList_Add(himl, hbmp, hMask);
-	DeleteObject(hbmp);
-	DeleteObject(hMask);
-
-	hbmp = LoadBitmap(hInstance, MAKEINTRESOURCE(IDB_PARSE));
-	hMask = LoadBitmap(hInstance, MAKEINTRESOURCE(IDB_PARSE_MASK));
-	errorImageIndices[LDLEParse] = ImageList_Add(himl, hbmp, hMask);
+	addImageToImageList(himl, IDR_INFO, size, scaleFactor);
+	errorImageIndices[LDLEParse] = addImageToImageList(himl, IDR_PARSE, size, scaleFactor);
 	errorImageIndices[LDLEGeneral] = errorImageIndices[LDLEParse];
 	errorImageIndices[LDLEBFCError] = errorImageIndices[LDLEParse];
 	errorImageIndices[LDLEMPDError] = errorImageIndices[LDLEParse];
 	errorImageIndices[LDLEMetaCommand] = errorImageIndices[LDLEParse];
-	DeleteObject(hbmp);
-	DeleteObject(hMask);
-
-	hbmp = LoadBitmap(hInstance, MAKEINTRESOURCE(IDB_FNF));
-	hMask = LoadBitmap(hInstance, MAKEINTRESOURCE(IDB_FNF_MASK));
-	errorImageIndices[LDLEFileNotFound] = ImageList_Add(himl, hbmp, hMask);
-	DeleteObject(hbmp);
-	DeleteObject(hMask);
-
-	hbmp = LoadBitmap(hInstance, MAKEINTRESOURCE(IDB_MATRIX));
-	hMask = LoadBitmap(hInstance, MAKEINTRESOURCE(IDB_MATRIX_MASK));
-	errorImageIndices[LDLEMatrix] = ImageList_Add(himl, hbmp, hMask);
-	DeleteObject(hbmp);
-	DeleteObject(hMask);
-
-	hbmp = LoadBitmap(hInstance, MAKEINTRESOURCE(IDB_DETERMINANT));
-	hMask = LoadBitmap(hInstance,
-		MAKEINTRESOURCE(IDB_DETERMINANT_MASK));
-	errorImageIndices[LDLEPartDeterminant] = ImageList_Add(himl, hbmp, hMask);
-	DeleteObject(hbmp);
-	DeleteObject(hMask);
-
-	hbmp = LoadBitmap(hInstance, MAKEINTRESOURCE(IDB_NON_FLAT_QUAD));
-	hMask = LoadBitmap(hInstance,
-		MAKEINTRESOURCE(IDB_NON_FLAT_QUAD_MASK));
-	errorImageIndices[LDLENonFlatQuad] = ImageList_Add(himl, hbmp, hMask);
-	DeleteObject(hbmp);
-	DeleteObject(hMask);
-
-	hbmp = LoadBitmap(hInstance, MAKEINTRESOURCE(IDB_CONCAVE_QUAD));
-	hMask = LoadBitmap(hInstance,
-		MAKEINTRESOURCE(IDB_CONCAVE_QUAD_MASK));
-	errorImageIndices[LDLEConcaveQuad] = ImageList_Add(himl, hbmp, hMask);
-	DeleteObject(hbmp);
-	DeleteObject(hMask);
-
-	hbmp = LoadBitmap(hInstance,
-		MAKEINTRESOURCE(IDB_MATCHING_POINTS));
-	hMask = LoadBitmap(hInstance,
-		MAKEINTRESOURCE(IDB_MATCHING_POINTS_MASK));
-	errorImageIndices[LDLEMatchingPoints] = ImageList_Add(himl, hbmp, hMask);
-	DeleteObject(hbmp);
-	DeleteObject(hMask);
-
-	hbmp = LoadBitmap(hInstance, MAKEINTRESOURCE(IDB_COLINEAR));
-	hMask = LoadBitmap(hInstance, MAKEINTRESOURCE(IDB_COLINEAR_MASK));
-	errorImageIndices[LDLEColinear] = ImageList_Add(himl, hbmp, hMask);
-	DeleteObject(hbmp);
-	DeleteObject(hMask);
-
-	hbmp = LoadBitmap(hInstance, MAKEINTRESOURCE(IDB_VERTEX_ORDER));
-	hMask = LoadBitmap(hInstance,
-		MAKEINTRESOURCE(IDB_VERTEX_ORDER_MASK));
-	errorImageIndices[LDLEVertexOrder] = ImageList_Add(himl, hbmp, hMask);
-	DeleteObject(hbmp);
-	DeleteObject(hMask);
-
-	hbmp = LoadBitmap(hInstance, MAKEINTRESOURCE(IDB_ERROR_LOOP));
-	hMask = LoadBitmap(hInstance,
-		MAKEINTRESOURCE(IDB_ERROR_LOOP_MASK));
-	errorImageIndices[LDLEModelLoop] = ImageList_Add(himl, hbmp, hMask);
-	DeleteObject(hbmp);
-	DeleteObject(hMask);
+	errorImageIndices[LDLEFileNotFound] = addImageToImageList(himl, IDR_FNF, size, scaleFactor);
+	errorImageIndices[LDLEMatrix] = addImageToImageList(himl, IDR_MATRIX, size, scaleFactor);
+	errorImageIndices[LDLEPartDeterminant] = addImageToImageList(himl, IDR_DETERMINANT, size, scaleFactor);
+	errorImageIndices[LDLENonFlatQuad] = addImageToImageList(himl, IDR_NON_FLAT_QUAD, size, scaleFactor);
+	errorImageIndices[LDLEConcaveQuad] = addImageToImageList(himl, IDR_CONCAVE_QUAD, size, scaleFactor);
+	errorImageIndices[LDLEMatchingPoints] = addImageToImageList(himl, IDR_MATCHING_POINTS, size, scaleFactor);
+	errorImageIndices[LDLEColinear] = addImageToImageList(himl, IDR_COLINEAR, size, scaleFactor);
+	errorImageIndices[LDLEVertexOrder] = addImageToImageList(himl, IDR_VERTEX_ORDER, size, scaleFactor);
+	errorImageIndices[LDLEModelLoop] = addImageToImageList(himl, IDR_ERROR_LOOP, size, scaleFactor);
+	if (scaleFactor == 1.0 || scaleFactor == 2.0)
+	{
+		errorImageIndices[LDLELastError + 1] = addImageToImageList(himl, IDR_DOTS, size, scaleFactor);
+	}
+	else
+	{
+		// The dots image will only look right and line up perfectly if the
+		// scale factor is exactly 1 or 2. Do what I used to do (show the info
+		// icon) if the scale factor is anything else.
+		errorImageIndices[LDLELastError + 1] = addImageToImageList(himl, IDR_INFO, size, scaleFactor);
+	}
 
 	// Associate the image list with the tree view control.
 	TreeView_SetImageList(hErrorTree, himl, TVSIL_NORMAL);
-//	TreeView_SetItemHeight(hErrorTree, 18);
+	TreeView_SetItemHeight(hErrorTree, scalePoints(18));
 }
 
 void ModelWindow::setupProgress(void)
@@ -2039,7 +2006,7 @@ void ModelWindow::createErrorWindow(void)
 		hErrorStatusWindow = CreateStatusWindow(
 			WS_CHILD | WS_VISIBLE | SBARS_SIZEGRIP, "", hErrorWindow,
 			2000);
-		SendMessage(hErrorStatusWindow, SB_SETPARTS, 1, (LPARAM)parts);
+		setStatusBarParts(hErrorStatusWindow, 1, parts);
 		originalErrorDlgProc = (WNDPROC)GetWindowLongPtr(hErrorWindow,
 			DWLP_DLGPROC);
 		SetWindowLongPtr(hErrorWindow, GWLP_USERDATA, (LONG_PTR)this);
@@ -2150,16 +2117,15 @@ void ModelWindow::populateErrorList(void)
 int ModelWindow::populateErrorTree(void)
 {
 	char buf[128] = "";
-//	RECT rect;
-//	POINT topLeft;
-//	int width;
-//	int height;
 
-	SetWindowRedraw(hErrorTree, FALSE);
 	if (!windowShown)
 	{
 		return 0;
 	}
+	// De-select any item that may have been selected before.
+	TreeView_Select(hErrorTree, NULL, TVGN_CARET);
+	// Don't let the tree redraw while we are populating it.
+	SetWindowRedraw(hErrorTree, FALSE);
 	if (hErrorWindow && !errorTreePopulated)
 	{
 		errorCount = 0;
@@ -2249,9 +2215,20 @@ void ModelWindow::showErrorsIfNeeded(BOOL onlyIfNeeded)
 				TCUserDefaults::longForKey(SHOW_ERRORS_KEY, 1, false)))
 			{
 				ShowWindow(hErrorWindow, SW_SHOWNORMAL);
+				// For some reason, in Windows 10 (and possibly earlier
+				// versions), the error window doesn't get brought to
+				// the front when it is already visible and ShowWindow is
+				// called, even with SW_SHOWNORMAL. The below brings it to the
+				// front, so it can't be hidden behind the main LDView window.
+				BringWindowToTop(hErrorWindow);
 			}
 		}
 	}
+}
+
+bool ModelWindow::isErrorWindowVisible(void) const
+{
+	return hErrorWindow != NULL && IsWindowVisible(hErrorWindow) != FALSE;
 }
 
 void ModelWindow::stopAnimation(void)
@@ -2340,16 +2317,16 @@ LRESULT ModelWindow::doShowWindow(BOOL showFlag, LPARAM status)
 BOOL ModelWindow::initWindow(void)
 {
 	LDVExtensionsSetup::setup(hInstance);
-	if (((LDViewWindow*)parentWindow)->getFullScreen() ||
-		((LDViewWindow*)parentWindow)->getScreenSaver() ||
-		((LDViewWindow*)parentWindow)->getHParentWindow())
-	{
-		exWindowStyle &= ~WS_EX_CLIENTEDGE;
-	}
-	else
-	{
-		exWindowStyle |= WS_EX_CLIENTEDGE;
-	}
+	//if (((LDViewWindow*)parentWindow)->getFullScreen() ||
+	//	((LDViewWindow*)parentWindow)->getScreenSaver() ||
+	//	((LDViewWindow*)parentWindow)->getHParentWindow())
+	//{
+	//	exWindowStyle &= ~WS_EX_CLIENTEDGE;
+	//}
+	//else
+	//{
+	//	exWindowStyle |= WS_EX_CLIENTEDGE;
+	//}
 	windowStyle |= WS_CHILD;
 	cancelLoad = false;
 	if (CUIOGLWindow::initWindow())
@@ -3071,7 +3048,7 @@ bool ModelWindow::setupBitmapRender(int imageWidth, int imageHeight)
 		return false;
 	}
 	hRenderBitmap = createDIBSection(hBitmapRenderDC, imageWidth, imageHeight,
-		96, 96, &bmBuffer);
+		&bmBuffer);
 	if (hRenderBitmap)
 	{
 		PIXELFORMATDESCRIPTOR pfd;
@@ -3285,6 +3262,14 @@ void ModelWindow::renderOffscreenImage(void)
 	//}
 }
 
+void ModelWindow::updateModelViewerSize(void)
+{
+	double scaleFactor = getScaleFactor(true);
+	modelViewer->setWidth(width / scaleFactor);
+	modelViewer->setHeight(height / scaleFactor);
+	modelViewer->setScaleFactor(scaleFactor);
+}
+
 void ModelWindow::cleanupRenderSettings(void)
 {
 	if (!savingFromCommandLine)
@@ -3294,8 +3279,7 @@ void ModelWindow::cleanupRenderSettings(void)
 		// recompiling the model, which takes quite a bit of extra
 		// time.
 		makeCurrent();
-		modelViewer->setWidth(width);
-		modelViewer->setHeight(height);
+		updateModelViewerSize();
 		//modelViewer->recompile();
 		modelViewer->unpause();
 		modelViewer->setup();
@@ -3392,8 +3376,7 @@ void ModelWindow::cleanupSnapshotBackBuffer(RECT &rect)
 		rect.bottom - rect.top, TRUE);
 	RedrawWindow(hParentWindow, NULL, NULL,
 		RDW_FRAME | RDW_INVALIDATE | RDW_UPDATENOW);
-	modelViewer->setWidth(width);
-	modelViewer->setHeight(height);
+	updateModelViewerSize();
 	modelViewer->setup();
 }
 
@@ -3487,8 +3470,9 @@ bool ModelWindow::saveImage(
 	snapshotTaker->setImageType(getSaveImageType());
 	snapshotTaker->setTrySaveAlpha(saveAlpha);
 	snapshotTaker->setAutoCrop(autoCrop);
-	snapshotTaker->setProductVersion(
-		((LDViewWindow *)parentWindow)->getProductVersion());
+	char *tmpVersion = ucstringtoutf8(((LDViewWindow *)parentWindow)->getProductVersion());
+	snapshotTaker->setProductVersion(tmpVersion);
+	delete[] tmpVersion;
 	grabSetup(imageWidth, imageHeight, origRect, origSlowClear);
 	retValue = snapshotTaker->saveImage(filename, imageWidth, imageHeight,
 		zoomToFit);
@@ -3764,7 +3748,7 @@ bool ModelWindow::printPage(const PRINTDLG &pd)
 		if (!canceled)
 		{
 			hBitmap = createDIBSection(hBitmapDC, bitmapWidth, bitmapHeight,
-				printHDPI, printVDPI, &bmBuffer);
+				&bmBuffer);
 		}
 		if (hBitmap)
 		{
@@ -3888,8 +3872,7 @@ bool ModelWindow::printPage(const PRINTDLG &pd)
 		}
 		else
 		{
-			modelViewer->setWidth(width);
-			modelViewer->setHeight(height);
+			updateModelViewerSize();
 			modelViewer->setSlowClear(oldSlowClear);
 		}
 		modelViewer->setBackgroundRGBA(oldR, oldG, oldB, oldA);
@@ -5023,20 +5006,23 @@ void ModelWindow::exportModel(void)
 	if (getSaveFilename(filename, COUNT_OF(filename)))
 	{
 		LDViewWindow *ldviewWindow = ((LDViewWindow *)parentWindow);
-		std::string copyright = ldviewWindow->getLegalCopyright();
-		unsigned char copyrightSym = 169;
-		size_t index = copyright.find((char)copyrightSym);
+		char *tmpCopyright = ucstringtoutf8(ldviewWindow->getLegalCopyright());
+		std::string copyright = tmpCopyright;
+		delete[] tmpCopyright;
+		char *copyrightSym = "\xC2\xA9";
+		size_t index = copyright.find(copyrightSym);
 
 		if (index < copyright.size())
 		{
 			copyright = copyright.substr(0, index) + "(C)" +
-				copyright.substr(index + 1);
+				copyright.substr(index + 2);
 		}
 		modelViewer->setExportType(
 			(LDrawModelViewer::ExportType)saveExportType);
 		setWaitCursor();
-		modelViewer->exportCurModel(filename,
-			ldviewWindow->getProductVersion());
+		char *tmpProductVersion = ucstringtoutf8(ldviewWindow->getProductVersion());
+		modelViewer->exportCurModel(filename, tmpProductVersion);
+		delete[] tmpProductVersion;
 		setArrowCursor();
 	}
 }

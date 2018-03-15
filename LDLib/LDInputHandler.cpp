@@ -59,6 +59,7 @@ void LDInputHandler::cancelMouseDrag(void)
 
 void LDInputHandler::setViewMode(LDInputHandler::ViewMode value)
 {
+	stopRotation();
 	m_viewMode = value;
 	if (m_modelViewer)
 	{
@@ -71,7 +72,17 @@ void LDInputHandler::setViewMode(LDInputHandler::ViewMode value)
 		{
 			m_modelViewer->setConstrainZoom(false);
 		}
+		m_modelViewer->requestRedraw();
 	}
+}
+
+void LDInputHandler::stopRotation(void)
+{
+	recordRotationStop();
+	m_rotationSpeed = 0.0f;
+	m_modelViewer->setXRotate(0.0f);
+	m_modelViewer->setYRotate(0.0f);
+	m_modelViewer->setRotationSpeed(m_rotationSpeed);
 }
 
 void LDInputHandler::updateSpinRateXY(int xPos, int yPos)
@@ -84,10 +95,7 @@ void LDInputHandler::updateSpinRateXY(int xPos, int yPos)
 	m_rotationSpeed = magnitude / 10.0f;
 	if (fEq(m_rotationSpeed, 0.0f))
 	{
-		recordRotationStop();
-		m_rotationSpeed = 0.0f;
-		m_modelViewer->setXRotate(0.0f);
-		m_modelViewer->setYRotate(0.0f);
+		stopRotation();
 	}
 	else
 	{
@@ -215,7 +223,7 @@ bool LDInputHandler::mouseCaptureChanged(void)
 {
 	if (m_buttonsDown[MBLeft])
 	{
-		if (m_viewMode == VMFlyThrough)
+		if (m_viewMode == VMFlyThrough || m_viewMode == VMWalk)
 		{
 			m_modelViewer->setCameraXRotate(0.0f);
 			m_modelViewer->setCameraYRotate(0.0f);
@@ -266,7 +274,7 @@ bool LDInputHandler::mouseUp(
 	switch (button)
 	{
 	case MBLeft:
-		if (m_viewMode == VMFlyThrough)
+		if (m_viewMode == VMFlyThrough || m_viewMode == VMWalk)
 		{
 			m_modelViewer->setCameraXRotate(0.0f);
 			m_modelViewer->setCameraYRotate(0.0f);
@@ -498,6 +506,9 @@ bool LDInputHandler::keyDown(TCULong modifierKeys, KeyCode keyCode)
 			}
 			m_rotationSpeed = rotationSpeed;
 			break;
+		case KCSpace:
+			stopRotation();
+			break;
 		default:
 			return false;
 		}
@@ -505,7 +516,7 @@ bool LDInputHandler::keyDown(TCULong modifierKeys, KeyCode keyCode)
 		m_modelViewer->requestRedraw();
 		return true;
 	}
-	else if (m_viewMode == VMFlyThrough)
+	else if (m_viewMode == VMFlyThrough || m_viewMode == VMWalk)
 	{
 		TCVector cameraMotion = m_modelViewer->getCameraMotion();
 		TCFloat fov = m_modelViewer->getFov();
@@ -604,7 +615,7 @@ bool LDInputHandler::keyUp(TCULong /*modifierKeys*/, KeyCode keyCode)
 		m_modelViewer->requestRedraw();
 		return true;
 	}
-	else if (m_viewMode == VMFlyThrough)
+	else if (m_viewMode == VMFlyThrough || m_viewMode == VMWalk)
 	{
 		TCVector cameraMotion = m_modelViewer->getCameraMotion();
 

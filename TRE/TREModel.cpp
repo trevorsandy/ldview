@@ -187,7 +187,7 @@ void TREModel::dealloc(void)
 {
 	int i;
 
-	delete m_name;
+	delete[] m_name;
 	// Don't release m_mainModel
 	TCObject::release(m_subModels);
 	if (!m_flags.unMirrored)
@@ -363,7 +363,7 @@ void TREModel::invert(TREModel *originalModel)
 
 void TREModel::setName(const char *name)
 {
-	delete m_name;
+	delete[] m_name;
 	m_name = copyString(name);
 }
 
@@ -861,7 +861,7 @@ TREModel::TexmapInfo *TREModel::getActiveTexmapInfo(void)
 		{
 			TexmapInfo &texmapInfo = m_texmapInfos.back();
 
-			if (texmapInfo.filename == *activeTextureFilename && texmapInfo.type == TTPlanar)
+			if (texmapInfo.filename == *activeTextureFilename)
 			{
 				return &texmapInfo;
 			}
@@ -1456,8 +1456,8 @@ void TREModel::processSmoothEdge(TREConditionalMap &conditionalMap,
 {
 	TRESmoother *smoother0 = NULL;
 	int line0Index = getConditionalLine(conditionalMap,
-		vertices->constVertexAtIndex(index0),
-		vertices->constVertexAtIndex(index1), smoother0);
+		vertices->vertexAtIndex(index0), vertices->vertexAtIndex(index1),
+		smoother0);
 
 	if (line0Index >= 0)
 	{
@@ -1467,8 +1467,8 @@ void TREModel::processSmoothEdge(TREConditionalMap &conditionalMap,
 		// at index0.
 		TRESmoother *smoother1 = NULL;
 		int line1Index = getConditionalLine(conditionalMap,
-			vertices->constVertexAtIndex(index1),
-			vertices->constVertexAtIndex(index0), smoother1);
+			vertices->vertexAtIndex(index1), vertices->vertexAtIndex(index0),
+			smoother1);
 
 		if (smoother1)
 		{
@@ -1479,7 +1479,7 @@ void TREModel::processSmoothEdge(TREConditionalMap &conditionalMap,
 			// of both ends, smoother1 should always be non-NULL if line0Index
 			// >= 0.
 			const TCVector &normal0 =
-				TCVector(normals->constVertexAtIndex(index0).v);
+				TCVector(normals->vertexAtIndex(index0).v);
 			TRENormalInfo *normalInfo;
 			// Check to see if there is conditional line between the points at
 			// index1 and index2.  Note that by passing smoother1 into
@@ -1488,8 +1488,8 @@ void TREModel::processSmoothEdge(TREConditionalMap &conditionalMap,
 			// the point will be marked as shared between the two conditionals,
 			// so that it will be smoothed betwen them.
 			int line2Index = getConditionalLine(conditionalMap,
-				vertices->constVertexAtIndex(index1),
-				vertices->constVertexAtIndex(index2), smoother1);
+				vertices->vertexAtIndex(index1),
+				vertices->vertexAtIndex(index2), smoother1);
 
 			// Check to see if the normal for index0 is more than 90 degrees
 			// away from the running total normal stored in smoother0.  Note
@@ -1518,7 +1518,7 @@ void TREModel::processSmoothEdge(TREConditionalMap &conditionalMap,
 			{
 				// This should always be the case.
 				const TCVector &normal1 =
-					TCVector(normals->constVertexAtIndex(index1).v);
+					TCVector(normals->vertexAtIndex(index1).v);
 
 				// Check to see if the normal for index1 is more than 90 degrees
 				// away from the running total normal stored in smoother1.  Note
@@ -1622,8 +1622,8 @@ void TREModel::fillConditionalMap(TREConditionalMap &conditionalMap,
 			{
 				int index0 = (*indices)[i];
 				int index1 = (*indices)[i + 1];
-				const TREVertex &vertex0 = vertices->constVertexAtIndex(index0);
-				const TREVertex &vertex1 = vertices->constVertexAtIndex(index1);
+				const TREVertex &vertex0 = vertices->vertexAtIndex(index0);
+				const TREVertex &vertex1 = vertices->vertexAtIndex(index1);
 				TREVertexKey vertex0Key(vertex0);
 				TREVertexKey vertex1Key(vertex1);
 
@@ -1666,7 +1666,7 @@ void TREModel::addConditionalPoint(TREConditionalMap &conditionalMap,
 		// operator of map.  However, that would require extra lookups, and
 		// we're trying to keep the lookups to a minimum.
 		TREConditionalMap::value_type newValue(vertexKey,
-			TRESmoother(vertices->constVertexAtIndex(index0)));
+			TRESmoother(vertices->vertexAtIndex(index0)));
 
 		// The insert function returns a pair, where the first of the pair is
 		// an iterator pointing to the newly inserted item, and the second of
@@ -1679,7 +1679,7 @@ void TREModel::addConditionalPoint(TREConditionalMap &conditionalMap,
 	// If the item did exist, it's set in the find() call.  Note that not all
 	// the vertices that match are necessarily equal.  However, this won't
 	// effect the results.
-	(*it).second.addVertex(vertices->constVertexAtIndex(index1));
+	(*it).second.addVertex(vertices->vertexAtIndex(index1));
 }
 
 void TREModel::scaleConditionalControlPoint(
@@ -2606,8 +2606,9 @@ void TREModel::addEighthSphere(const TCVector& center, TCFloat radius,
 	TCVector *spherePoints = NULL;
 	int numMainPoints = (usedSegments + 1) * (usedSegments + 1) - 1;
 	int mainSpot = 0;
+	bool shouldLoadConditionals = shouldLoadConditionalLines();
 
-	if (shouldLoadConditionalLines())
+	if (shouldLoadConditionals)
 	{
 		spherePoints = new TCVector[numMainPoints];
 	}
@@ -2643,7 +2644,7 @@ void TREModel::addEighthSphere(const TCVector& center, TCFloat radius,
 				p1 *= radius / p1.length();
 				normals[stripSpot] = (p1 - center).normalize();
 				points[stripSpot++] = p1;
-				if (shouldLoadConditionalLines())
+				if (shouldLoadConditionals)
 				{
 					spherePoints[mainSpot++] = p1;
 				}
@@ -2658,7 +2659,7 @@ void TREModel::addEighthSphere(const TCVector& center, TCFloat radius,
 			points[stripSpot++] = p2;
 			normals[stripSpot] = (p3 - center).normalize();
 			points[stripSpot++] = p3;
-			if (shouldLoadConditionalLines())
+			if (shouldLoadConditionals)
 			{
 				spherePoints[mainSpot++] = p2;
 				spherePoints[mainSpot++] = p3;
@@ -2680,7 +2681,7 @@ void TREModel::addEighthSphere(const TCVector& center, TCFloat radius,
 		delete[] points;
 		delete[] normals;
 	}
-	if (shouldLoadConditionalLines())
+	if (shouldLoadConditionals)
 	{
 		addEighthSphereConditionals(spherePoints, numSegments);
 	}
@@ -3929,9 +3930,10 @@ void TREModel::startTexture(
 	int type,
 	const std::string &filename,
 	TCImage *image,
-	const TCVector *points)
+	const TCVector *points,
+	const TCFloat *extra)
 {
-	TexmapInfo info((TexmapType)type, filename, points);
+	TexmapInfo info((TexmapType)type, filename, points, extra);
 
 	if (this != m_mainModel)
 	{
@@ -3967,32 +3969,24 @@ void TREModel::disableTexmaps(void)
 	glDisable(GL_TEXTURE_2D);
 }
 
-void TREModel::activateTexmap(
-	const TexmapInfo &texmapInfo,
-	const TCFloat *matrix /*= NULL*/)
+void TREModel::activateTexmap(const TexmapInfo &texmapInfo)
 {
 	GLuint textureID = m_mainModel->getTexmapTextureID(texmapInfo.filename);
-	const TCImage *image = m_mainModel->getTexmapImage(texmapInfo.filename);
 
-	if (textureID != 0 && image != NULL)
+	if (textureID == 0)
 	{
-		TCVector transformedPoints[3];
+		return;
+	}
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+	if (texmapInfo.type == TTPlanar)
+	{
 		const TCVector *points = texmapInfo.points;
 
-		if (matrix != NULL)
-		{
-			points[0].transformPoint(matrix, transformedPoints[0]);
-			points[1].transformPoint(matrix, transformedPoints[1]);
-			points[2].transformPoint(matrix, transformedPoints[2]);
-			points = transformedPoints;
-		}
-		glEnable(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, textureID);
 		TCVector point = points[0];
 		TCVector normal = points[1] - point;
 		double length = normal.length();
 		double scale = 1.0;
-		//double scale = image->getWidth();
 		normal /= (TCFloat)length;	// Normalize normal
 		double planeCoefficients[4];
 		planeCoefficients[0] = (normal[0] * scale) / length;
@@ -4006,7 +4000,6 @@ void TREModel::activateTexmap(
 
 		normal = points[2] - point;
 		length = normal.length();
-		//scale = image->getHeight();
 		normal /= (TCFloat)length;	// Normalize normal
 		planeCoefficients[0] = (normal[0] * scale) / length;
 		planeCoefficients[1] = (normal[1] * scale) / length;
@@ -4016,6 +4009,26 @@ void TREModel::activateTexmap(
 		glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
 		glTexGendv(GL_T, GL_OBJECT_PLANE, planeCoefficients);
 		glEnable(GL_TEXTURE_GEN_T);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
+			m_mainModel->getTexClampMode());
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,
+			m_mainModel->getTexClampMode());
+	}
+	else
+	{
+		glDisable(GL_TEXTURE_GEN_S);
+		glDisable(GL_TEXTURE_GEN_T);
+		if (texmapInfo.type == TTCylindrical || texmapInfo.type == TTSpherical)
+		{
+			GLint sClamp = m_mainModel->getTexClampMode();
+			if (texmapInfo.sAngleIs360)
+			{
+				sClamp = GL_REPEAT;
+			}
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, sClamp);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,
+				m_mainModel->getTexClampMode());
+		}
 	}
 }
 
@@ -4095,6 +4108,240 @@ void TREModel::finishParts(void)
 					model->finishParts();
 				}
 			}
+		}
+	}
+}
+
+TREModel::TexmapInfo::TexmapInfo(void)
+	: type(TTPlanar)
+	, cylHeight(0.0)
+	, sAngle(0.0)
+	, tAngle(0.0)
+	, sAngleIs360(false)
+	, subModelOffset(0)
+	, subModelCount(0)
+{
+}
+
+TREModel::TexmapInfo::TexmapInfo(
+	TexmapType type,
+	const std::string &filename,
+	const TCVector *otherPoints,
+	const TCFloat *extra)
+	: type(type)
+	, filename(filename)
+	, cylHeight(0.0)
+	, sAngle(0.0)
+	, tAngle(0.0)
+	, sAngleIs360(false)
+	, subModelOffset(0)
+	, subModelCount(0)
+{
+	copyPoints(otherPoints);
+	if (type == TTCylindrical)
+	{
+		calcCylFields();
+		sAngle = deg2rad(extra[0]);
+		sAngleIs360 = extra[0] >= 360 || extra[0] <= -360;
+	}
+	else if (type == TTSpherical)
+	{
+		calcSphereFields();
+		sAngle = deg2rad(extra[0]);
+		sAngleIs360 = extra[0] >= 360 || extra[0] <= -360;
+		tAngle = deg2rad(extra[1]);
+	}
+}
+
+bool TREModel::TexmapInfo::texmapEquals(const TexmapInfo &other)
+{
+	return type == other.type &&
+	points[0] == other.points[0] &&
+	points[1] == other.points[1] &&
+	points[2] == other.points[2] &&
+	sAngle == other.sAngle &&
+	tAngle == other.tAngle &&
+	cylHeight == other.cylHeight &&
+	filename == other.filename;
+}
+
+void TREModel::TexmapInfo::copyPoints(const TCVector *otherPoints)
+{
+	points[0] = otherPoints[0];
+	points[1] = otherPoints[1];
+	points[2] = otherPoints[2];
+}
+
+void TREModel::TexmapInfo::transform(const TCFloat* matrix)
+{
+	if (matrix != NULL)
+	{
+		for (size_t i = 0; i < 3; i++)
+		{
+			points[i] = points[i].transformPoint(matrix);
+		}
+		if (type == TTCylindrical)
+		{
+			calcCylFields();
+		}
+		else if (type == TTSpherical)
+		{
+			calcSphereFields();
+		}
+	}
+}
+
+void TREModel::TexmapInfo::calcCylFields(void)
+{
+	a = points[0];
+	TCVector b = points[1];
+	normal = a - b;
+	cylHeight = normal.length();
+	normal /= cylHeight;
+	dir = cylDirectionFrom(points[2]);
+}
+
+void TREModel::TexmapInfo::calcSphereFields(void)
+{
+	a = points[0];
+	normal = -((points[0] - points[1]) * (points[2] - points[1])).normalize();
+	normal2 = (normal * (points[1] - a)).normalize();
+	dir = (points[1] - points[0]).normalize();
+}
+
+TCVector TREModel::TexmapInfo::cylDirectionFrom(const TCVector& point)
+{
+	return directionFrom(point, normal);
+}
+
+TCVector TREModel::TexmapInfo::directionFrom(
+	const TCVector& point,
+	const TCVector& norm)
+{
+	TCVector ap = point - a;
+	TCVector proj = a + ap.dot(norm) / norm.dot(norm) * norm;
+	TCVector dir = point - proj;
+	return dir.normalize();
+}
+
+TCFloat TREModel::TexmapInfo::distanceToPlane(
+	const TCVector& point,
+	const TCVector& planePoint,
+	const TCVector& planeNormal)
+{
+	return planeNormal.dot(planePoint - point);
+}
+
+void TREModel::TexmapInfo::calcTextureCoords(
+	const TCVector* ppoints,
+	TCVector* textureCoords)
+{
+	if (type == TTCylindrical)
+	{
+		calcCylTextureCoords(ppoints, textureCoords);
+	}
+	else if (type == TTSpherical)
+	{
+		calcSphereTextureCoords(ppoints, textureCoords);
+	}
+}
+
+TCFloat TREModel::TexmapInfo::calcSAngle(
+	const TCVector& point,
+	bool isFirst,
+	TCVector& baseDir,
+	TCFloat& baseAngle)
+{
+	TCFloat curAngle;
+	if (isFirst)
+	{
+		baseDir = cylDirectionFrom(point);
+		curAngle = atan2((dir * baseDir).dot(normal), baseDir.dot(dir));
+	}
+	else
+	{
+		TCVector curDir = cylDirectionFrom(point);
+		curAngle = atan2((baseDir * curDir).dot(normal), curDir.dot(baseDir)) +
+			baseAngle;
+	}
+	if (isFirst)
+	{
+		baseAngle = curAngle;
+	}
+	return curAngle;
+}
+
+void TREModel::TexmapInfo::calcCylTextureCoords(
+	const TCVector* ppoints,
+	TCVector* textureCoords)
+{
+	TCVector baseDir;
+	TCFloat baseAngle = 0.0;
+	for (size_t i = 0; i < 3; ++i)
+	{
+		const TCVector& point(ppoints[i]);
+		TCVector& tc(textureCoords[i]);
+		tc[0] = 0.5 + calcSAngle(point, i == 0, baseDir, baseAngle) / sAngle;
+		tc[1] = distanceToPlane(point, a, normal) / cylHeight;
+	}
+}
+
+
+void TREModel::TexmapInfo::calcSphereTextureCoords(
+	const TCVector* ppoints,
+	TCVector* textureCoords)
+{
+	TCVector baseDir;
+	TCFloat baseAngle = 0.0;
+	std::vector<size_t> poleIndices;
+	TCFloat uSum = 0.0;
+	for (size_t i = 0; i < 3; ++i)
+	{
+		const TCVector& point(ppoints[i]);
+		TCVector& tc(textureCoords[i]);
+		TCVector pointDir = (point - a).normalize();
+		bool northPole = pointDir.approxEquals(normal, 1e-05);
+		bool southPole = false;
+		if (!northPole)
+		{
+			southPole = pointDir.approxEquals(-normal, 1e-05);
+		}
+		TCFloat pointSAngle = 0.0;
+		TCFloat pointTAngle;
+		if (northPole || southPole)
+		{
+			poleIndices.push_back(i);
+			if (northPole)
+			{
+				pointTAngle = -M_PI_2;
+			}
+			else
+			{
+				pointTAngle = M_PI_2;
+			}
+		}
+		else
+		{
+			pointSAngle = calcSAngle(point, i == 0, baseDir, baseAngle);
+			uSum += pointSAngle;
+			TCFloat theta = -pointSAngle;
+			// Rotate pointDir around normal until it's at 0 longitude.
+			TCVector refPointDir = (pointDir * cos(theta) +
+				(normal * pointDir) * sin(theta) + normal *
+				normal.dot(pointDir) * (1.0 - cos(theta))).normalize();
+			pointTAngle = atan2((dir * refPointDir).dot(normal2),
+				refPointDir.dot(dir));
+		}
+		tc[0] = 0.5 + pointSAngle / sAngle;
+		tc[1] = 0.5 + pointTAngle / tAngle;
+	}
+	if (!poleIndices.empty() && poleIndices.size() < 3)
+	{
+		TCFloat uAverage = 0.5 + uSum / (3 - poleIndices.size()) / sAngle;
+		for (size_t i = 0; i < poleIndices.size(); ++i)
+		{
+			TCVector& tc(textureCoords[poleIndices[i]]);
+			tc[0] = uAverage;
 		}
 	}
 }

@@ -10,7 +10,7 @@
 # CONFIG+=BUILD_TINYXML
 # CONFIG+=BUILD_GUI_ONLY
 # CONFIG+=BUILD_CUI_ONLY
-# CONFIG+=USE_OSMESA_STATIC
+# CONFIG+=USE_OSMESA_STATIC  # build static OSMesa libraray and use system LLVM library
 # CONFIG+=USE_OSMESA_LOCAL   # use local OSmesa and LLVM libraries - for OBS images w/o OSMesa stuff (e.g. RHEL)
 # CONFIG+=USE_SYSTEM_PNG     # override USE_3RD_PARTY_LIBS for libPng
 # CONFIG+=USE_SYSTEM_JPEG    # override USE_3RD_PARTY_LIBS for libJpeg

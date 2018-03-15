@@ -63,6 +63,7 @@ HEADERS += $$PWD/ConvertUTF.h \
            $$PWD/TCWebClient.h
 SOURCES += $$PWD/ConvertUTF.c \
            $$PWD/mystring.cpp \
+           $$PWD/STB.cpp \
            $$PWD/TCAlert.cpp \
            $$PWD/TCAlertManager.cpp \
            $$PWD/TCArray.cpp \

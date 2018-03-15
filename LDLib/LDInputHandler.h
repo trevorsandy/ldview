@@ -28,6 +28,7 @@ public:
 	{
 		VMExamine,
 		VMFlyThrough,
+		VMWalk,
 	};
 	// Note: the special key values happen to match Windows, but that's only
 	// because it made it easy to be sure there were no repeats.  Even the
@@ -94,6 +95,7 @@ public:
 	void setMouseUpPending(bool value);
 	void cancelMouseDrag(void);
 	virtual TCObject *getAlertSender(void);
+	void stopRotation(void);
 
 	static const char *captureAlertClass(void) { return "LDCaptureMouse"; }
 	static const char *releaseAlertClass(void) { return "LDReleaseMouse"; }

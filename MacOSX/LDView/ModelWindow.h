@@ -53,7 +53,6 @@ class LDPartsList;
 	IBOutlet NSSegmentedControl *viewModeSegments;
 	IBOutlet NSSegmentedControl *viewingAngleSegments;
 	IBOutlet NSSegmentedControl *printSegments;
-	IBOutlet NSSegmentedControl *customizeSegments;
 	IBOutlet NSSegmentedControl *stepSegments;
 	IBOutlet NSSegmentedControl *stepSegments2;
 	IBOutlet NSSegmentedControl *stepNextSegments;
@@ -91,6 +90,7 @@ class LDPartsList;
 	IBOutlet NSSegmentedControl *lowResStudsSegments;
 	IBOutlet NSSegmentedControl *latLonRotationSegments;
 	IBOutlet NSSegmentedControl *boundingBoxSegments;
+	IBOutlet NSLayoutConstraint *progressMessageLeft;
 	IBOutlet NSTextField *stepField;
 	
 	IBOutlet NSBox *latLonBox;
@@ -136,6 +136,9 @@ class LDPartsList;
 	bool pollingUpdateNeeded;
 	bool forceProgress;
 	float latLonDelta;
+	BOOL closing;
+	CGFloat progressWidth;
+	CGFloat progressMargin;
 }
 
 - (bool)sheetBusy;
@@ -147,11 +150,11 @@ class LDPartsList;
 - (id)initWithController:(LDViewController *)value;
 - (LDrawModelView *)modelView;
 - (bool)examineLatLong;
-- (bool)flyThroughMode;
+- (bool)examineMode;
+- (long)viewMode;
 - (bool)keepRightSideUp;
-- (bool)fullScreen;
 
-- (void)setFlyThroughMode:(bool)value;
+- (void)setViewMode:(long)newViewMode;
 - (void)setKeepRightSideUp:(bool)value;
 - (void)updateStatusLatLon;
 - (void)ldlErrorCallback:(LDLError *)error;
@@ -195,8 +198,10 @@ class LDPartsList;
 - (IBAction)partsList:(id)sender;
 - (IBAction)examineMode:(id)sender;
 - (IBAction)flyThroughMode:(id)sender;
+- (IBAction)walkMode:(id)sender;
 
 - (bool)isModelTreeOpen;
 - (bool)isMPDOpen;
+- (void)escapePressed;
 
 @end

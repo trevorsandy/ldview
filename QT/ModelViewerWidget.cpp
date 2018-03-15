@@ -269,6 +269,13 @@ void ModelViewerWidget::setApplication(QApplication *value)
             }
         }
     }
+	QImage fontImage2x(":/images/images/SanSerif@2x.png");
+#if QT_VERSION < 0x40600
+	long len = fontImage2x.numBytes();
+#else
+	long len = fontImage2x.byteCount();
+#endif
+	modelViewer->setRawFont2xData(fontImage2x.bits(),len);
 
 	bool shouldExit = false;
 	// Let LDSnapshotTaker perform an export if requested, but don't try to use
@@ -1132,10 +1139,15 @@ void ModelViewerWidget::setMainWindow(LDViewMainWindow *value)
 		mainWindow->setExamineModeOn(true);
 		progressMode->setText(QString::fromWCharArray(TCLocalStrings::get(L"ExamineMode")));
 	}
-	else
+	else if (viewMode == LDInputHandler::VMFlyThrough)
 	{
 		mainWindow->setFlythroughModeOn(true);
 		progressMode->setText(QString::fromWCharArray(TCLocalStrings::get(L"FlyThroughMode")));
+	}
+	else if (viewMode == LDInputHandler::VMWalk)
+	{
+		mainWindow->setWalkModeOn(true);
+		progressMode->setText(QString::fromWCharArray(TCLocalStrings::get(L"WalkMode")));
 	}
 	mainWindow->setViewLatitudeRotationOn(Preferences::getLatLongMode());
 	mainWindow->setKeepRightSideUpOn(keepRightSide = Preferences::getKeepRightSideUp());
@@ -2075,7 +2087,7 @@ bool examine, bool keep, bool /*saveSettings*/)
 		}
 		modelViewer->setExamineMode(examineMode);
 	}
-	else
+	else if (viewMode == LDInputHandler::VMFlyThrough)
 	{
 		inputHandler->setViewMode(LDInputHandler::VMFlyThrough);
 		modelViewer->setConstrainZoom(false);
@@ -2085,6 +2097,15 @@ bool examine, bool keep, bool /*saveSettings*/)
 			progressMode->setText(QString::fromWCharArray(TCLocalStrings::get(L"FlyThroughMode")));
 		}
 		if (progressLatlong) progressLatlong->setHidden(true);
+	}
+	else if (viewMode == LDInputHandler::VMWalk)
+	{
+		inputHandler->setViewMode(LDInputHandler::VMWalk);
+		modelViewer->setKeepRightSideUp(true);
+		if (progressMode)
+		{
+			progressMode->setText(QString::fromWCharArray(TCLocalStrings::get(L"WalkMode")));
+		}
 	}
 	Preferences::setViewMode(viewMode);
 }
@@ -2455,6 +2476,7 @@ bool ModelViewerWidget::getSaveFilename(char* saveFilename, int len)
 		saveDialog->selectNameFilter(exportFilters.at(exportType - LDrawModelViewer::ETFirst));
 #endif
 		saveDialog->setFileMode(QFileDialog::AnyFile);
+		saveDialog->setAcceptMode(QFileDialog::AcceptSave);
 		saveDialog->setLabelText(QFileDialog::Accept,"Export");
 
 		break;
@@ -2469,6 +2491,7 @@ bool ModelViewerWidget::getSaveFilename(char* saveFilename, int len)
 #endif
 		saveDialog->setWindowIcon(QPixmap( ":/images/images/LDViewIcon16.png"));
 		saveDialog->setFileMode(QFileDialog::AnyFile);
+		saveDialog->setAcceptMode(QFileDialog::AcceptSave);
 		saveDialog->setLabelText(QFileDialog::Accept,"Save");
 		break;
 	}

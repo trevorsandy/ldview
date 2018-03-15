@@ -10,6 +10,7 @@
 #endif // NO_JPG_IMAGE_FORMAT
 #include "TCImageOptions.h"
 #include "mystring.h"
+#include "../3rdParty/stb/stb_image_resize.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,6 +39,7 @@ TCImage::TCImage(void)
 		 bytesPerPixel(3),
 		 width(0),
 		 height(0),
+		 dpi(72),
 		 lineAlignment(1),
 		 flipped(false),
 		 formatName(NULL),
@@ -59,10 +61,10 @@ void TCImage::dealloc(void)
 {
 	if (!userImageData)
 	{
-		delete imageData;
+		delete[] imageData;
 	}
-	delete formatName;
-	delete comment;
+	delete[] formatName;
+	delete[] comment;
 	TCObject::release(compressionOptions);
 	TCObject::dealloc();
 }
@@ -119,7 +121,7 @@ void TCImage::setImageData(TCByte *value)
 {
 	if (!userImageData)
 	{
-		delete imageData;
+		delete[] imageData;
 	}
 	imageData = value;
 	if (imageData)
@@ -136,7 +138,7 @@ void TCImage::allocateImageData(void)
 {
 	if (!userImageData)
 	{
-		delete imageData;
+		delete[] imageData;
 	}
 	if (width > 0 && height > 0)
 	{
@@ -203,7 +205,7 @@ void TCImage::setFormatName(const char *value)
 	if (value != formatName && (value == NULL || formatName == NULL ||
 		strcmp(value, formatName) != 0))
 	{
-		delete formatName;
+		delete[] formatName;
 		formatName = copyString(value);
 		TCObject::release(compressionOptions);
 		compressionOptions = NULL;
@@ -395,7 +397,7 @@ void TCImage::setComment(const char *value)
 {
 	if (value != comment)
 	{
-		delete comment;
+		delete[] comment;
 		comment = copyString(value);
 	}
 }
@@ -509,7 +511,7 @@ void TCImage::autoCrop(TCUShort r, TCUShort g, TCUShort b)
 	}
 	if (!userImageData)
 	{
-		delete imageData;
+		delete[] imageData;
 	}
 	imageData = newImageData;
 	userImageData = false;
@@ -531,6 +533,43 @@ TCImageOptions *TCImage::getCompressionOptions(void)
 	return compressionOptions;
 }
 
+TCImage *TCImage::getScaledImage(
+	double scaleFactor,
+	bool premultipliedAlpha /*= false*/)
+{
+	return getScaledImage((int)(width * scaleFactor),
+		(int)(height * scaleFactor), premultipliedAlpha);
+}
+
+TCImage *TCImage::getScaledImage(
+	int scaledWidth,
+	int scaledHeight,
+	bool premultipliedAlpha /*= false*/)
+{
+	TCImage* other = new TCImage;
+	other->setDataFormat(dataFormat);
+	other->setSize(scaledWidth, scaledHeight);
+	other->setDpi(dpi);
+	other->setLineAlignment(lineAlignment);
+	other->setFlipped(flipped);
+	other->allocateImageData();
+	int alphaChannel = STBIR_ALPHA_CHANNEL_NONE;
+	if (bytesPerPixel == 4)
+	{
+		alphaChannel = 3;
+	}
+	int flags = premultipliedAlpha ? STBIR_FLAG_ALPHA_PREMULTIPLIED : 0;
+	if (stbir_resize_uint8_generic(imageData, width, height, getRowSize(),
+		other->imageData, other->width, other->height, other->getRowSize(),
+		bytesPerPixel, alphaChannel, flags, STBIR_EDGE_CLAMP,
+		STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_SRGB, NULL) == 0)
+	{
+		other->release();
+		return NULL;
+	}
+	return other;
+}
+
 #ifdef WIN32
 
 // Note: static method
@@ -538,10 +577,48 @@ TCImage *TCImage::createFromResource(
 	HMODULE hModule,
 	int resourceId,
 	int lineAlignment /*= 1*/,
-	bool flipped /*= false*/)
+	bool flipped /*= false*/,
+	double scaleFactor /*= 1.0*/)
+{
+	TCImage* image = NULL;
+	double imageScale = 1.0;
+	if (scaleFactor > 1.0)
+	{
+		image = createFromResource(hModule, resourceId, lineAlignment, flipped,
+			RT_PNGDATA_2X);
+		imageScale = 2.0;
+	}
+	if (image == NULL)
+	{
+		image = createFromResource(hModule, resourceId, lineAlignment, flipped,
+			RT_PNGDATA_1X);
+		imageScale = 1.0;
+	}
+	if (image != NULL)
+	{
+		if (scaleFactor == imageScale)
+		{
+			return image;
+		}
+		// Windows 32-bit BMPs are expected to have pre-multiplied alpha.
+		// It took me MANY hours to figure this out.
+		TCImage* scaledImage = image->getScaledImage(scaleFactor / imageScale,
+			true);
+		image->release();
+		return scaledImage;
+	}
+	return NULL;
+}
+
+TCImage *TCImage::createFromResource(
+	HMODULE hModule,
+	int resourceId,
+	int lineAlignment,
+	bool flipped,
+	LPCTSTR resourceType)
 {
 	HRSRC hResource = FindResource(hModule, MAKEINTRESOURCE(resourceId),
-		RT_RCDATA);
+		resourceType);
 	TCImage *retVal = NULL;
 
 	if (hResource != NULL)
@@ -580,32 +657,27 @@ HBITMAP TCImage::createDIBSection(
 	HDC hBitmapDC,
 	int bitmapWidth,
 	int bitmapHeight,
-	int hDPI,
-	int vDPI,
-	BYTE **bmBuffer)
+	BYTE **bmBuffer,
+	bool force32 /*= false*/)
 {
 	BITMAPINFO bmi;
 
+	memset(&bmi, 0, sizeof(BITMAPINFO));
 	bmi.bmiHeader.biSize = sizeof(bmi.bmiHeader);
 	bmi.bmiHeader.biWidth = bitmapWidth;
 	bmi.bmiHeader.biHeight = bitmapHeight;
 	bmi.bmiHeader.biPlanes = 1;
-	bmi.bmiHeader.biBitCount = 24;
+	bmi.bmiHeader.biBitCount = force32 ? 32 : 24;
 	bmi.bmiHeader.biCompression = BI_RGB;
-	bmi.bmiHeader.biSizeImage = 0;//roundUp(bitmapWidth * 3, 4) * bitmapHeight;
-	bmi.bmiHeader.biXPelsPerMeter = (long)(hDPI * 39.37);
-	bmi.bmiHeader.biYPelsPerMeter = (long)(vDPI * 39.37);
-	bmi.bmiHeader.biClrUsed = 0;
-	bmi.bmiHeader.biClrImportant = 0;
-	bmi.bmiColors[0].rgbRed = 0;
-	bmi.bmiColors[0].rgbGreen = 0;
-	bmi.bmiColors[0].rgbBlue = 0;
-	bmi.bmiColors[0].rgbReserved = 0;
-	return CreateDIBSection(hBitmapDC, &bmi, DIB_RGB_COLORS,
-		(void**)bmBuffer, NULL, 0);
+	// NOTE: CreateDIBSection ignores the DPI settings, so don't even try to set
+	// them.
+	return CreateDIBSection(hBitmapDC, &bmi, DIB_RGB_COLORS, (void**)bmBuffer,
+		NULL, 0);
 }
 
-HBITMAP TCImage::createMask(bool updateSource /*= false*/)
+HBITMAP TCImage::createMask(
+	bool updateSource /*= false*/,
+	TCByte threshold /*= 128*/)
 {
 	TCByte *dstData;
 	int dstBytesPerLine;
@@ -627,7 +699,7 @@ HBITMAP TCImage::createMask(bool updateSource /*= false*/)
 		{
 			TCByte alpha = imageData[srcYOffset + x * 4 + 3];
 
-			if (alpha < 128)
+			if (alpha < threshold)
 			{
 				int byteOffset = dstYOffset + x / 8;
 				int bitOffset = 7 - (x % 8);
@@ -643,22 +715,34 @@ HBITMAP TCImage::createMask(bool updateSource /*= false*/)
 		}
 	}
 	hNewBitmap = CreateBitmap(width, height, 1, 1, dstData);
-	delete dstData;
+	delete[] dstData;
 	return hNewBitmap;
 }
 
-void TCImage::getBmpAndMask(
-	HBITMAP &hBitmap,
-	HBITMAP &hMask,
-	bool updateSource /*= false*/)
+HBITMAP TCImage::createBmp(bool force32 /*= false*/, int rightPad /*= 0*/)
 {
 	HDC hdc = CreateCompatibleDC(NULL);
 	BYTE *bmBuffer = NULL;
 	int srcBytesPerLine = getRowSize();
-	int dstBytesPerLine = roundUp(width * 3, 4);
+	int dstBytesPerPixel = force32 ? 4 : 3;
+	int dstBytesPerLine = roundUp((width + rightPad) * dstBytesPerPixel, 4);
+	// Windows 32-bit BMPs are expected to have pre-multiplied alpha.
+	// It took me MANY hours to figure this out. If force32 is set, alphaNum
+	// will be changed to the alpha value for each pixel, and then used
+	// as the numberator in an alphaNum / 255 expression.
+	TCByte alphaNum = 255;
 
-	hBitmap = createDIBSection(hdc, width, height, 0, 0, &bmBuffer);
-	hMask = createMask(updateSource);
+	HBITMAP hBitmap = createDIBSection(hdc, width + rightPad, height, &bmBuffer,
+		force32);
+	if (rightPad != 0)
+	{
+		// I THINK it's already all zeroes when it comes out of
+		// CreateDIBSection, but I can't find official documentation that states
+		// that, so do this to be absolutely sure. Note that if rightPad is 0,
+		// every single byte in bmBuffer will be written to in the for loop
+		// below, so there is no need to clear that memory.
+		memset(bmBuffer, 0, dstBytesPerLine * height);
+	}
 	for (int y = 0; y < height; y++)
 	{
 		int srcYOffset = srcBytesPerLine * y;
@@ -666,40 +750,87 @@ void TCImage::getBmpAndMask(
 
 		for (int x = 0; x < width; x++)
 		{
-			bmBuffer[dstYOffset + x * 3 + 0] =
-				imageData[srcYOffset + x * 4 + 2];
-			bmBuffer[dstYOffset + x * 3 + 1] =
-				imageData[srcYOffset + x * 4 + 1];
-			bmBuffer[dstYOffset + x * 3 + 2] =
-				imageData[srcYOffset + x * 4 + 0];
+			alphaNum = imageData[srcYOffset + x * 4 + 3];
+			if (force32)
+			{
+				bmBuffer[dstYOffset + x * dstBytesPerPixel + 3] =
+					alphaNum;
+			}
+			bmBuffer[dstYOffset + x * dstBytesPerPixel + 0] =
+				imageData[srcYOffset + x * 4 + 2] * alphaNum / 255;
+			bmBuffer[dstYOffset + x * dstBytesPerPixel + 1] =
+				imageData[srcYOffset + x * 4 + 1] * alphaNum / 255;
+			bmBuffer[dstYOffset + x * dstBytesPerPixel + 2] =
+				imageData[srcYOffset + x * 4 + 0] * alphaNum / 255;
 		}
 	}
 	DeleteDC(hdc);
+	return hBitmap;
 }
 
-HICON TCImage::loadIconFromPngResource(HMODULE hModule, int resourceId)
+void TCImage::getBmpAndMask(
+	HBITMAP &hBitmap,
+	HBITMAP &hMask,
+	bool updateSource /*= false*/,
+	bool force32 /*= false*/)
 {
-	TCImage *image = TCImage::createFromResource(hModule, resourceId, 4, true);
+	TCByte threshold = force32 ? 1 : 128;
+	hMask = createMask(updateSource, threshold);
+	hBitmap = createBmp(force32);
+}
 
-	if (image != NULL)
+HBITMAP TCImage::loadBmpFromPngResource(
+	HMODULE hModule,
+	int resourceId,
+	double scaleFactor /*= 1.0*/,
+	bool force32 /*= false*/,
+	int rightPad /*= 0*/)
+{
+	TCImage *image = TCImage::createFromResource(hModule, resourceId, 4, true,
+		scaleFactor);
+	if (image == NULL)
 	{
-		HBITMAP hBitmap;
-		HBITMAP hMask;
-		ICONINFO ii;
-		HICON hIcon;
-
-		image->getBmpAndMask(hBitmap, hMask, true);
-		image->release();
-		memset(&ii, 0, sizeof(ii));
-		ii.fIcon = FALSE;
-		ii.hbmMask = hMask;
-		ii.hbmColor = hBitmap;
-		hIcon = CreateIconIndirect(&ii);
-		DeleteObject(hBitmap);
-		DeleteObject(hMask);
-		return hIcon;
+		return NULL;
 	}
-	return NULL;
+	HBITMAP hBitmap = image->createBmp(force32, rightPad);
+	image->release();
+	return hBitmap;
+}
+
+HICON TCImage::loadIconFromPngResource(
+	HMODULE hModule,
+	int resourceId,
+	double scaleFactor /*= 1.0*/,
+	bool force32 /*= false*/)
+{
+	TCImage *image = TCImage::createFromResource(hModule, resourceId, 4, true,
+		scaleFactor);
+
+	if (image == NULL)
+	{
+		return NULL;
+	}
+	HBITMAP hBitmap;
+	HBITMAP hMask;
+	ICONINFO ii;
+	HICON hIcon;
+
+	image->getBmpAndMask(hBitmap, hMask, true, force32);
+	image->release();
+	memset(&ii, 0, sizeof(ii));
+	ii.fIcon = FALSE;
+	ii.hbmMask = hMask;
+	ii.hbmColor = hBitmap;
+	hIcon = CreateIconIndirect(&ii);
+	if (hBitmap)
+	{
+		DeleteObject(hBitmap);
+	}
+	if (hMask)
+	{
+		DeleteObject(hMask);
+	}
+	return hIcon;
 }
 
 #endif // WIN32

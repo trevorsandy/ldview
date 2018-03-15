@@ -173,7 +173,15 @@ wchar_t *copyString(const wchar_t *string, size_t pad)
 {
 	if (string)
 	{
+#ifdef __clang_analyzer__
+		wchar_t *result = new wchar_t[wcslen(string) + 1 + pad];
+		wcscpy(result, string);
+		return result;
+#else
+		// The Xcode static analyzer thinks that the below leaks, even though
+		// it doesn't.
 		return wcscpy(new wchar_t[wcslen(string) + 1 + pad], string);
+#endif
 	}
 	else
 	{
@@ -281,9 +289,9 @@ template<class T>void deleteStringArray(T** array, int count)
 
 	for (i = 0; i < count; i++)
 	{
-		delete array[i];
+		delete[] array[i];
 	}
-	delete array;
+	delete[] array;
 }
 */
 /*
@@ -293,9 +301,9 @@ void deleteStringArray(wchar_t** array, int count)
 
 	for (i = 0; i < count; i++)
 	{
-		delete array[i];
+		delete[] array[i];
 	}
-	delete array;
+	delete[] array;
 }
 */
 bool arrayContainsString(char** array, int count, const char* string)
@@ -455,7 +463,7 @@ wchar_t** componentsSeparatedByString(const wchar_t* string,
 			tokenEnd = NULL;
 		}
 	}
-	delete stringCopy;
+	delete[] stringCopy;
 	return components;
 }
 
@@ -479,7 +487,12 @@ char* componentsJoinedByString(char** array, int count, const char* separator)
 	for (i = 0; i < count - 1; i++)
 	{
 		strcat(string, array[i]);
+#ifndef __clang_analyzer__
+		// The Xcode static analyzer has a bug where it thinks we can get here
+		// if count is 0. Since both i and count are signed, that's not
+		// possible.
 		strcat(string, separator);
+#endif
 	}
 	if (count)
 	{
@@ -1933,6 +1946,78 @@ char *ucstringtoutf8(CUCSTR src, int length /*= -1*/)
 	}
 }
 
+bool utf8towstring(std::wstring& dst, const std::string& src)
+{
+	return utf8towstring(dst, src.c_str(), (int)src.length());
+}
+
+bool utf8towstring(std::wstring& dst, const char *src, int length /*= -1*/)
+{
+	dst.clear();
+	if (length == 0)
+	{
+		return true;
+	}
+	const UTF8 *src8;
+	const UTF8 *src8Dup;
+	if (length == -1)
+	{
+		length = (int)strlen(src);
+	}
+	std::vector<UTF8> srcBuffer;
+	// I'm going to assume that the wide string has no more characters than the
+	// UTF-8 one.
+	size_t dstLength = length + 1;
+	if (sizeof(UTF8) == sizeof(char))
+	{
+		src8 = src8Dup = (UTF8 *)src;
+	}
+	else
+	{
+		srcBuffer.reserve(length + 1);
+		for (size_t i = 0; i < length; ++i)
+		{
+			srcBuffer.push_back((UTF8)src[i]);
+		}
+		srcBuffer.push_back(0);
+		src8 = src8Dup = &srcBuffer[0];
+	}
+	if (sizeof(wchar_t) == sizeof(UTF16))
+	{
+		UTF16 *dst16;
+		UTF16 *dst16Dup;
+		dst.resize(dstLength);
+		dst16 = dst16Dup = (UTF16 *)&dst[0];
+		// Note: length really is correct for end below, not length - 1.
+		ConversionResult result = ConvertUTF8toUTF16(&src8Dup, &src8[length],
+			&dst16Dup, &dst16[dstLength], lenientConversion);
+		if (result == conversionOK)
+		{
+			dstLength = dst16Dup - dst16;
+			dst.resize(dstLength);
+			return true;
+		}
+	}
+	else if (sizeof(wchar_t) == sizeof(UTF32))
+	{
+		UTF32 *dst32;
+		UTF32 *dst32Dup;
+		dst.resize(dstLength);
+		dst32 = dst32Dup = (UTF32 *)&dst[0];
+		// Note: length really is correct for end below, not length - 1.
+		ConversionResult result = ConvertUTF8toUTF32(&src8Dup, &src8[length],
+			&dst32Dup, &dst32[dstLength], lenientConversion);
+		if (result == conversionOK)
+		{
+			dstLength = dst32Dup - dst32;
+			dst.resize(dstLength);
+			return true;
+		}
+	}
+	dst.clear();
+	return false;
+}
+
 #ifdef TC_NO_UNICODE
 UCSTR utf8toucstring(const char *src, int /*length*/ /*= -1*/)
 #else // TC_NO_UNICODE
@@ -2002,7 +2087,7 @@ UCSTR utf8toucstring(const char *src, int length /*= -1*/)
 		delete[] dst;
 		if (src8 != (UTF8 *)src)
 		{
-			delete src8;
+			delete[] src8;
 		}
 		return retValue;
 #endif // TC_NO_UNICODE
@@ -2253,4 +2338,100 @@ TCExport bool ensurePath(const std::string &path)
 	deleteStringArray(components, count);
 	setCurrentDirectory(origDir);
 	return retValue;
+}
+
+// Adapted from Public Domain base64Decode from:
+// https://en.wikibooks.org/wiki/Algorithm_Implementation/Miscellaneous/Base64
+const static char base64Charset[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+static std::set<char> base64CharsetSet;
+const static char padCharacter = '=';
+
+bool base64Decode(const std::string& input, std::vector<TCByte>& decodedBytes)
+{
+	decodedBytes.clear();
+	if (input.size() % 4) //Sanity check
+	{
+		return false;
+	}
+	size_t padding = 0;
+	if (input.length())
+	{
+		if (input[input.length()-1] == padCharacter)
+		{
+			padding++;
+		}
+		if (input[input.length()-2] == padCharacter)
+		{
+			padding++;
+		}
+	}
+	//Setup a vector to hold the result
+	decodedBytes.reserve(((input.length()/4)*3) - padding);
+	TCULong temp=0; //Holds decoded quanta
+	std::string::const_iterator cursor = input.begin();
+	while (cursor < input.end())
+	{
+		for (size_t quantumPosition = 0; quantumPosition < 4; ++quantumPosition)
+		{
+			temp <<= 6;
+			if (*cursor >= 0x41 && *cursor <= 0x5A) // This area will need tweaking if
+			{		                                // you are using an alternate alphabet
+				temp |= *cursor - 0x41;
+			}
+			else if (*cursor >= 0x61 && *cursor <= 0x7A)
+			{
+				temp |= *cursor - 0x47;
+			}
+			else if (*cursor >= 0x30 && *cursor <= 0x39)
+			{
+				temp |= *cursor + 0x04;
+			}
+			else if (*cursor == 0x2B)
+			{
+				temp |= 0x3E; //change to 0x2D for URL alphabet
+			}
+			else if (*cursor == 0x2F)
+			{
+				temp |= 0x3F; //change to 0x5F for URL alphabet
+			}
+			else if (*cursor == padCharacter) //pad
+			{
+				switch (input.end() - cursor)
+				{
+					case 1: //One pad character
+						decodedBytes.push_back((temp >> 16) & 0x000000FF);
+						decodedBytes.push_back((temp >> 8 ) & 0x000000FF);
+						return true;
+					case 2: //Two pad characters
+						decodedBytes.push_back((temp >> 10) & 0x000000FF);
+						return true;
+					default:
+						decodedBytes.clear();
+						return false;
+				}
+			}
+			else
+			{
+				decodedBytes.clear();
+				return false;
+			}
+			cursor++;
+		}
+		decodedBytes.push_back((temp >> 16) & 0x000000FF);
+		decodedBytes.push_back((temp >> 8 ) & 0x000000FF);
+		decodedBytes.push_back((temp      ) & 0x000000FF);
+	}
+	return true;
+}
+
+bool isInBase64Charset(char character)
+{
+	if (base64CharsetSet.empty())
+	{
+		for (const char *charsetChar = base64Charset; *charsetChar; ++charsetChar)
+		{
+			base64CharsetSet.insert(*charsetChar);
+		}
+	}
+	return base64CharsetSet.find(character) != base64CharsetSet.end();
 }

@@ -426,18 +426,19 @@ void TREShapeGroup::deleteMultiDrawIndices(void)
 					{
 						if (m_multiDrawIndices[i][j])
 						{
-							delete m_multiDrawIndices[i][j];
+							delete[] m_multiDrawIndices[i][j];
 						}
 					}
 				}
 			}
 			if (m_multiDrawIndices[i])
 			{
-				delete m_multiDrawIndices[i];
+				delete[] m_multiDrawIndices[i];
 			}
 		}
-		delete m_multiDrawIndices;
+		delete[] m_multiDrawIndices;
 	}
+	m_multiDrawIndices = NULL;
 }
 
 void TREShapeGroup::drawStripShapeType(TREShapeType shapeType)
@@ -732,14 +733,14 @@ void TREShapeGroup::drawConditionalLines(void)
 								activeIndices->getCount(), GL_UNSIGNED_INT,
 								activeIndices->getValues());
 						}
-						activeIndices->release();
 					}
 					else
 					{
 						glEnd();
 					}
+					TCObject::release(activeIndices);
 					activeIndices = indices;
-					activeIndices->retain(); // @ToDo: Is this activeIndices leaked?
+					activeIndices->retain();
 					glPopAttrib(); // GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT
 					glStencilFunc(GL_NOTEQUAL, 0, 0xFFFFFFFF);
 					glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
@@ -889,6 +890,11 @@ int TREShapeGroup::addShape(
 	else
 	{
 		m_vertexStore->setup();
+		TREVertexArray *vsTextureCoords = m_vertexStore->getTextureCoords();
+		if (vsTextureCoords != NULL)
+		{
+			vsTextureCoords->addEmptyValues(count);
+		}
 	}
 	if (normals)
 	{
@@ -905,8 +911,16 @@ int TREShapeGroup::addShape(
 	}
 	else
 	{
-		index = m_vertexStore->addVertices(vertices, count,
-			m_mainModel->getCurStepIndex());
+		if (textureCoords)
+		{
+			index = m_vertexStore->addVertices(vertices, NULL, textureCoords,
+				count, m_mainModel->getCurStepIndex());
+		}
+		else
+		{
+			index = m_vertexStore->addVertices(vertices, count,
+				m_mainModel->getCurStepIndex());
+		}
 	}
 	addShapeIndices(shapeType, index, count);
 	return index;
@@ -1922,6 +1936,7 @@ void TREShapeGroup::flattenShapes(TREVertexArray *dstVertices,
 {
 	int i;
 	int count = srcIndices->getCount();
+	int addedVertexCount = 0;
 
 	for (i = 0; i < count; i++)
 	{
@@ -1931,6 +1946,7 @@ void TREShapeGroup::flattenShapes(TREVertexArray *dstVertices,
 		dstIndices->addValue(dstVertices->getCount());
 		transformVertex(vertex, matrix);
 		dstVertices->addVertex(vertex);
+		++addedVertexCount;
 		if (srcNormals)
 		{
 			TREVertex normal = (*srcNormals)[index];
@@ -1970,6 +1986,7 @@ void TREShapeGroup::flattenShapes(TREVertexArray *dstVertices,
 				// conditional, and therefore we need to copy the extra edge
 				// flag.
 				dstVertices->addVertex(vertex);
+				++addedVertexCount;
 				if (srcNormals)
 				{
 					// This is a line; it doesn't have a normal.
@@ -2003,6 +2020,7 @@ void TREShapeGroup::flattenShapes(TREVertexArray *dstVertices,
 			dstCPIndices->addValue(dstVertices->getCount());
 			transformVertex(vertex, matrix);
 			dstVertices->addVertex(vertex);
+			++addedVertexCount;
 			if (srcNormals)
 			{
 				dstNormals->addVertex((*srcNormals)[index]);
@@ -2020,6 +2038,11 @@ void TREShapeGroup::flattenShapes(TREVertexArray *dstVertices,
 				dstEdgeFlags.push_back(GL_FALSE);
 			}
 		}
+	}
+	if (dstTextureCoords != NULL && srcTextureCoords == NULL &&
+		addedVertexCount > 0)
+	{
+		dstTextureCoords->addEmptyValues(addedVertexCount);
 	}
 }
 
@@ -2041,6 +2064,7 @@ void TREShapeGroup::flattenStrips(TREVertexArray *dstVertices,
 	int i, j;
 	int numStrips = srcStripCounts->getCount();
 	int indexOffset = 0;
+	int addedVertexCount = 0;
 
 	for (i = 0; i < numStrips; i++)
 	{
@@ -2055,6 +2079,7 @@ void TREShapeGroup::flattenStrips(TREVertexArray *dstVertices,
 			dstIndices->addValue(dstVertices->getCount());
 			transformVertex(vertex, matrix);
 			dstVertices->addVertex(vertex);
+			++addedVertexCount;
 			if (srcNormals)
 			{
 				TREVertex normal = (*srcNormals)[index];
@@ -2076,6 +2101,11 @@ void TREShapeGroup::flattenStrips(TREVertexArray *dstVertices,
 			}
 		}
 		indexOffset += stripCount;
+	}
+	if (dstTextureCoords != NULL && srcTextureCoords == NULL &&
+		addedVertexCount > 0)
+	{
+		dstTextureCoords->addEmptyValues(addedVertexCount);
 	}
 }
 

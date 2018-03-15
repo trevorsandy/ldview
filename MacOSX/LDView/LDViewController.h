@@ -15,6 +15,7 @@
 	IBOutlet NSMenuItem *examineMenuItem;
 	IBOutlet NSMenuItem *latLongRotationMenuItem;
 	IBOutlet NSMenuItem *flyThroughMenuItem;
+	IBOutlet NSMenuItem *walkMenuItem;
 	IBOutlet NSMenuItem *keepRightSideUpMenuItem;
 	IBOutlet NSMenuItem *cancelMenuItem;
 	IBOutlet NSMenuItem *modelTreeMenuItem;
@@ -52,6 +53,7 @@
 	NSString *noWindowText;
 	NSSize maxSize;
 	BOOL forceNewWindow;
+	BOOL statusBarMenuItemDisabled;
 	int commandLineStep;
 }
 
@@ -73,5 +75,6 @@
 - (NSMenuItem *)prefsMenuItem;
 - (IBAction)showHelp:(id)sender;
 - (int)commandLineStep;
+- (void)setStatusBarMenuItemDisabled:(BOOL)disabled;
 
 @end

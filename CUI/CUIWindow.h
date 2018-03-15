@@ -13,6 +13,9 @@
 #ifndef WM_THEMECHANGED
 #define WM_THEMECHANGED                 0x031A
 #endif
+#ifndef WM_DPICHANGED
+#define WM_DPICHANGED                   0x02E0
+#endif
 
 typedef TCTypedPointerArray<HWND> CUIHwndArray;
 
@@ -21,7 +24,8 @@ typedef std::map<UINT, UINT> UIntUIntMap;
 #define CUI_MAX_CHILDREN 100
 #define NUM_SYSTEM_COLORS 25
 
-class CUIWindowResizer;
+class CUIScaler;
+class TCImage;
 
 #ifdef TC_NO_UNICODE
 #define LPNMTTDISPINFOUC LPNMTTDISPINFOA
@@ -118,7 +122,7 @@ class CUIExport CUIWindow : public TCAlertSender
 		void setMinHeight(int value) { minHeight = value; }
 		void setMaxWidth(int value) { maxWidth = value; }
 		void setMaxHeight(int value) { maxHeight = value; }
-		virtual SIZE getDecorationSize(void);
+		virtual SIZE getDecorationSize(HMONITOR hMonitor = NULL);
 		virtual void runDialogModal(HWND hDlg, bool allowMessages = false);
 		virtual bool flushModal(HWND hWnd, bool isDialog, int maxFlush = -1);
 		virtual bool flushDialogModal(HWND hDlg);
@@ -144,7 +148,18 @@ class CUIExport CUIWindow : public TCAlertSender
 		virtual void setMenuEnabled(HMENU hParentMenu, int itemID,
 			bool enabled, BOOL byPosition = FALSE);
 		virtual HBITMAP createDIBSection(HDC hBitmapDC, int bitmapWidth,
-			int bitmapHeight, int hDPI, int vDPI, BYTE **bmBuffer);
+			int bitmapHeight, BYTE **bmBuffer, bool force32 = false);
+		virtual HRESULT setStatusBarParts(HWND hStatusBar, WPARAM numParts,
+			int *parts, bool scale = true);
+		virtual bool getBitmapSize(HBITMAP hBitmap, SIZE& size);
+		virtual int addImageToImageList(HIMAGELIST hImageList, TCImage *image,
+			const SIZE& size);
+		virtual int addImageToImageList(HIMAGELIST hImageList, int resourceId,
+			const SIZE& size, double scaleFactor = 1.0);
+		virtual double getScaleFactor(bool recalculate = false,
+			UINT *dpiX = NULL, UINT *dpiY = NULL);
+		int scalePoints(int points);
+		int unscalePixels(int pixels);
 
 		static void setMenuCheck(HMENU hParentMenu, UINT uItem, bool checked,
 			bool radio = false);
@@ -165,6 +180,16 @@ class CUIExport CUIWindow : public TCAlertSender
 			LPARAM lParam);
 		static LRESULT sendDlgItemMessageUC(HWND hDlg, int nIDDlgItem,
 			UINT uMsg, WPARAM wParam, LPARAM lParam);
+		static DWORD getModuleFileNameUC(_In_opt_ HMODULE hModule,
+			_Out_writes_to_(nSize, ((return < nSize) ? (return +1) : nSize)) UCSTR lpFilename,
+			_In_ DWORD nSize);
+		static DWORD getFileVersionInfoSizeUC(CUCSTR lptstrFilename,
+			LPDWORD lpdwHandle);
+		static BOOL getFileVersionInfoUC(_In_ CUCSTR lptstrFilename,
+			_Reserved_ DWORD dwHandle, _In_ DWORD dwLen,
+			_Out_writes_bytes_(dwLen) LPVOID lpData);
+		static BOOL verQueryValueUC(LPCVOID pBlock, CUCSTR lpSubBlock,
+			LPVOID * lplpBuffer, PUINT puLen);
 		static HWND createStatusWindowUC(LONG style, CUCSTR lpszText,
 			HWND hwndParent, UINT wID);
 		static int messageBoxUC(HWND hWnd, CUCSTR lpText, CUCSTR lpCaption,
@@ -279,6 +304,8 @@ class CUIExport CUIWindow : public TCAlertSender
 			LPDRAWITEMSTRUCT drawItemStruct);
 		virtual LRESULT doThemeChanged(void);
 		virtual LRESULT doNotify(int controlId, LPNMHDR notification);
+		virtual LRESULT doDpiChanged(int dpiX, int dpiY, RECT* proposedRect);
+		virtual bool handleDpiChange(void) { return true; }
 		virtual BOOL doDialogThemeChanged(void);
 		virtual BOOL doDialogCtlColorStatic(HDC hdcStatic, HWND hwndStatic);
 		virtual BOOL doDialogCtlColorBtn(HDC hdcStatic, HWND hwndStatic);
@@ -315,6 +342,7 @@ class CUIExport CUIWindow : public TCAlertSender
 			int &saveHeight, int &saveMaximized);
 		virtual void writeAutosaveInfo(int saveX, int saveY, int saveWidth,
 			int saveHeight, int saveMaximized);
+		virtual void initScaler(void);
 
 		static void printMessageName(UINT message);
 		static std::string getMessageName(UINT message);
@@ -353,6 +381,7 @@ class CUIExport CUIWindow : public TCAlertSender
 		HBRUSH hBackgroundBrush;
 		PAINTSTRUCT* paintStruct;
 		char *autosaveName;
+		CUIScaler* scaler;
 
 		static int systemMaxWidth;
 		static int systemMaxHeight;

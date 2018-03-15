@@ -30,6 +30,7 @@
 #include <TCFoundation/mystring.h>
 #include <TCFoundation/TCUnzip.h>
 #include <TCFoundation/TCLocalStrings.h>
+#include <fstream>
 
 #ifndef WIN32
 #include <sys/types.h>
@@ -88,9 +89,9 @@ void LDLibraryUpdater::dealloc(void)
 		m_thread->join();
 		delete m_thread;
 	}
-	delete m_libraryUpdateKey;
-	delete m_ldrawDir;
-	delete m_ldrawDirParent;
+	delete[] m_libraryUpdateKey;
+	delete[] m_ldrawDir;
+	delete[] m_ldrawDirParent;
 	TCObject::release(m_updateQueue);
 	TCObject::release(m_updateUrlList);
 	TCObject::release(m_downloadList);
@@ -109,9 +110,9 @@ void LDLibraryUpdater::setLdrawDir(const char *ldrawDir)
 		char *trimSpot;
 		char *slashSpot;
 
-		delete m_ldrawDir;
+		delete[] m_ldrawDir;
 		m_ldrawDir = copyString(ldrawDir);
-		delete m_ldrawDirParent;
+		delete[] m_ldrawDirParent;
 		m_ldrawDirParent = copyString(ldrawDir);
 		stripTrailingPathSeparators(m_ldrawDirParent);
 		trimSpot = strrchr(m_ldrawDirParent, '\\');
@@ -411,22 +412,23 @@ bool LDLibraryUpdater::determineLastUpdate(
 	if (lastRecordedUpdate)
 	{
 		strcpy(updateName, lastRecordedUpdate);
-		delete lastRecordedUpdate;
+		delete[] lastRecordedUpdate;
 		return true;
 	}
 	else
 	{
-		char buf[1024];
-		FILE *completeTextFile;
+		std::string line;
+		std::ifstream completeTextStream;
 		int i;
 		bool done = false;
+		std::string filename = m_ldrawDir;
 
 		updateName[0] = 0;
-		sprintf(buf, "%s/models/complete.txt", m_ldrawDir);
+		filename += "/models/complete.txt";
 		// LDLModel::openFile just opens a file, but it supports
 		// case-insensitive opening of a file on a case-sensitive file system.
-		completeTextFile = LDLModel::openFile(buf);
-		if (completeTextFile)
+		LDLModel::openFile(filename.c_str(), completeTextStream);
+		if (completeTextStream.is_open() && !completeTextStream.fail())
 		{
 			bool firstUpdateFound = false;
 
@@ -436,14 +438,14 @@ bool LDLibraryUpdater::determineLastUpdate(
 			{
 				char *lcad;
 
-				if (fgets(buf, sizeof(buf), completeTextFile) == NULL)
+				if (!std::getline(completeTextStream, line))
 				{
 					// If we have a real complete.txt file out of a complete
 					// update install, we shouldn't get here, but we certainly
 					// don't want to assume anything.
 					break;
 				}
-				lcad = strcasestr(buf, "lcad");
+				lcad = strcasestr(&line[0], "lcad");
 				if (lcad && isdigit(lcad[4]) && isdigit(lcad[5]) &&
 					isdigit(lcad[6]) && isdigit(lcad[7]) &&
 					strncmp(lcad + 8, ".exe", 4) == 0)
@@ -467,7 +469,7 @@ bool LDLibraryUpdater::determineLastUpdate(
 					break;
 				}
 			}
-			fclose(completeTextFile);
+			completeTextStream.close();
 		}
 		else
 		{
@@ -494,8 +496,11 @@ bool LDLibraryUpdater::determineLastUpdate(
 
 				strcpy(tmpFilename, updateInfoName);
 				strncpy(tmpFilename, "note", 4);
-				sprintf(buf, "%s/models/%s.txt", m_ldrawDir, tmpFilename);
-				if (fileExists(buf))
+				filename = m_ldrawDir;
+				filename += "/models/";
+				filename += tmpFilename;
+				filename += ".txt";
+				if (fileExists(filename.c_str()))
 				{
 					strcpy(updateName, updateInfoName);
 				}
@@ -719,7 +724,7 @@ bool LDLibraryUpdater::caseSensitiveFileSystem(UCSTR &error)
 				fclose(file);
 				convertStringToLower(tempFilename2);
 				file = fopen(tempFilename2, "r");
-				delete tempFilename2;
+				delete[] tempFilename2;
 				if (file)
 				{
 					fclose(file);
@@ -943,7 +948,7 @@ void LDLibraryUpdater::extractUpdate(const char *filename)
 			CUCSTR errorFormat =
 				TCLocalStrings::get(_UC("LDLUpdateUnzipError"));
 			sucprintf(m_error, COUNT_OF(m_error), errorFormat, ucFilename);
-			delete ucFilename;
+			delete[] ucFilename;
 		}
 		unzip->release();
 	}
@@ -1307,17 +1312,8 @@ void LDLibraryUpdater::threadFinish(void)
 
 bool LDLibraryUpdater::fileExists(const char *filename)
 {
-	FILE* file = LDLModel::openFile(filename);
-
-	if (file)
-	{
-		fclose(file);
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	std::ifstream stream;
+	return LDLModel::openFile(filename, stream);
 }
 
 #endif // USE_CPP11 || !_NO_BOOST

@@ -78,6 +78,10 @@ public:
 	virtual void perspectiveView(void);
 	virtual BOOL showPreferences(void);
 	virtual void showErrors(void);
+	virtual void createErrorWindow(void);
+	virtual bool isErrorWindowVisible(void) const;
+	virtual int getErrorCount(void) const { return errorCount; }
+	virtual int getWarningCount(void) const { return warningCount; }
 	virtual void setFilename(const char*);
 	virtual char* getFilename(void);
 	virtual int loadModel(void);
@@ -158,6 +162,7 @@ public:
 	static int roundUp(int value, int nearest);
 	static const char *alertClass(void) { return "ModelWindowAlert"; }
 	virtual std::string getSaveDir(LDPreferences::SaveOp saveOp);
+	void updateModelViewerSize();
 protected:
 	virtual ~ModelWindow(void);
 	virtual void dealloc(void);
@@ -204,7 +209,6 @@ protected:
 	//virtual void doPreferencesFSRefresh(void);
 	//virtual void doPreferencesStipple(void);
 	//virtual void doPreferencesSort(void);
-	virtual void createErrorWindow(void);
 	virtual void setupErrorWindow(void);
 	virtual int populateErrorTree(void);
 	virtual void populateErrorList(void);

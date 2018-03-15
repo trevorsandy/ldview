@@ -2,6 +2,7 @@
 #include "LDLLineLine.h"
 #include "LDLMainModel.h"
 #include <TCFoundation/TCLocalStrings.h>
+#include <sstream>
 
 #ifdef WIN32
 #if defined(_MSC_VER) && _MSC_VER >= 1400 && defined(_DEBUG)
@@ -34,6 +35,20 @@ bool LDLTriangleLine::parse(void)
 	if (sscanf(m_line, "%d %i %f %f %f %f %f %f %f %f %f", &lineType,
 		&m_colorNumber, &x1, &y1, &z1, &x2, &y2, &z2, &x3, &y3, &z3) == 11)
 	{
+		std::string prefix = getTypeAndColorPrefix();
+		std::stringstream ss;
+		if (!prefix.empty())
+		{
+			ss << prefix << "  ";
+		}
+		else
+		{
+			ss << "3 " << m_colorNumber << "  ";
+		}
+		ss << x1 << " " << y1 << " " << z1 << "  ";
+		ss << x2 << " " << y2 << " " << z2 << "  ";
+		ss << x3 << " " << y3 << " " << z3 << "  ";
+		m_formattedLine = copyString(ss.str().c_str());
 		m_points = new TCVector[3];
 		m_points[0] = TCVector(x1, y1, z1);
 		m_points[1] = TCVector(x2, y2, z2);
@@ -152,12 +167,12 @@ LDLFileLineArray *LDLTriangleLine::removeMatchingPoint(void)
 
 	if (fileLineArray)
 	{
-		UCCHAR pointBuf[64] = _UC("");
+		UCSTRING pointStr;
 
-		printPoint(m_matchingIndex, pointBuf);
+		pointStr = printPoint(m_matchingIndex);
 		setWarning(LDLEMatchingPoints,
 			TCLocalStrings::get(_UC("LDLTriLineIdentical")),
-			m_matchingIndex + 1, pointBuf);
+			m_matchingIndex + 1, pointStr.c_str());
 	}
 	else
 	{
@@ -173,11 +188,11 @@ LDLFileLineArray *LDLTriangleLine::removeColinearPoint(void)
 
 	if (fileLineArray)
 	{
-		UCCHAR pointBuf[64] = _UC("");
+		UCSTRING pointStr;
 
-		printPoint(m_colinearIndex, pointBuf);
+		pointStr = printPoint(m_colinearIndex);
 		setWarning(LDLEColinear, TCLocalStrings::get(_UC("LDLTriLineCoLinear")),
-			m_colinearIndex + 1, pointBuf);
+			m_colinearIndex + 1, pointStr.c_str());
 	}
 	else
 	{
@@ -188,18 +203,16 @@ LDLFileLineArray *LDLTriangleLine::removeColinearPoint(void)
 
 LDLLineLine *LDLTriangleLine::newLineLine(int p1, int p2)
 {
-	UCCHAR pointBuf1[64] = _UC("");
-	UCCHAR pointBuf2[64] = _UC("");
-	UCCHAR ucNewLine[1024];
+	UCSTRING point1Str, point2Str;
 	char *newLine;
 	LDLLineLine *retValue;
+	std::basic_stringstream<UCSTRING::value_type> ss;
 
-	printPoint(p1, pointBuf1);
-	printPoint(p2, pointBuf2);
-	sucprintf(ucNewLine, COUNT_OF(ucNewLine), _UC("3 %ld %s %s"), m_colorNumber,
-		pointBuf1, pointBuf2);
-	newLine = ucstringtombs(ucNewLine);
+	point1Str = printPoint(p1);
+	point2Str = printPoint(p2);
+	ss << "2 " << m_colorNumber << " " << point1Str << " " << point2Str;
+	newLine = ucstringtombs(ss.str().c_str());
 	retValue = new LDLLineLine(m_parentModel, newLine, m_lineNumber, m_line);
-	delete newLine;
+	delete[] newLine;
 	return retValue;
 }

@@ -67,13 +67,14 @@ class LDViewWindow: public CUIWindow
 		virtual LRESULT switchToolbar(void);
 		virtual LRESULT switchStatusBar(void);
 		virtual LRESULT switchKeepRightSideUp(void);
-		virtual const char *getProductVersion(void);
-		virtual const char *getLegalCopyright(void);
+		virtual const UCCHAR *getProductVersion(void);
+		virtual const UCCHAR *getLegalCopyright(void);
 		virtual void setHParentWindow(HWND hWnd);
 		ModelWindow *getModelWindow(void) { return modelWindow; }
 		void redrawStatusBar(void);
 		void updateStatusParts(void);
 		bool inExamineMode(void);
+		LDrawModelViewer::ViewMode getViewMode(void);
 		bool inLatLonMode(void);
 		void showStatusLatLon(bool redraw = true);
 		bool getLoading(void) const { return loading; }
@@ -104,7 +105,8 @@ class LDViewWindow: public CUIWindow
 		static void setLastOpenFile(const char* filename, char* pathKey = NULL);
 		static std::string browseForDir(const char *prompt,
 			const char *initialDir);
-	protected:
+		static std::string getFloatUdKey(const char* udKey);
+protected:
 		virtual ~LDViewWindow(void);
 		static BOOL verifyLDrawDir(char*);
 		static BOOL promptForLDrawDir(const char *prompt = NULL);
@@ -112,6 +114,7 @@ class LDViewWindow: public CUIWindow
 		virtual BOOL verifyLDrawDir(bool forceChoose = false);
 		virtual void dealloc(void);
 		virtual WNDCLASSEX getWindowClass(void);
+		virtual bool handleDpiChange(void);
 		virtual LRESULT doMouseWheel(short keyFlags, short zDelta, int xPos,
 			int yPos);
 		virtual LRESULT doCreate(HWND, LPCREATESTRUCT);
@@ -209,9 +212,9 @@ class LDViewWindow: public CUIWindow
 		virtual void showLDrawCommandLine(void);
 		virtual bool modelWindowIsShown(void);
 		LRESULT switchPovCameraAspect(bool saveSetting = true);
-		virtual LRESULT switchToExamineMode(bool saveSetting = true);
 		virtual LRESULT switchExamineLatLong(void);
-		virtual LRESULT switchToFlythroughMode(bool saveSetting = true);
+		virtual LRESULT switchToViewMode(LDrawModelViewer::ViewMode viewMode,
+			bool saveSetting = true);
 		//virtual void setMenuRadioCheck(HMENU hParentMenu, UINT uItem,
 		//	bool checked);
 		//virtual void setMenuCheck(HMENU hParentMenu, UINT uItem, bool checked,
@@ -229,7 +232,8 @@ class LDViewWindow: public CUIWindow
 		virtual void reshapeModelWindow(void);
 		virtual void startLoading(void);
 		virtual void stopLoading(void);
-		virtual void showStatusIcon(bool examineMode, bool redraw = true);
+		virtual void showStatusIcon(LDrawModelViewer::ViewMode viewMode,
+			bool redraw = true);
 		virtual void reflectViewMode(bool saveSetting = true);
 		virtual void reflectPovCameraAspect(bool saveSetting = true);
 		virtual void reflectTopmost(void);
@@ -264,6 +268,13 @@ class LDViewWindow: public CUIWindow
 			LDPartsList *partsList, const char *filename);
 		void progressAlertCallback(TCProgressAlert *alert);
 		void updateWindowMonitor(void);
+		void destroyStatusBarIcons(void);
+		void loadStatusBarIcons(void);
+
+		int getSavedPixelSize(const char* udKey, int defaultSize);
+		void savePixelSize(const char* udKey, int size);
+		int getSavedWindowWidth(int defaultValue = -1);
+		int getSavedWindowHeight(int defaultValue = -1);
 
 		void loadSettings(void);
 		RECT getWorkArea(void);
@@ -282,6 +293,7 @@ class LDViewWindow: public CUIWindow
 		HWND hExtraDirsWindow;
 		HWND hExtraDirsToolbar;
 		HWND hExtraDirsList;
+		HIMAGELIST hExtraDirsImageList;
 		HWND hStatusBar;
 		HWND hFrameWindow;
 		HWND hUpdateProgressBar;
@@ -323,6 +335,7 @@ class LDViewWindow: public CUIWindow
 		HWND hOpenGLStatusBar;
 		HICON hExamineIcon;
 		HICON hFlythroughIcon;
+		HICON hWalkIcon;
 #ifndef TC_NO_UNICODE
 		HMONITOR hMonitor;
 #endif // TC_NO_UNICODE
@@ -332,8 +345,8 @@ class LDViewWindow: public CUIWindow
 		bool libraryUpdateFinished;
 		bool libraryUpdateCanceled;
 #endif // !_NO_BOOST
-		char *productVersion;
-		char *legalCopyright;
+		UCCHAR *productVersion;
+		UCCHAR *legalCopyright;
 		LDViewPreferences *prefs;
 		bool drawWireframe;
 		bool seams;

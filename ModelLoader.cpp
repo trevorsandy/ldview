@@ -9,6 +9,7 @@
 #include <TCFoundation/mystring.h>
 #include <TCFoundation/TCUserDefaults.h>
 #include <TCFoundation/TCStringArray.h>
+#include <TCFoundation/TCAlertManager.h>
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400 && defined(_DEBUG)
 #define new DEBUG_CLIENTBLOCK
@@ -24,7 +25,8 @@ ModelLoader::ModelLoader(HINSTANCE hInstance, int nCmdShow, bool screenSaver)
 			 parentWindow(NULL),
 			 hInstance(hInstance),
 			 nCmdShow(nCmdShow),
-			 screenSaver(screenSaver)
+			 screenSaver(screenSaver),
+			 offscreenSetup(false)
 {
 	init();
 }
@@ -35,6 +37,7 @@ ModelLoader::~ModelLoader(void)
 
 void ModelLoader::dealloc(void)
 {
+	TCAlertManager::unregisterHandler(this);
 	if (modelWindow)
 	{
 		modelWindow->release();
@@ -98,8 +101,26 @@ void ModelLoader::startup(void)
 			}
 		}
 	}
-	width = TCUserDefaults::longForKey(WINDOW_WIDTH_KEY, WIN_WIDTH, false);
-	height = TCUserDefaults::longForKey(WINDOW_HEIGHT_KEY, WIN_HEIGHT, false);
+	float widthf = TCUserDefaults::floatForKey(
+		LDViewWindow::getFloatUdKey(WINDOW_WIDTH_KEY).c_str(), -1.0, false);
+	float heightf = TCUserDefaults::floatForKey(
+		LDViewWindow::getFloatUdKey(WINDOW_HEIGHT_KEY).c_str(), -1.0, false);
+	if (widthf == -1.0)
+	{
+		width = TCUserDefaults::longForKey(WINDOW_WIDTH_KEY, WIN_WIDTH, false);
+	}
+	else
+	{
+		width = (int)widthf;
+	}
+	if (heightf == -1.0)
+	{
+		height = TCUserDefaults::longForKey(WINDOW_HEIGHT_KEY, WIN_HEIGHT, false);
+	}
+	else
+	{
+		height = (int)heightf;
+	}
 	maximized = TCUserDefaults::longForKey(WINDOW_MAXIMIZED_KEY, 0, false) != 0;
 	parentWindow = new LDViewWindow(TITLE, hInstance, CW_USEDEFAULT,
 		CW_USEDEFAULT, width + widthDelta, height);
@@ -152,21 +173,13 @@ void ModelLoader::startup(void)
 				}
 			}
 		}
-		if (!screenSaver && commandLineFilename &&
-			(snapshotFilename || saveSnapshots || exportFilename ||
-				exportFiles))
+		TCAlertManager::registerHandler(LDSnapshotTaker::alertClass(), this,
+			(TCAlertCallback)&ModelLoader::snapshotCallback);
+		if (LDSnapshotTaker::doCommandLine())
 		{
-			if (modelWindow->setupOffscreen(1600, 1200,
-				TCUserDefaults::longForKey(FSAA_MODE_KEY) > 0))
-			{
-				// Note: even if the snapshot save fails, we don't want to continue.
-				// The user will get an error in the event of a snapshot save
-				// failure.
-				LDSnapshotTaker::doCommandLine();
-				parentWindow->shutdown();
-				savedSnapshot = true;
-				modelWindow->cleanupOffscreen();
-			}
+			parentWindow->shutdown();
+			savedSnapshot = true;
+			modelWindow->cleanupOffscreen();
 		}
 		if (!savedSnapshot)
 		{
@@ -202,6 +215,23 @@ void ModelLoader::startup(void)
 		}
 		delete commandLineFilename;
 		delete snapshotFilename;
+	}
+}
+
+void ModelLoader::snapshotCallback(TCAlert *alert)
+{
+	if (strcmp(alert->getMessage(), "PreSave") == 0 && !offscreenSetup)
+	{
+		if (modelWindow->setupOffscreen(1600, 1200,
+			TCUserDefaults::longForKey(FSAA_MODE_KEY) > 0))
+		{
+			offscreenSetup = true;
+		}
+		else
+		{
+			LDSnapshotTaker *sender = (LDSnapshotTaker *)alert->getSender();
+			sender->cancel();
+		}
 	}
 }
 

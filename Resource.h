@@ -125,6 +125,20 @@
 #define IDR_TB_POVCAMERA                531
 #define IDR_TB_RIGHTSIDEUP              532
 #define IDR_TB_TEXMAPS                  533
+#define IDR_INFO                        534
+#define IDR_PARSE                       535
+#define IDR_FNF                         536
+#define IDR_MATRIX                      537
+#define IDR_DETERMINANT                 538
+#define IDR_NON_FLAT_QUAD               539
+#define IDR_CONCAVE_QUAD                540
+#define IDR_MATCHING_POINTS             541
+#define IDR_COLINEAR                    542
+#define IDR_VERTEX_ORDER                543
+#define IDR_ERROR_LOOP                  544
+#define IDR_DOTS                        545
+#define IDR_EXTRA_DIRS_TOOLBAR          546
+#define IDR_TB_WALK                     547
 #define IDC_LIGHTING_QUALITY            1001
 #define IDC_FRAME_RATE                  1002
 #define IDC_HIGHLIGHTS                  1003
@@ -486,6 +500,7 @@
 #define ID_VIEW_RIGHTSIDEUP             40115
 #define ID_VIEW_KEEPRIGHTSIDEUP         40116
 #define ID_PRIMITIVES_TEXMAPS           40117
+#define ID_VIEW_WALK                    40118
 #define ID_FILE_OPEN                    0xE101
 #define ID_FILE_SAVE                    0xE103
 #define ID_FILE_PRINT                   0xE107
@@ -497,8 +512,8 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_3D_CONTROLS                     1
-#define _APS_NEXT_RESOURCE_VALUE        191
-#define _APS_NEXT_COMMAND_VALUE         40118
+#define _APS_NEXT_RESOURCE_VALUE        548
+#define _APS_NEXT_COMMAND_VALUE         40119
 #define _APS_NEXT_CONTROL_VALUE         1304
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

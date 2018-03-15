@@ -13,6 +13,7 @@
 #import "LDViewCategories.h"
 
 #include <LDLib/LDrawModelViewer.h>
+#include <LDLib/LDInputHandler.h>
 #include <TRE/TREMainModel.h>
 #include <TCFoundation/TCWebClient.h>
 #include <TCFoundation/TCUserDefaults.h>
@@ -112,7 +113,7 @@
 - (void)updateLatLongRotationMenuItem:(ModelWindow *)modelWindow
 {
 	bool examineLatLong = [modelWindow examineLatLong];
-	bool flyThroughMode = [modelWindow flyThroughMode];
+	bool examineMode = [modelWindow examineMode];
 
 	if (examineLatLong)
 	{
@@ -122,31 +123,41 @@
 	{
 		[latLongRotationMenuItem setState:NSOffState];
 	}
-	if (flyThroughMode)
+	if (examineMode)
 	{
-		[latLongRotationMenuItem setEnabled:NO];
+		[latLongRotationMenuItem setEnabled:YES];
 	}
 	else
 	{
-		[latLongRotationMenuItem setEnabled:YES];
+		[latLongRotationMenuItem setEnabled:NO];
 	}
 }
 
-- (void)updateViewModeMenuItems:(bool)flyThroughMode keepRightSideUp:(bool)keepRightSideUp
+- (void)setStatusBarMenuItemDisabled:(BOOL)disabled
 {
-	if (flyThroughMode)
+	statusBarMenuItemDisabled = disabled;
+}
+
+- (void)updateViewModeMenuItems:(long)viewMode keepRightSideUp:(bool)keepRightSideUp
+{
+	[examineMenuItem setState:NSOffState];
+	[flyThroughMenuItem setState:NSOffState];
+	[walkMenuItem setState:NSOffState];
+	[latLongRotationMenuItem setEnabled:NO];
+	[keepRightSideUpMenuItem setEnabled:NO];
+	switch (viewMode)
 	{
-		[examineMenuItem setState:NSOffState];
-		[flyThroughMenuItem setState:NSOnState];
-		[latLongRotationMenuItem setEnabled:NO];
-		[keepRightSideUpMenuItem setEnabled:YES];
-	}
-	else
-	{
-		[examineMenuItem setState:NSOnState];
-		[flyThroughMenuItem setState:NSOffState];
-		[latLongRotationMenuItem setEnabled:YES];
-		[keepRightSideUpMenuItem setEnabled:NO];
+		case LDInputHandler::VMExamine:
+			[examineMenuItem setState:NSOnState];
+			[latLongRotationMenuItem setEnabled:YES];
+			break;
+		case LDInputHandler::VMFlyThrough:
+			[flyThroughMenuItem setState:NSOnState];
+			[keepRightSideUpMenuItem setEnabled:YES];
+			break;
+		case LDInputHandler::VMWalk:
+			[walkMenuItem setState:NSOnState];
+			break;
 	}
 	[keepRightSideUpMenuItem setState:keepRightSideUp ? NSOnState : NSOffState];
 }
@@ -253,7 +264,7 @@
 		}
 		else if (item == examineMenuItem)
 		{
-			[self updateViewModeMenuItems:[modelWindow flyThroughMode] keepRightSideUp:[modelWindow keepRightSideUp]];
+			[self updateViewModeMenuItems:[modelWindow viewMode] keepRightSideUp:[modelWindow keepRightSideUp]];
 		}
 		else if (item == modelTreeMenuItem)
 		{
@@ -313,13 +324,17 @@
 		{
 			return [modelWindow canCopy];
 		}
+		else if (menuItem == statusBarMenuItem)
+		{
+			return !statusBarMenuItemDisabled;
+		}
 		else if (menuItem == cancelMenuItem || [modelWindow sheetBusy])
 		{
 			return NO;
 		}
 		else if (menuItem == latLongRotationMenuItem)
 		{
-			if (![modelWindow flyThroughMode])
+			if ([modelWindow examineMode])
 			{
 				return YES;
 			}
@@ -388,6 +403,7 @@
 - (void)modelWindowWillClose:(ModelWindow *)modelWindow
 {
 	[modelWindows removeObject:modelWindow];
+	[[self preferences] modelWindowWillClose:modelWindow];
 }
 
 - (IBAction)newWindow:(id)sender

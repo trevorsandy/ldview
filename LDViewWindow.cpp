@@ -21,6 +21,7 @@
 #include <TCFoundation/TCLocalStrings.h>
 #include <TCFoundation/TCWebClient.h>
 #include <CUI/CUIWindowResizer.h>
+#include <CUI/CUIScaler.h>
 #include <LDLib/LDLibraryUpdater.h>
 #include <LDLib/LDPartsList.h>
 #include <LDLoader/LDLPalette.h>
@@ -121,6 +122,7 @@ hAboutWindow(NULL),
 hLDrawDirWindow(NULL),
 hOpenGLInfoWindow(NULL),
 hExtraDirsWindow(NULL),
+hExtraDirsImageList(NULL),
 hStatusBar(NULL),
 //hToolbar(NULL),
 //hDeactivatedTooltip(NULL),
@@ -145,6 +147,7 @@ openGLInfoWindoResizer(NULL),
 hOpenGLStatusBar(NULL),
 hExamineIcon(NULL),
 hFlythroughIcon(NULL),
+hWalkIcon(NULL),
 #ifndef TC_NO_UNICODE
 hMonitor(NULL),
 #endif // TC_NO_UNICODE
@@ -190,19 +193,20 @@ mpdDialog(NULL)
 		extraSearchDirs = new TCStringArray;
 		populateExtraSearchDirs();
 	}
-	hExamineIcon = TCImage::loadIconFromPngResource(hInstance, IDR_TB_EXAMINE);
-	hFlythroughIcon = TCImage::loadIconFromPngResource(hInstance,
-		IDR_TB_FLYTHROUGH);
+	loadStatusBarIcons();
 	//hExamineIcon = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(IDI_EXAMINE),
 	//	IMAGE_ICON, 32, 16, LR_DEFAULTCOLOR);
 	//hFlythroughIcon = (HICON)LoadImage(hInstance,
 	//	MAKEINTRESOURCE(IDI_FLYTHROUGH), IMAGE_ICON, 32, 16, LR_DEFAULTCOLOR);
 	TCAlertManager::registerHandler(TCProgressAlert::alertClass(), this,
 		(TCAlertCallback)&LDViewWindow::progressAlertCallback);
-	char userAgent[256];
-	sprintf(userAgent, "LDView/%s  (Windows; ldview@gmail.com; "
-		"http://ldview.sf.net/)", getProductVersion());
+	UCCHAR ucUserAgent[256];
+	sucprintf(ucUserAgent, COUNT_OF(ucUserAgent),
+		_UC("LDView/%s  (Windows; ldview@gmail.com; ")
+		_UC("http://ldview.sf.net/)"), getProductVersion());
+	char *userAgent = ucstringtoutf8(ucUserAgent);
 	TCWebClient::setUserAgent(userAgent);
+	delete[] userAgent;
 	maxStandardSize.cx = 0;
 	maxStandardSize.cy = 0;
 //	DeleteObject(hBackgroundBrush);
@@ -216,8 +220,7 @@ LDViewWindow::~LDViewWindow(void)
 
 void LDViewWindow::dealloc(void)
 {
-	DestroyIcon(hExamineIcon);
-	DestroyIcon(hFlythroughIcon);
+	destroyStatusBarIcons();
 	TCAlertManager::unregisterHandler(this);
 	TCObject::release(modelTreeDialog);
 	TCObject::release(boundingBoxDialog);
@@ -239,16 +242,50 @@ void LDViewWindow::dealloc(void)
 	{
 		DestroyWindow(hExtraDirsWindow);
 	}
+	if (hExtraDirsImageList)
+	{
+		ImageList_Destroy(hExtraDirsImageList);
+	}
 #if defined(USE_CPP11) || !defined(_NO_BOOST)
 	if (hLibraryUpdateWindow)
 	{
 		DestroyWindow(hLibraryUpdateWindow);
 	}
 #endif // !_NO_BOOST
-	delete productVersion;
-	delete legalCopyright;
+	delete[] productVersion;
+	delete[] legalCopyright;
 	TCObject::release(prefs);
 	CUIWindow::dealloc();
+}
+
+void LDViewWindow::destroyStatusBarIcons(void)
+{
+	if (hExamineIcon)
+	{
+		DestroyIcon(hExamineIcon);
+		hExamineIcon = NULL;
+	}
+	if (hFlythroughIcon)
+	{
+		DestroyIcon(hFlythroughIcon);
+		hFlythroughIcon = NULL;
+	}
+	if (hWalkIcon)
+	{
+		DestroyIcon(hWalkIcon);
+		hWalkIcon = NULL;
+	}
+}
+
+void LDViewWindow::loadStatusBarIcons(void)
+{
+	double scaleFactor = getScaleFactor();
+	hExamineIcon = TCImage::loadIconFromPngResource(hInstance,
+		IDR_TB_EXAMINE, scaleFactor, CUIScaler::use32bit());
+	hFlythroughIcon = TCImage::loadIconFromPngResource(hInstance,
+		IDR_TB_FLYTHROUGH, scaleFactor, CUIScaler::use32bit());
+	hWalkIcon = TCImage::loadIconFromPngResource(hInstance,
+		IDR_TB_WALK, scaleFactor, CUIScaler::use32bit());
 }
 
 void LDViewWindow::loadSettings(void)
@@ -449,7 +486,9 @@ void LDViewWindow::forceShowStatusBar(bool value)
 	}
 }
 
-void LDViewWindow::showStatusIcon(bool examineMode, bool redraw /*= true*/)
+void LDViewWindow::showStatusIcon(
+	LDrawModelViewer::ViewMode viewMode,
+	bool redraw /*= true*/)
 {
 	if ((showStatusBar || showStatusBarOverride) && hStatusBar)
 	{
@@ -463,10 +502,15 @@ void LDViewWindow::showStatusIcon(bool examineMode, bool redraw /*= true*/)
 			SendMessage(hStatusBar, SB_SETICON, 2, (LPARAM)NULL);
 			SendMessage(hStatusBar, SB_SETTIPTEXT, 2, (LPARAM)"");
 		}
-		if (!examineMode)
+		if (viewMode == LDrawModelViewer::VMFlyThrough)
 		{
 			hModeIcon = hFlythroughIcon;
 			tipText = TCLocalStrings::get(_UC("FlyThroughMode"));
+		}
+		else if (viewMode == LDrawModelViewer::VMWalk)
+		{
+			hModeIcon = hWalkIcon;
+			tipText = TCLocalStrings::get(_UC("WalkMode"));
 		}
 		SendMessage(hStatusBar, SB_SETICON, iconPart, (LPARAM)hModeIcon);
 		sendMessageUC(hStatusBar, SB_SETTIPTEXT, iconPart, (LPARAM)tipText);
@@ -480,6 +524,37 @@ void LDViewWindow::showStatusIcon(bool examineMode, bool redraw /*= true*/)
 void LDViewWindow::setHParentWindow(HWND hWnd)
 {
 	hParentWindow = hWnd;
+}
+
+bool LDViewWindow::handleDpiChange(void)
+{
+	if (toolbarStrip)
+	{
+		removeToolbar();
+	}
+	if (!showToolbar && !initialShown)
+	{
+		// Icons from the toolbar get applied to the main menu.  So we
+		// need to create it here if it's not visible, then immediately
+		// delete it.
+		createToolbar();
+		toolbarStrip->release();
+		toolbarStrip = NULL;
+	}
+	removeStatusBar();
+	destroyStatusBarIcons();
+	loadStatusBarIcons();
+	reflectToolbar();
+	reflectStatusBar();
+	if (prefs != NULL)
+	{
+		prefs->checkForDpiChange();
+	}
+	if (modelWindow != NULL)
+	{
+		modelWindow->updateModelViewerSize();
+	}
+	return true;
 }
 
 void LDViewWindow::createToolbar(void)
@@ -563,16 +638,19 @@ void LDViewWindow::createToolbar(void)
 	}
 }
 
-bool LDViewWindow::inExamineMode(void)
+LDrawModelViewer::ViewMode LDViewWindow::getViewMode(void)
 {
 	LDrawModelViewer *modelViewer = modelWindow->getModelViewer();
-
-	if (modelViewer &&
-		modelViewer->getViewMode() == LDrawModelViewer::VMExamine)
+	if (modelViewer != NULL)
 	{
-		return true;
+		return modelViewer->getViewMode();
 	}
-	return false;
+	return LDrawModelViewer::VMExamine;
+}
+
+bool LDViewWindow::inExamineMode(void)
+{
+	return getViewMode() == LDrawModelViewer::VMExamine;
 }
 
 bool LDViewWindow::inLatLonMode(void)
@@ -672,8 +750,8 @@ void LDViewWindow::updateStatusParts(void)
 		RECT rect;
 		int numParts = 3;
 		bool latLon = inLatLonMode();
-		int rightMargin = 20;
-		int latLonWidth = 100;
+		int rightMargin = scalePoints(20);
+		int latLonWidth = scalePoints(100);
 
 		if (latLon)
 		{
@@ -681,15 +759,15 @@ void LDViewWindow::updateStatusParts(void)
 			parts[2] = 100;
 			rightMargin += latLonWidth;
 		}
-		SendMessage(hStatusBar, SB_SETPARTS, numParts, (LPARAM)parts);
+		setStatusBarParts(hStatusBar, numParts, parts);
 		SendMessage(hStatusBar, SB_GETRECT, numParts - 1, (LPARAM)&rect);
 		parts[1] += rect.right - rect.left - rightMargin;
 		if (latLon)
 		{
 			parts[2] = parts[1] + latLonWidth;
 		}
-		SendMessage(hStatusBar, SB_SETPARTS, numParts, (LPARAM)parts);
-		showStatusIcon(inExamineMode(), false);
+		setStatusBarParts(hStatusBar, numParts, parts, false);
+		showStatusIcon(getViewMode(), false);
 		showStatusLatLon();
 	}
 }
@@ -698,7 +776,6 @@ void LDViewWindow::createStatusBar(void)
 {
 	if (showStatusBar || showStatusBarOverride)
 	{
-		//int parts[] = {100, 100, -1};
 		HWND hProgressBar;
 		RECT rect;
 
@@ -707,23 +784,14 @@ void LDViewWindow::createStatusBar(void)
 			SBARS_SIZEGRIP | SBT_TOOLTIPS, "", hWindow, ID_STATUS_BAR);
 		SetWindowLongW(hStatusBar, GWL_EXSTYLE, WS_EX_TRANSPARENT);
 		updateStatusParts();
-		//SendMessage(hStatusBar, SB_SETPARTS, 3, (LPARAM)parts);
 		SendMessage(hStatusBar, SB_SETTEXT, 0 | SBT_NOBORDERS, (LPARAM)"");
 		SendMessage(hStatusBar, SB_GETRECT, 0, (LPARAM)&rect);
-		InflateRect(&rect, -4, -3);
+		InflateRect(&rect, scalePoints(-4), scalePoints(-3));
 		hProgressBar = CreateWindowEx(0, PROGRESS_CLASS, "",
 			WS_CHILD | WS_VISIBLE | PBS_SMOOTH, rect.left,
 			rect.top, rect.right - rect.left, rect.bottom - rect.top,
 			hStatusBar, NULL, hInstance, NULL);
-		if (modelWindow && modelWindow->getViewMode() ==
-			LDInputHandler::VMFlyThrough)
-		{
-			showStatusIcon(false);
-		}
-		else
-		{
-			showStatusIcon(true);
-		}
+		showStatusIcon(getViewMode());
 		if (modelWindow)
 		{
 			modelWindow->setStatusBar(hStatusBar);
@@ -758,16 +826,10 @@ void LDViewWindow::reflectPovCameraAspect(bool saveSetting)
 
 void LDViewWindow::reflectViewMode(bool saveSetting)
 {
-	switch (TCUserDefaults::longForKey(VIEW_MODE_KEY, 0, false))
-	{
-	case LDInputHandler::VMFlyThrough:
-		switchToFlythroughMode(saveSetting);
-		break;
-	case LDInputHandler::VMExamine:
-	default:
-		switchToExamineMode(saveSetting);
-		break;
-	}
+	LDrawModelViewer::ViewMode viewMode =
+		(LDrawModelViewer::ViewMode)TCUserDefaults::longForKey(VIEW_MODE_KEY, 0,
+		false);
+	switchToViewMode(viewMode, saveSetting);
 }
 
 BOOL LDViewWindow::initWindow(void)
@@ -856,6 +918,44 @@ BOOL LDViewWindow::initWindow(void)
 	return FALSE;
 }
 
+std::string LDViewWindow::getFloatUdKey(const char* udKey)
+{
+	std::string floatUdKey = udKey;
+	floatUdKey += "Float";
+	return floatUdKey;
+}
+
+void LDViewWindow::savePixelSize(const char* udKey, int size)
+{
+	float scaleFactor = (float)getScaleFactor();
+	float fsize = size / scaleFactor;
+	TCUserDefaults::setFloatForKey(fsize, getFloatUdKey(udKey).c_str(), false);
+	TCUserDefaults::setLongForKey((long)fsize, udKey, false);
+}
+
+int LDViewWindow::getSavedPixelSize(const char* udKey, int defaultSize)
+{
+	std::string floatUdKey = getFloatUdKey(udKey);
+	double size = TCUserDefaults::floatForKey(floatUdKey.c_str(), -1.0, false);
+	if (size == -1.0)
+	{
+		size = TCUserDefaults::longForKey(udKey, defaultSize, true);
+	}
+	return (int)(size * getScaleFactor());
+}
+
+int LDViewWindow::getSavedWindowWidth(int defaultValue /*= -1*/)
+{
+	return getSavedPixelSize(WINDOW_WIDTH_KEY,
+		defaultValue == -1 ? DEFAULT_WIN_WIDTH : defaultValue);
+}
+
+int LDViewWindow::getSavedWindowHeight(int defaultValue /*= -1*/)
+{
+	return getSavedPixelSize(WINDOW_HEIGHT_KEY,
+		defaultValue == -1 ? DEFAULT_WIN_HEIGHT : defaultValue);
+}
+
 void LDViewWindow::createModelWindow(void)
 {
 	int lwidth;
@@ -863,10 +963,8 @@ void LDViewWindow::createModelWindow(void)
 	bool maximized;
 
 	TCObject::release(modelWindow);
-	lwidth = TCUserDefaults::longForKey(WINDOW_WIDTH_KEY, DEFAULT_WIN_WIDTH,
-		false);
-	lheight = TCUserDefaults::longForKey(WINDOW_HEIGHT_KEY, DEFAULT_WIN_HEIGHT,
-		false);
+	lwidth = getSavedWindowWidth();
+	lheight = getSavedWindowHeight();
 	maximized = TCUserDefaults::longForKey(WINDOW_MAXIMIZED_KEY, 0, false) != 0;
 	if (screenSaver)
 	{
@@ -897,7 +995,7 @@ BOOL LDViewWindow::showAboutBox(void)
 	return FALSE;
 }
 
-const char *LDViewWindow::getProductVersion(void)
+const UCCHAR *LDViewWindow::getProductVersion(void)
 {
 	if (!productVersion)
 	{
@@ -906,7 +1004,7 @@ const char *LDViewWindow::getProductVersion(void)
 	return productVersion;
 }
 
-const char *LDViewWindow::getLegalCopyright(void)
+const UCCHAR *LDViewWindow::getLegalCopyright(void)
 {
 	if (!legalCopyright)
 	{
@@ -917,41 +1015,41 @@ const char *LDViewWindow::getLegalCopyright(void)
 
 void LDViewWindow::readVersionInfo(void)
 {
-	char moduleFilename[1024];
+	UCCHAR moduleFilename[1024];
 
 	if (productVersion != NULL)
 	{
 		return;
 	}
-	if (GetModuleFileName(NULL, moduleFilename, sizeof(moduleFilename)) > 0)
+	if (getModuleFileNameUC(NULL, moduleFilename, sizeof(moduleFilename)) > 0)
 	{
 		DWORD zero;
-		DWORD versionInfoSize = GetFileVersionInfoSize(moduleFilename, &zero);
+		DWORD versionInfoSize = getFileVersionInfoSizeUC(moduleFilename, &zero);
 
 		if (versionInfoSize > 0)
 		{
 			BYTE *versionInfo = new BYTE[versionInfoSize];
 
-			if (GetFileVersionInfo(moduleFilename, NULL, versionInfoSize,
+			if (getFileVersionInfoUC(moduleFilename, NULL, versionInfoSize,
 				versionInfo))
 			{
-				char *value;
+				UCCHAR *value;
 				UINT versionLength;
 
-				if (VerQueryValue(versionInfo,
-					"\\StringFileInfo\\040904B0\\ProductVersion",
+				if (verQueryValueUC(versionInfo,
+					_UC("\\StringFileInfo\\040904B0\\ProductVersion"),
 					(void**)&value, &versionLength))
 				{
 					productVersion = copyString(value);
 				}
-				if (VerQueryValue(versionInfo,
-					"\\StringFileInfo\\040904B0\\LegalCopyright",
+				if (verQueryValueUC(versionInfo,
+					_UC("\\StringFileInfo\\040904B0\\LegalCopyright"),
 					(void**)&value, &versionLength))
 				{
 					legalCopyright = copyString(value);
 				}
 			}
-			delete versionInfo;
+			delete[] versionInfo;
 		}
 	}
 }
@@ -960,52 +1058,55 @@ void LDViewWindow::readVersionInfo(void)
 
 void LDViewWindow::createAboutBox(void)
 {
-	char fullVersionFormat[1024];
-	char fullVersionString[1024];
-	char versionString[128];
-	char copyrightString[128];
-	char buildDateString[128];
+	UCCHAR fullVersionFormat[1024];
+	UCCHAR fullVersionString[1024];
+	UCCHAR versionString[128];
+	UCCHAR copyrightString[128];
+	UCCHAR buildDateString[128];
 	char *tmpString = stringByReplacingSubstring(__DATE__, "  ", " ");
+	UCCHAR *tmpUCString = mbstoucstring(tmpString);
 	int dateCount;
-	char **dateComponents = componentsSeparatedByString(tmpString, " ",
+	UCCHAR **dateComponents = componentsSeparatedByString(tmpUCString, _UC(" "),
 		dateCount);
 
-	delete tmpString;
-	sprintf(buildDateString, "!UnknownDate!");
+	delete[] tmpString;
+	delete[] tmpUCString;
+	ucstrcpy(buildDateString, _UC("!UnknownDate!"));
 	if (dateCount == 3)
 	{
-		const char *buildMonth = TCLocalStrings::get(dateComponents[0]);
+		const UCCHAR *buildMonth = TCLocalStrings::get(dateComponents[0]);
 
 		if (buildMonth)
 		{
-			sprintf(buildDateString, "%s %s, %s", dateComponents[1], buildMonth,
+			sucprintf(buildDateString, COUNT_OF(buildDateString),
+				_UC("%s %s, %s"), dateComponents[1], buildMonth,
 				dateComponents[2]);
 		}
 	}
 	deleteStringArray(dateComponents, dateCount);
-	strcpy(versionString, TCLocalStrings::get("!UnknownVersion!"));
-	strcpy(copyrightString, TCLocalStrings::get("Copyright"));
+	ucstrcpy(versionString, TCLocalStrings::get(_UC("!UnknownVersion!")));
+	ucstrcpy(copyrightString, TCLocalStrings::get(_UC("Copyright")));
 	hAboutWindow = createDialog(IDD_ABOUT_BOX);
-	SendDlgItemMessage(hAboutWindow, IDC_VERSION_LABEL, WM_GETTEXT,
-		sizeof(fullVersionFormat), (LPARAM)fullVersionFormat);
+	sendDlgItemMessageUC(hAboutWindow, IDC_VERSION_LABEL, WM_GETTEXT,
+		COUNT_OF(fullVersionFormat), (LPARAM)fullVersionFormat);
 	readVersionInfo();
-	if (productVersion)
+	if (productVersion != NULL)
 	{
-		strcpy(versionString, productVersion);
+		ucstrcpy(versionString, productVersion);
 	}
-	if (legalCopyright)
+	if (legalCopyright != NULL)
 	{
-		strcpy(copyrightString, legalCopyright);
+		ucstrcpy(copyrightString, legalCopyright);
 	}
 #ifdef _WIN64
-	const char *platform = "x64";
+	const UCCHAR *platform = _UC("x64");
 #else // _WIN64
-	const char *platform = "x86";
+	const UCCHAR *platform = _UC("x86");
 #endif // _WIN64
-	sprintf(fullVersionString, fullVersionFormat, versionString,
-		platform, buildDateString, copyrightString);
-	SendDlgItemMessage(hAboutWindow, IDC_VERSION_LABEL, WM_SETTEXT,
-		sizeof(fullVersionString), (LPARAM)fullVersionString);
+	sucprintf(fullVersionString, COUNT_OF(fullVersionString), fullVersionFormat,
+		versionString, platform, buildDateString, copyrightString);
+	sendDlgItemMessageUC(hAboutWindow, IDC_VERSION_LABEL, WM_SETTEXT,
+		0, (LPARAM)fullVersionString);
 }
 
 BOOL LDViewWindow::doLDrawDirOK(HWND hDlg)
@@ -1747,8 +1848,8 @@ void LDViewWindow::switchModes(void)
 	}
 	else
 	{
-		int newWidth = TCUserDefaults::longForKey(WINDOW_WIDTH_KEY, 0, false);
-		int newHeight = TCUserDefaults::longForKey(WINDOW_HEIGHT_KEY, 0, false);
+		int newWidth = getSavedWindowWidth(0);
+		int newHeight = getSavedWindowHeight(0);
 		int dWidth = newWidth - width;
 		int dHeight = newHeight - height;
 
@@ -2442,7 +2543,7 @@ LRESULT LDViewWindow::showOpenGLDriverInfo(void)
 			(LPARAM)message);
 		hOpenGLStatusBar = CreateStatusWindow(WS_CHILD | WS_VISIBLE |
 			SBARS_SIZEGRIP, "", hOpenGLInfoWindow, ID_TOOLBAR);
-		SendMessage(hOpenGLStatusBar, SB_SETPARTS, 2, (LPARAM)parts);
+		setStatusBarParts(hOpenGLStatusBar, 2, parts);
 		if (numOpenGlExtensions == 1)
 		{
 			ucstrcpy(buf, TCLocalStrings::get(_UC("OpenGl1Extension")));
@@ -2541,31 +2642,34 @@ LRESULT LDViewWindow::switchPovCameraAspect(bool saveSetting /*= true*/)
 	return 0;
 }
 
-LRESULT LDViewWindow::switchToExamineMode(bool saveSetting)
-{
-	setMenuRadioCheck(hViewMenu, ID_VIEW_EXAMINE, true);
-	setMenuRadioCheck(hViewMenu, ID_VIEW_FLYTHROUGH, false);
-	modelWindow->setViewMode(LDInputHandler::VMExamine, examineLatLong,
-		saveSetting);
-	updateStatusParts();
-	setMenuCheck(hViewMenu, ID_VIEW_EXAMINE_LAT_LONG, examineLatLong);
-	setMenuCheck(hViewMenu, ID_VIEW_KEEPRIGHTSIDEUP, false);
-	if (toolbarStrip)
-	{
-		toolbarStrip->viewModeReflect();
-	}
-	return 0;
-}
-
-LRESULT LDViewWindow::switchToFlythroughMode(bool saveSetting)
+LRESULT LDViewWindow::switchToViewMode(
+	LDrawModelViewer::ViewMode viewMode,
+	bool saveSetting)
 {
 	setMenuRadioCheck(hViewMenu, ID_VIEW_EXAMINE, false);
-	setMenuRadioCheck(hViewMenu, ID_VIEW_FLYTHROUGH, true);
-	modelWindow->setViewMode(LDInputHandler::VMFlyThrough, examineLatLong,
+	setMenuRadioCheck(hViewMenu, ID_VIEW_FLYTHROUGH, false);
+	setMenuRadioCheck(hViewMenu, ID_VIEW_WALK, false);
+	setMenuCheck(hViewMenu, ID_VIEW_EXAMINE_LAT_LONG, false);
+	setMenuCheck(hViewMenu, ID_VIEW_KEEPRIGHTSIDEUP, false);
+	modelWindow->setViewMode((LDInputHandler::ViewMode)viewMode, examineLatLong,
 		saveSetting);
 	updateStatusParts();
-	setMenuCheck(hViewMenu, ID_VIEW_KEEPRIGHTSIDEUP, keepRightSideUp);
-	modelWindow->setKeepRightSideUp(keepRightSideUp, saveSetting);
+	switch (viewMode)
+	{
+	case LDrawModelViewer::VMExamine:
+		setMenuRadioCheck(hViewMenu, ID_VIEW_EXAMINE, true);
+		setMenuCheck(hViewMenu, ID_VIEW_EXAMINE_LAT_LONG, examineLatLong);
+		break;
+	case LDrawModelViewer::VMFlyThrough:
+		setMenuRadioCheck(hViewMenu, ID_VIEW_FLYTHROUGH, true);
+		setMenuCheck(hViewMenu, ID_VIEW_KEEPRIGHTSIDEUP, keepRightSideUp);
+		modelWindow->setKeepRightSideUp(keepRightSideUp, saveSetting);
+		break;
+	case LDrawModelViewer::VMWalk:
+		setMenuRadioCheck(hViewMenu, ID_VIEW_WALK, true);
+		setMenuCheck(hViewMenu, ID_VIEW_KEEPRIGHTSIDEUP, true);
+		break;
+	}
 	if (toolbarStrip)
 	{
 		toolbarStrip->viewModeReflect();
@@ -2704,7 +2808,6 @@ void LDViewWindow::chooseExtraDirs(void)
 {
 	if (!hExtraDirsWindow)
 	{
-		TBADDBITMAP addBitmap;
 		TBBUTTON buttons[4];
 		char buttonTitle[128];
 		int i;
@@ -2715,20 +2818,25 @@ void LDViewWindow::chooseExtraDirs(void)
 		ModelWindow::initCommonControls(ICC_WIN95_CLASSES);
 		hExtraDirsWindow = createDialog(IDD_EXTRA_DIRS);
 		hExtraDirsToolbar = GetDlgItem(hExtraDirsWindow, IDC_ESD_TOOLBAR);
+		int tbImageSize = scalePoints(16);
+		int tbButtonSize = scalePoints(25);
+		SIZE tbImageFullSize = { tbImageSize * 4, tbImageSize };
+		UINT flags = CUIScaler::imageListCreateFlags();
+		hExtraDirsImageList = ImageList_Create(tbImageSize, tbImageSize, flags,
+			4, 0);
+		addImageToImageList(hExtraDirsImageList, IDR_EXTRA_DIRS_TOOLBAR,
+			tbImageFullSize, getScaleFactor());
+		SendMessage(hExtraDirsToolbar, TB_SETIMAGELIST, 0,
+			(LPARAM)hExtraDirsImageList);
 		hExtraDirsList = GetDlgItem(hExtraDirsWindow, IDC_ESD_LIST);
 		populateExtraDirsListBox();
 		GetClientRect(hExtraDirsToolbar, &tbRect);
 		SendDlgItemMessage(hExtraDirsWindow, IDC_ESD_TOOLBAR,
 			TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0); 
-		// Should the toolbar bitmap be language specific?
-		addBitmap.hInst = getLanguageModule();
-		addBitmap.nID = IDB_EXTRA_DIRS;
 		SendDlgItemMessage(hExtraDirsWindow, IDC_ESD_TOOLBAR, TB_SETINDENT,
-			tbRect.right - tbRect.left - 100, 0);
+			tbRect.right - tbRect.left - tbButtonSize * 4, 0);
 		SendDlgItemMessage(hExtraDirsWindow, IDC_ESD_TOOLBAR, TB_SETBUTTONWIDTH,
-			0, MAKELONG(25, 25));
-		SendDlgItemMessage(hExtraDirsWindow, IDC_ESD_TOOLBAR, TB_ADDBITMAP, 4,
-			(LPARAM)&addBitmap);
+			0, MAKELONG(tbButtonSize, tbButtonSize));
 		SendDlgItemMessage(hExtraDirsWindow, IDC_ESD_TOOLBAR, TB_ADDSTRING,
 			0, (LPARAM)buttonTitle);
 		for (i = 0; i < 4; i++)
@@ -3309,11 +3417,13 @@ LRESULT LDViewWindow::doCommand(int itemId, int notifyCode, HWND controlHWnd)
 		case ID_VIEW_VISUALSTYLE:
 			return switchVisualStyle();
 		case ID_VIEW_EXAMINE:
-			return switchToExamineMode();
+			return switchToViewMode(LDrawModelViewer::VMExamine);
 		case ID_VIEW_EXAMINE_LAT_LONG:
 			return switchExamineLatLong();
 		case ID_VIEW_FLYTHROUGH:
-			return switchToFlythroughMode();
+			return switchToViewMode(LDrawModelViewer::VMFlyThrough);
+		case ID_VIEW_WALK:
+			return switchToViewMode(LDrawModelViewer::VMWalk);
 		case ID_VIEW_KEEPRIGHTSIDEUP:
 			return switchKeepRightSideUp();
 		case ID_TOOLS_ERRORS:
@@ -3593,10 +3703,8 @@ LRESULT LDViewWindow::doSize(WPARAM sizeType, int newWidth, int newHeight)
 			TCUserDefaults::setLongForKey(0, WINDOW_MAXIMIZED_KEY, false);
 			if (sizeType == SIZE_RESTORED)
 			{
-				TCUserDefaults::setLongForKey(newWidth, WINDOW_WIDTH_KEY,
-					false);
-				TCUserDefaults::setLongForKey(newHeight, WINDOW_HEIGHT_KEY,
-					false);
+				savePixelSize(WINDOW_WIDTH_KEY, newWidth);
+				savePixelSize(WINDOW_HEIGHT_KEY, newHeight);
 			}
 		}
 		if ((showStatusBar || showStatusBarOverride) && hStatusBar)
@@ -3604,13 +3712,6 @@ LRESULT LDViewWindow::doSize(WPARAM sizeType, int newWidth, int newHeight)
 			SendMessage(hStatusBar, WM_SIZE, SIZE_RESTORED,
 				MAKELPARAM(newWidth, newHeight));
 			updateStatusParts();
-			//int parts[] = {100, 150, -1};
-			//RECT rect;
-
-			//SendMessage(hStatusBar, SB_SETPARTS, 3, (LPARAM)parts);
-			//SendMessage(hStatusBar, SB_GETRECT, 2, (LPARAM)&rect);
-			//parts[1] += rect.right - rect.left - 32;
-			//SendMessage(hStatusBar, SB_SETPARTS, 3, (LPARAM)parts);
 		}
 		if (showToolbar && toolbarStrip)
 		{
@@ -4275,6 +4376,11 @@ void LDViewWindow::openModel(const char* filename, bool skipLoad)
 		char dir[1024];
 		GetCurrentDirectory(sizeof(dir), dir);
 		modelWindow->setFilename(fullPathName);
+		// We need to create the error window before we start loading the
+		// file. Otherwise, the progress tracking that happens when it
+		// loads its images will confuse us and send the app into an
+		// infinite loop waiting for the model to finish loading.
+		modelWindow->createErrorWindow();
 		if (modelWindow->loadModel())
 		{
 			updateModelMenuItems();
@@ -4301,7 +4407,18 @@ void LDViewWindow::openModel(const char* filename, bool skipLoad)
 		// Don't activate if it hasn't been shown, because my activation handler
 		// shows it, and this makes the window show up with command line image
 		// generation.
-		SetActiveWindow(hWindow);
+		if (modelWindow->isErrorWindowVisible() &&
+			modelWindow->getErrorCount() > 0)
+		{
+			// If the error window is visible, and we have errors (as opposed
+			// to just warnings, or no errors OR warnings), activate the error
+			// window.
+			modelWindow->showErrors();
+		}
+		else
+		{
+			SetActiveWindow(hWindow);
+		}
 	}
 }
 

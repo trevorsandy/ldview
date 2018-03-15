@@ -80,6 +80,7 @@ class LDrawModelViewer: public TCAlertSender
 		{
 			VMExamine,
 			VMFlyThrough,
+			VMWalk,
 		};
 		enum ExamineMode
 		{
@@ -110,7 +111,7 @@ class LDrawModelViewer: public TCAlertSender
 		typedef std::list<StandardSize> StandardSizeList;
 		typedef std::vector<StandardSize> StandardSizeVector;
 
-		LDrawModelViewer(int, int);
+		LDrawModelViewer(TCFloat, TCFloat);
 		LDInputHandler *getInputHandler(void);
 		virtual void update(void);
 		virtual void perspectiveView(void);
@@ -178,10 +179,16 @@ class LDrawModelViewer: public TCAlertSender
 		virtual void setOneLight(bool value);
 		bool getOneLight(void) const { return flags.oneLight != false; }
 		virtual bool forceOneLight(void) const;
-		virtual void setWidth(int value);
-		virtual void setHeight(int value);
-		int getWidth(void) { return width; }
-		int getHeight(void) { return height; }
+		virtual void setWidth(TCFloat value);
+		virtual void setHeight(TCFloat value);
+		int getWidth(void) const { return (int)width; }
+		int getHeight(void) const { return (int)height; }
+		TCFloat getFloatWidth(void) const { return width; }
+		TCFloat getFloatHeight(void) const { return height; }
+		virtual void setScaleFactor(TCFloat value);
+		TCFloat getScaleFactor(void) const { return scaleFactor; }
+		int scale(int value) const { return (int)(scaleFactor * value); }
+		TCFloat scale(TCFloat value) const { return (TCFloat)(scaleFactor * value); }
 		void setViewMode(ViewMode value);
 		ViewMode getViewMode(void) const { return viewMode; }
 		void setExamineMode(ExamineMode value);
@@ -325,11 +332,13 @@ class LDrawModelViewer: public TCAlertSender
 		{
 			return highlightLineWidth;
 		}
+		TCFloat32 getScaledHighlightLineWidth(void) const;
 		virtual void setWireframeLineWidth(TCFloat32 value);
 		TCFloat32 getWireframeLineWidth(void) const
 		{
 			return wireframeLineWidth;
 		}
+		TCFloat32 getScaledWireframeLineWidth(void) const;
 		virtual void setAnisoLevel(TCFloat32 value);
 		TCFloat32 getAnisoLevel(void) const { return anisoLevel; }
 		virtual void setProcessLDConfig(bool value);
@@ -407,6 +416,7 @@ class LDrawModelViewer: public TCAlertSender
 		TCFloat32 getCutawayAlpha(void) { return cutawayAlpha; }
 		virtual void setCutawayLineWidth(TCFloat32 value);
 		TCFloat32 getCutawayLineWidth(void) { return cutawayLineWidth; }
+		TCFloat32 getScaledCutawayLineWidth(void) const;
 		void setSlowClear(bool value) { flags.slowClear = value; }
 		bool getSlowClear(void) const { return flags.slowClear != false; }
 		virtual void setBlackHighlights(bool value);
@@ -532,7 +542,10 @@ class LDrawModelViewer: public TCAlertSender
 		LDViewPoint *saveViewPoint(void) const;
 		void restoreViewPoint(const LDViewPoint *viewPoint);
 		void rightSideUp(bool shouldRequestRedraw = true);
-		virtual void setupFont(char *fontFilename);
+		virtual void setupFont(const char *fontFilename);
+		virtual void setupFont2x(const char *fontFilename);
+	    virtual void setRawFont2xData(const TCByte *data, long length);
+		virtual void setFont2x(TCImage *image);
 		virtual int exportCurModel(const char *filename,
 			const char *version = NULL, const char *copyright = NULL,
 			ExportType type = (ExportType)0);
@@ -604,7 +617,7 @@ class LDrawModelViewer: public TCAlertSender
 		virtual void perspectiveViewToClipPlane(void);
 		virtual void applyTile(void);
 		virtual void drawString(TCFloat xPos, TCFloat yPos, char* string);
-		virtual void loadVGAFont(char *fontFilename);
+		virtual void loadVGAFont(const char *fontFilename);
 		virtual void setupDefaultViewAngle(void);
 		virtual void setupFrontViewAngle(void);
 		virtual void setupBackViewAngle(void);
@@ -653,8 +666,10 @@ class LDrawModelViewer: public TCAlertSender
 			bool primitive);
 		static void initStandardSizes(void);
 		static void addStandardSize(int width, int height);
-		static ucstring getAspectString(int width, int height, CUCSTR separator,
-			bool standardOnly = false);
+		static bool checkAspect(TCFloat width, TCFloat height, int aspectW,
+			int aspectH);
+		static ucstring getAspectString(TCFloat aWidth, TCFloat aHeight,
+			CUCSTR separator, bool standardOnly = false);
 
 		//int L3Solve6(TCFloat x[L3ORDERN], const TCFloat A[L3ORDERM][L3ORDERN],
 		//	const TCFloat b[L3ORDERM]);
@@ -673,8 +688,9 @@ class LDrawModelViewer: public TCAlertSender
 		char* filename;
 		std::string mpdName;
 		char* programPath;
-		int width;
-		int height;
+		TCFloat width;
+		TCFloat height;
+		TCFloat scaleFactor;
 		TCFloat pixelAspectRatio;
 		TCFloat size;
 		TCFloat clipSize;
@@ -735,7 +751,8 @@ class LDrawModelViewer: public TCAlertSender
 		int curveQuality;
 		int textureFilterType;
 		TCFloat distanceMultiplier;
-		TCImage *fontImage;
+		TCImage *fontImage1x;
+		TCImage *fontImage2x;
 		GLuint fontTextureID;
 		LDLCamera camera;
 		TCFloat aspectRatio;

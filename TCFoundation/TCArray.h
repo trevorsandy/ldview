@@ -73,7 +73,7 @@ public:
 				memcpy(newItems + index + 1, items + index,
 				 (count - index) * sizeof (Type));
 			}
-			delete items;
+			delete[] items;
 			items = newItems;
 		}
 		if (!expanded && index < count)
@@ -190,7 +190,12 @@ public:
 		return count;
 	}
 
-	virtual int setCapacity(unsigned newCapacity)
+	virtual void shrinkToFit(void)
+	{
+		setCapacity(count);
+	}
+
+	virtual int setCapacity(unsigned newCapacity, bool updateCount = false, bool clear = false)
 	{
 		if (newCapacity >= count)
 		{
@@ -202,8 +207,16 @@ public:
 			{
 				memcpy(newItems, items, count * sizeof (Type));
 			}
-			delete items;
+			delete[] items;
 			items = newItems;
+			if (updateCount)
+			{
+				if (clear)
+				{
+					memset(&newItems[count], 0, (newCapacity - count) * sizeof (Type));
+				}
+				count = newCapacity;
+			}
 			return 1;
 		}
 		else
@@ -239,7 +252,7 @@ protected:
 
 	virtual void dealloc(void)
 	{
-		delete items;
+		delete[] items;
 		TCObject::dealloc();
 	}
 

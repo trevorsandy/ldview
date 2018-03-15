@@ -34,7 +34,8 @@
 #define EDGE_THICKNESS_KEY "EdgeThickness"
 #define EXAMINE_MODE_KEY "ExamineMode"
 #define EXPORT_FILE_KEY "ExportFile"
-#define EXPORT_FILES_KEY "ExportFiles"
+#define EXPORT_FILES_KEY "ExportFiles"							// NO UI
+#define EXPORT_FILES_LIST_KEY "ExportFilesList"					// NO UI
 #define EXPORT_SUFFIX_KEY "ExportSuffix"
 #define EXPORTS_DIR_KEY "ExportsDir"
 #define EXPORTS_DIR_MODE_KEY "ExportsDirMode"
@@ -98,9 +99,12 @@
 #define SAVE_DIR_KEY "SaveDir"
 #define SAVE_HEIGHT_KEY "SaveHeight"
 #define SAVE_IMAGE_TYPE_KEY "SaveImageType"
+#define SAVE_MATCH_SCALE_FACTOR_KEY "SaveMatchScaleFactor"
+#define SAVE_SCALE_FACTOR_KEY "SaveScaleFactor"					// NO UI
 #define SAVE_SERIES_KEY "SaveSeries"
 #define SAVE_SNAPSHOT_KEY "SaveSnapshot"						// NO UI
-#define SAVE_SNAPSHOTS_KEY "SaveSnapshots"
+#define SAVE_SNAPSHOTS_KEY "SaveSnapshots"						// NO UI
+#define SAVE_SNAPSHOTS_LIST_KEY "SaveSnapshotsList"				// NO UI
 #define SAVE_STEPS_KEY "SaveSteps"
 #define SAVE_STEPS_SAME_SCALE_KEY "SaveStepsSameScale"
 #define SAVE_STEPS_SUFFIX_KEY "SaveStepsSuffix"

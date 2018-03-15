@@ -12,8 +12,6 @@
 #include <LDLoader/LDLPalette.h>
 #include <TRE/TREMainModel.h>
 #include <TRE/TRESubModel.h>
-#include <TRE/TREVertexArray.h>
-#include <TRE/TREShapeGroup.h>
 #include <TCFoundation/mystring.h>
 #include <TCFoundation/TCMacros.h>
 #include <TCFoundation/TCVector.h>
@@ -184,7 +182,8 @@ bool LDModelParser::parseMainModel(LDLModel *mainLDLModel)
 		break;
 	}
 	m_mainTREModel->setPolygonOffsetFlag(getPolygonOffsetFlag());
-	m_mainTREModel->setEdgeLineWidth(m_modelViewer->getHighlightLineWidth());
+	m_mainTREModel->setEdgeLineWidth(
+		m_modelViewer->getScaledHighlightLineWidth());
 	m_mainTREModel->setStudAnisoLevel(m_modelViewer->getAnisoLevel());
 	m_mainTREModel->setAALinesFlag(getAALinesFlag());
 	m_mainTREModel->setSortTransparentFlag(getSortTransparentFlag());
@@ -230,7 +229,7 @@ bool LDModelParser::parseMainModel(LDLModel *mainLDLModel)
 			char *name = filenameFromPath(m_topLDLModel->getFilename());
 
 			m_mainTREModel->setName(name);
-			delete name;
+			delete[] name;
 		}
 		if (m_alertSender != NULL)
 		{
@@ -947,7 +946,8 @@ bool LDModelParser::parseModel(
 							treModel->startTexture(fileLine->getTexmapType(),
 								fileLine->getTexmapFilename(),
 								fileLine->getTexmapImage(),
-								fileLine->getTexmapPoints());
+								fileLine->getTexmapPoints(),
+								fileLine->getTexmapExtra());
 							m_flags.newTexmap = false;
 							m_flags.texmapStarted = true;
 						}

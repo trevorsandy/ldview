@@ -6,6 +6,7 @@
 #include <LDLoader/LDLError.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <fstream>
 
 class TCDictionary;
 class LDLMainModel;
@@ -56,7 +57,7 @@ public:
 	virtual const char *getDescription(void) const { return m_description; }
 	virtual const char *getAuthor(void) const { return m_author; }
 	virtual void setName(const char *name);
-	bool load(FILE *file, bool trackProgress = true);
+	bool load(std::ifstream &stream, bool trackProgress = true);
 	void print(int indent) const;
 	virtual bool parse(void);
 	virtual TCDictionary* getLoadedModels(void);
@@ -116,6 +117,7 @@ public:
 	void setMainModel(LDLMainModel *value) { m_mainModel = value; }
 	const LDLMainModel *getMainModel(void) const { return m_mainModel; }
 	virtual TCObject *getAlertSender(void);
+	virtual int loadMpdTexmaps(void);
 
 	static const char *lDrawDir(bool defaultValue = false);
 	static void setLDrawDir(const char *value);
@@ -124,20 +126,26 @@ public:
 	{
 		return fileCaseCallback;
 	}
-	static FILE *openFile(const char *filename);
+	static bool openFile(const char *filename, std::ifstream &modelStream);
+	static void combinePathParts(std::string &path, const std::string &left,
+		const std::string& middle, const std::string &right = std::string());
 protected:
 	virtual void dealloc(void);
-	FILE *openTexmap(const char *filename, char *path);
-	virtual FILE *openSubModelNamed(const char* subModelName,
-		char* subModelPath, bool knownPart, bool *pLoop = NULL,
-		bool isText = true);
+	bool openTexmap(const char *filename, std::ifstream &texmapStream,
+		std::string &path);
+	virtual bool openSubModelNamed(const char* subModelName,
+		std::string &subModelPath, std::ifstream &fileStream, bool knownPart,
+		bool *pLoop = NULL, bool isText = true);
 	virtual bool initializeNewSubModel(LDLModel* subModel,
-		const char *dictName, FILE* subModelFile = NULL);
-	virtual bool read(FILE *file);
+		const char *dictName, std::ifstream &subModelStream);
+	virtual bool initializeNewSubModel(LDLModel* subModel,
+		const char *dictName);
+	virtual bool read(std::ifstream &stream);
 	virtual int parseComment(int index, LDLCommentLine *commentLine);
 	virtual int parseMPDMeta(int index, const char *filename);
 	virtual int parseBFCMeta(LDLCommentLine *commentLine);
 	virtual int parseTexmapMeta(LDLCommentLine *commentLine);
+	virtual int parseDataMeta(int index, LDLCommentLine *commentLine);
 	virtual int parseBBoxIgnoreMeta(LDLCommentLine *commentLine);
 	virtual void readComment(LDLCommentLine *commentLine);
 	virtual void sendAlert(LDLError *alert);
@@ -158,8 +166,8 @@ protected:
 	virtual bool isSubPart(const char *subModelName);
 	virtual bool isAbsolutePath(const char *path);
 //	virtual void processModelLine(LDLModelLine *modelLine);
-	virtual FILE *openModelFile(const char *filename, bool isText,
-		bool knownPart = false);
+	virtual bool openModelFile(const char *filename, std::ifstream &modelStream,
+		bool isText, bool knownPart = false);
 	virtual void calcBoundingBox(void) const;
 	virtual void calcMaxRadius(const TCVector &center, bool watchBBoxIgnore);
 	void scanBoundingBoxPoint(const TCVector &point, LDLFileLine *pFileLine);
@@ -167,6 +175,7 @@ protected:
 	void sendUnofficialWarningIfPart(const LDLModel *subModel,
 		const LDLModelLine *fileLine, const char *subModelName);
 	void endTexmap(void);
+	void endData(int index, LDLCommentLine *commentLine);
 
 	static bool verifyLDrawDir(const char *value);
 	static void initCheckDirs();
@@ -176,6 +185,9 @@ protected:
 	char *m_author;
 	char *m_description;
 	LDLFileLineArray *m_fileLines;
+	LDLModelArray *m_mpdTexmapModels;
+	LDLCommentLineArray *m_mpdTexmapLines;
+	TCImageArray *m_mpdTexmapImages;
 	LDLMainModel *m_mainModel;
 	IntList m_stepIndices;
 	int m_activeLineCount;
@@ -190,6 +202,9 @@ protected:
 	TCImage *m_texmapImage;
 	LDLFileLine::TexmapType m_texmapType;
 	TCVector m_texmapPoints[3];
+	TCFloat m_texmapExtra[2];
+	std::vector<TCByte> m_data;
+	int m_dataStartIndex;
 	struct
 	{
 		// Private flags

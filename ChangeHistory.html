@@ -83,6 +83,48 @@ Changes
 </tr>
 
 <tr><td class="NoWrap" align="right">
+<b class="Bigger">4.4</b><br/>
+(?? ???, 2018)
+</td>
+<td colspan="2">
+<b>Additions</b>
+<ul>
+<li>Added support for SPHERICAL and CYLINDRICAL texture maps.</li>
+<li>Updated formatting of lines from LDraw files in Errors &amp; Warnings dialog
+to use double spaces around vertices.</li>
+<li>Added support for DPI scaling (AKA High DPI) to Windows Version. Requires
+Windows 10 Version 1703 (AKA Creators Update).</li>
+<li>Added Retina support to Mac version.</li>
+<li>Added support for Mac QuickLook thumbnails for .ldr and .mpd files. This
+can be disabled by unchecking the "Use LDView to generate thumbnails for LDraw
+files" check box in the LDraw tab of LDView's Preferences.</li>
+<li>Added LDraw file line content to Mac Errors &amp; Warnings panel.</li>
+<li>Added "LDView.com", a wrapper for LDView64.exe and LDView.exe that is
+designed to be used from the command line so that errors and warnings can be
+displayed.</li>
+</ul>
+<b>Updates</b>
+<ul>
+<li>Mac version now requires macOS 10.8 Mountain Lion or later.</li>
+<li>Updated so that hitting space while the model is spinning will stop the
+rotation.</li>
+<li>Update default verbosity for command line snapshots and exports to show
+errors (but not warnings).</li>
+</ul>
+<b>Bug Fixes</b>
+<ul>
+<li>Fixed primitive substitution of ring primitives with 2-digit sizes.</li>
+<li>Fixed command line snapshot generation to work in macOS High Sierra.</li>
+<li>Fixed Mac Errors &amp; Warnings panel to not truncate rows.</li>
+<li>Fixed Mac Errors &amp; Warnings panel "Copy Error to Clipboard" button.</li>
+<li>Fixed Mac full screen support.</li>
+<li>Fixed crashes when quads or triangles had to be converted to something else
+and their coordinates had too many decimal places.</li>
+<li>Fixed to support loading LDraw files with arbitrarily long lines.</li>
+</ul>
+</td></tr>
+
+<tr><td class="NoWrap" align="right">
 <b class="Bigger">4.3</b><br/>
 (30 Jan, 2018)
 </td>
@@ -1944,7 +1986,7 @@ If you have any comments, questions, or suggestions, please e-mail me at
 <a href="mailto:ldview@gmail.com">ldview@gmail.com</a>.
 </p>
 <p>
-LDView and this web page are both Copyright &copy; 2016 Travis Cobbs and
+LDView and this web page are both Copyright &copy; 2018 Travis Cobbs and
 Peter Bartfai.
 </p>
 <p class="FinePrint">

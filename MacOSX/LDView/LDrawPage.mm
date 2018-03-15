@@ -32,6 +32,7 @@
 {
 	[ldrawDirField setStringValue:[NSString stringWithASCIICString:ldPreferences->getLDrawDir()]];
 	[self setupExtraFolders:ldPreferences->getExtraDirs()];
+	[self setCheck:generateThumbnailsCheck value:[self generateThumbnails]];
 	[super setup];
 }
 
@@ -84,6 +85,17 @@
 	[self updateLDrawDir:ldrawDir apply:YES];
 }
 
+- (void)setGenerateThumbnails:(bool)value
+{
+	BOOL disableThumbnails = value ? NO : YES;
+	NSUserDefaults *sud = [NSUserDefaults standardUserDefaults];
+	NSMutableDictionary<NSString *, id>* udDomain = [[sud persistentDomainForName:@"com.cobbsville.LDViewQuickLook"] mutableCopy];
+	[udDomain setObject:[NSNumber numberWithBool:disableThumbnails] forKey:@"DisableThumbnails"];
+	[[NSUserDefaults standardUserDefaults] setPersistentDomain:udDomain forName:@"com.cobbsville.LDViewQuickLook"];
+	[sud synchronize];
+	[udDomain release];
+}
+
 - (bool)updateLdPreferences
 {
 	StringVector extraDirs;
@@ -100,12 +112,14 @@
 		extraDirs.push_back([[extraFolders objectAtIndex:i] cStringUsingEncoding:NSASCIIStringEncoding]);
 	}
 	ldPreferences->setExtraDirs(extraDirs);
+	[self setGenerateThumbnails:[self getCheck:generateThumbnailsCheck]];
 	return [super updateLdPreferences];
 }
 
 - (IBAction)resetPage:(id)sender
 {
 	ldPreferences->loadDefaultLDrawSettings(false);
+	[self setGenerateThumbnails:YES];
 	[super resetPage:sender];
 }
 
@@ -170,8 +184,8 @@
 {
 	NSSegmentedCell *segmentCell = [addRemoveExtraFolder cell];
 
-	[segmentCell setToolTip:@"Add extra search folder" forSegment:0];
-	[segmentCell setToolTip:@"Remove extra search folder" forSegment:0];
+	[segmentCell setToolTip:[OCLocalStrings get:@"AddExtraSearchFolder"] forSegment:0];
+	[segmentCell setToolTip:[OCLocalStrings get:@"RemoveExtraSearchFolder"] forSegment:1];
 	tableViewReorder = [[TableViewReorder alloc] initWithTableView:extraFoldersTableView owner:self dragType:@"LDViewExtraDirsDragType"];
 	[super awakeFromNib];
 }
@@ -194,6 +208,14 @@
 - (void)tableViewReorderDidOccur:(id)sender
 {
 	[self valueChanged:self];
+}
+
+- (bool)generateThumbnails
+{
+	NSUserDefaults *sud = [NSUserDefaults standardUserDefaults];
+	NSDictionary<NSString *, id>* udDomain = [sud persistentDomainForName:@"com.cobbsville.LDViewQuickLook"];
+	BOOL disableThumbnails = [[udDomain objectForKey:@"DisableThumbnails"] boolValue];
+	return disableThumbnails ? false : true;
 }
 
 @end

@@ -14,6 +14,7 @@
 #include <LDLib/LDUserDefaultsKeys.h>
 #include "ModelWindow.h"
 #include "LDViewWindow.h"
+#include <CUI/CUIScaler.h>
 
 #include <TCFoundation/TCUserDefaults.h>
 #include <TCFoundation/mystring.h>
@@ -916,6 +917,14 @@ BOOL LDViewPreferences::doDialogNotify(HWND hDlg, int controlId,
 {
 //	debugPrintf("LDViewPreferences::doDialogNotify: %d 0x%08X\n",
 //		notification->code, notification->code);
+	// We don't get told when the DPI changes, but it does seem to send at least
+	// one notification. So, any time we get a notification, check for DPI
+	// changes. Note that when the LDViewWindow gets a DPI changed message, it
+	// tells us to check then too. That's probably not necessary, but it won't
+	// hurt. And if the user moves the Preferences from one monitor to another,
+	// and the DPI changes because of that, the LDViewWindow won't get a DPI
+	// change message.
+	checkForDpiChange();
 	if (notification->code == NM_RELEASEDCAPTURE)
 	{
 		if (hDlg == hEffectsPage)
@@ -3338,7 +3347,7 @@ void LDViewPreferences::setupWireframe(void)
 		ldPrefs->getUseWireframeFog(), 0);
 	SendDlgItemMessage(hGeometryPage, IDC_REMOVE_HIDDEN_LINES, BM_SETCHECK,
 		ldPrefs->getRemoveHiddenLines(), 0);
-	setupDialogSlider(hGeometryPage, IDC_WIREFRAME_THICKNESS, 1, 5, 1,
+	setupDialogSlider(hGeometryPage, IDC_WIREFRAME_THICKNESS, 0, 5, 1,
 		ldPrefs->getWireframeThickness());
 	if (ldPrefs->getDrawWireframe())
 	{
@@ -3447,7 +3456,7 @@ void LDViewPreferences::setupEdgeLines(void)
 	hAlwaysBlackButton = GetDlgItem(hGeometryPage, IDC_ALWAYS_BLACK);
 	hEdgeThicknessLabel = GetDlgItem(hGeometryPage, IDC_EDGE_THICKNESS_LABEL);
 	hEdgeThicknessSlider = GetDlgItem(hGeometryPage, IDC_EDGE_THICKNESS);
-	setupDialogSlider(hGeometryPage, IDC_EDGE_THICKNESS, 1, 5, 1,
+	setupDialogSlider(hGeometryPage, IDC_EDGE_THICKNESS, 0, 5, 1,
 		ldPrefs->getEdgeThickness());
 	if (ldPrefs->getShowHighlightLines())
 	{
@@ -3547,7 +3556,7 @@ void LDViewPreferences::setupCutaway(void)
 	hCutawayThicknessSlider = GetDlgItem(hEffectsPage, IDC_CUTAWAY_THICKNESS);
 	setupDialogSlider(hEffectsPage, IDC_CUTAWAY_OPACITY, 1, 100, 10,
 		ldPrefs->getCutawayAlpha());
-	setupDialogSlider(hEffectsPage, IDC_CUTAWAY_THICKNESS, 1, 5, 1,
+	setupDialogSlider(hEffectsPage, IDC_CUTAWAY_THICKNESS, 0, 5, 1,
 		ldPrefs->getCutawayThickness());
 	if (ldPrefs->getCutawayMode() == LDVCutawayNormal)
 	{
@@ -3866,24 +3875,53 @@ void LDViewPreferences::setupLightAngleToolbar(void)
 void LDViewPreferences::setupLightAngleButtons(void)
 {
 	lightAngleButtons.clear();
+	double scaleFactor = getScaleFactor();
+	HIMAGELIST hImageList = NULL;
+	SIZE size = { scalePoints(16), scalePoints(16) };
+	hImageList = ImageList_Create(size.cx, size.cy, ILC_COLOR32, 9, 0);
 	for (IntIntMap::const_iterator it = lightDirIndexToId.begin()
 		; it != lightDirIndexToId.end(); it++)
 	{
-		HICON hIcon = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(it->second),
-			IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+		HWND hButton = GetDlgItem(hEffectsPage, it->second);
 
-		if (hIcon)
+		if (hButton)
 		{
-			HWND hButton = GetDlgItem(hEffectsPage, it->second);
-
-			if (hButton)
+			HICON hIcon = NULL;
+			if (scaleFactor > 1.0)
+			{
+				TCImage *image = TCImage::createFromResource(NULL, it->second, 4, true, scaleFactor);
+				if (image != NULL)
+				{
+					int index = addImageToImageList(hImageList, image, size);
+					UINT flags = ILD_TRANSPARENT;
+					if (!CUIScaler::use32bit())
+					{
+						// Note: this doesn't work quite right, but it's close.
+						flags = ILD_IMAGE;
+					}
+					hIcon = ImageList_GetIcon(hImageList, index, flags);
+					image->release();
+				}
+			}
+			if (!hIcon)
+			{
+				hIcon = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(it->second),
+					IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+			}
+			if (hIcon)
 			{
 				lightAngleButtons.push_back(hButton);
-				SendMessage(hButton, BM_SETIMAGE, IMAGE_ICON, (LPARAM)hIcon);
+				HICON hOldIcon = (HICON)SendMessage(hButton, BM_SETIMAGE,
+					IMAGE_ICON, (LPARAM)hIcon);
+				if (hOldIcon != NULL)
+				{
+					DestroyIcon(hOldIcon);
+				}
 				setupIconButton(hButton);
 			}
 		}
 	}
+	ImageList_Destroy(hImageList);
 }
 
 void LDViewPreferences::setupLighting(void)
@@ -4291,6 +4329,19 @@ BOOL LDViewPreferences::doHotKeyInit(HWND hDlg, HWND /*hHotKeyCombo*/)
 	}
 	SendDlgItemMessage(hDlg, IDC_HOTKEY_COMBO, CB_SETCURSEL, hotKeyIndex, 0);
 	return TRUE;
+}
+
+void LDViewPreferences::checkForDpiChange(void)
+{
+	// Note: It is VERY important that the call with true as its parameter
+	// happen AFTER the call with no parameters.
+	if (getScaleFactor() != getScaleFactor(true))
+	{
+		if (!lightAngleButtons.empty())
+		{
+			setupLightAngleButtons();
+		}
+	}
 }
 
 BOOL LDViewPreferences::doDialogInit(HWND hDlg, HWND /*hFocusWindow*/,

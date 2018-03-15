@@ -139,6 +139,8 @@ protected:
 	void fillTbButton(TBBUTTON &button, const TbButtonInfo &buttonInfo);
 	void stepCountChanged(void);
 
+	int translateCommandId(int commandId);
+
 	LDViewWindow *m_ldviewWindow;
 	LDViewPreferences *m_prefs;
 
@@ -158,6 +160,11 @@ protected:
 	HMENU m_hBFCMenu;
 
 	HMODULE m_hGdiPlus;
+
+	double m_scaleFactor;
+	int m_imageSize;
+	int m_buttonWidth;
+	int m_buttonHeight;
 
 	int m_numSteps;
 	int m_step;

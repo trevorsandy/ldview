@@ -67,7 +67,7 @@ void LDLMainModel::ldrawDirNotFound(void)
 
 bool LDLMainModel::load(const char *filename)
 {
-	FILE *file;
+	std::ifstream stream;
 	LDLError *error;
 
 	setFilename(filename);
@@ -92,9 +92,9 @@ bool LDLMainModel::load(const char *filename)
 		ldrawDirNotFound();
 		return false;
 	}
-	file = fopen(filename, "rb");
+	stream.open(filename, std::ios_base::binary);
 	m_mainModel = this;
-	if (file)
+	if (stream.is_open() && !stream.fail())
 	{
 		bool retValue;
 
@@ -102,7 +102,7 @@ bool LDLMainModel::load(const char *filename)
 		{
 			processLDConfig();
 		}
-		retValue = LDLModel::load(file);
+		retValue = LDLModel::load(stream);
 		if (sm_lDrawIni)
 		{
 			// If bool isn't 1 byte, then the filename case callback won't
@@ -135,7 +135,7 @@ bool LDLMainModel::load(const char *filename)
 						failed = true;
 					}
 				}
-				delete tmpStr;
+				delete[] tmpStr;
 				if (failed)
 				{
 					// Either P or PARTS was inaccessible, so let the user
@@ -149,6 +149,20 @@ bool LDLMainModel::load(const char *filename)
 		// The ancestor map has done its job; may as well free up the memory it
 		// was using.
 		m_ancestorMap.clear();
+		if (getHaveMpdTexmaps())
+		{
+			TCDictionary* subModelDict = getLoadedModels();
+			if (subModelDict != NULL)
+			{
+				TCObjectArray *subModels = subModelDict->allObjects();
+				int subModelCount = subModels->getCount();
+				for (int i = 0; i < subModelCount; ++i)
+				{
+					LDLModel *subModel = (LDLModel *)(*subModels)[i];
+					subModel->loadMpdTexmaps();
+				}
+			}
+		}
 		return retValue;
 	}
 	else
@@ -164,29 +178,28 @@ bool LDLMainModel::load(const char *filename)
 
 void LDLMainModel::processLDConfig(void)
 {
-	FILE* configFile = NULL;
-	char filename[1024];
+	std::ifstream configStream;
+	std::string filename;
 	if (!m_ldConfig.empty())
 	{
 		// First, check the standard model path
-		configFile = openSubModelNamed(m_ldConfig.c_str(), filename,
-			false);
-		if (configFile == NULL)
+		if (!openSubModelNamed(m_ldConfig.c_str(), filename, configStream,
+			false))
 		{
 			// Next, check the root LDraw dir
-			sprintf(filename, "%s/%s", lDrawDir(), m_ldConfig.c_str());
-			configFile = openFile(filename);
+			combinePathParts(filename, lDrawDir(), "/", m_ldConfig);
+			openFile(filename.c_str(), configStream);
 		}
 	}
-	if (configFile == NULL)
+	if (!configStream.is_open())
 	{
-		sprintf(filename, "%s/ldconfig.ldr", lDrawDir());
-		configFile = openFile(filename);
+		combinePathParts(filename, lDrawDir(), "/ldconfig.ldr");
+		openFile(filename.c_str(), configStream);
 	}
-	if (configFile)
+	if (configStream.is_open())
 	{
-		fclose(configFile);
-		subModelNamed(filename);
+		configStream.close();
+		subModelNamed(filename.c_str());
 	}
 }
 

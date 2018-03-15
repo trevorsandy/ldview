@@ -25,7 +25,6 @@ typedef enum
 	BOOL rButtonDown;
 	unsigned int mouseDownModifierFlags;
 	unsigned int rightMouseDownModifierFlags;
-	//NSDate *lastMoveTime;
 	LDVViewMode viewMode;
 	BOOL loading;
 	BOOL parsing;
@@ -50,19 +49,16 @@ typedef enum
 - (IBAction)zoomToFit:(id)sender;
 - (IBAction)rightSideUp:(id)sender;
 - (IBAction)viewMode:(id)sender;
-- (void)setFlyThroughMode:(bool)flyThroughMode;
-- (bool)flyThroughMode;
+- (void)setViewMode:(long)newViewMode;
+- (bool)examineMode;
+- (long)viewMode;
 - (void)setKeepRightSideUp:(bool)keepRightSideUp;
 - (bool)keepRightSideUp;
 - (void)rotationUpdate;
-- (bool)fullScreen;
-
-- (IBAction)toggleFullScreen:(id)sender;
 
 - (void)modelViewerAlertCallback:(TCAlert *)alert;
 - (void)redrawAlertCallback:(TCAlert *)alert;
 - (void)captureAlertCallback:(TCAlert *)alert;
 - (void)releaseAlertCallback:(TCAlert *)alert;
-//- (void)peekMouseUpAlertCallback:(TCAlert *)alert;
 
 @end

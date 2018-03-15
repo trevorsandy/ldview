@@ -226,14 +226,16 @@ test: ldview
 	fi
 	@if [ -f /tmp/8464.png ] ; then rm -f /tmp/8464.png ; fi
 	./ldview ../8464.mpd -SaveSnapshot=/tmp/8464.png \
-	-SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0
-	@file /tmp/8464.png
-	@for a in eog gthumb ; do 						\
-		if which $$a >/dev/null 2>/dev/null ; then  \
-			$$a /tmp/8464.png; 						\
-			break ;									\
-		fi											\
-	done
+	-SaveWidth=1024 -SaveHeight=1024 -ShowErrors=0 -SaveActualSize=0
+	@if [ -f /tmp/8464.png ] ; then                     \
+		file /tmp/8464.png ;                            \
+		for a in eog gthumb ; do 						\
+			if which $$a >/dev/null 2>/dev/null ; then  \
+				$$a /tmp/8464.png; 						\
+				break ;									\
+			fi											\
+		done                                            \
+	fi
 
 install: ldview
 	install -D -m 755 ldview $(PREFIX)/usr/bin/ldview

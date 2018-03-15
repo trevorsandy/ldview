@@ -33,8 +33,10 @@ public:
 	virtual void getSize(int &xSize, int &ySize);
 	int getWidth(void) const { return width; }
 	int getHeight(void) const { return height; }
+	virtual void setDpi(int value) { dpi = value; }
+	int getDpi(void) const { return dpi; }
 	virtual void setLineAlignment(int value);
-	int getLineAlignment(void) { return lineAlignment; }
+	int getLineAlignment(void) const { return lineAlignment; }
 	virtual void setFlipped(bool value);
 	bool getFlipped(void) { return flipped; }
 	virtual void allocateImageData(void);
@@ -62,6 +64,10 @@ public:
 	virtual void autoCrop(void);
 	const char *getComment(void) { return comment; }
 	virtual TCImageOptions *getCompressionOptions(void);
+	TCImage *getScaledImage(int scaledWidth, int scaledHeight,
+		bool premultipliedAlpha = false);
+	TCImage *getScaledImage(double scaleFactor,
+		bool premultipliedAlpha = false);
 
 	static int roundUp(int value, int nearest);
 	static void addImageFormat(TCImageFormat *imageFormat,
@@ -69,14 +75,20 @@ public:
 
 #ifdef WIN32
 	static TCImage *createFromResource(HMODULE hModule, int resourceId,
-		int lineAlignment = 1, bool flipped = false);
+		int lineAlignment, bool flipped, LPCTSTR resourceType);
+	static TCImage *createFromResource(HMODULE hModule, int resourceId,
+		int lineAlignment = 1, bool flipped = false, double scaleFactor = 1.0);
 	static HBITMAP createDIBSection(HDC hBitmapDC, int bitmapWidth,
-		int bitmapHeight, int hDPI, int vDPI, BYTE **bmBuffer);
-	static HICON loadIconFromPngResource(HMODULE hModule, int resourceId);
+		int bitmapHeight, BYTE **bmBuffer, bool force32 = false);
+	static HICON loadIconFromPngResource(HMODULE hModule, int resourceId,
+		double scaleFactor = 1.0, bool force32 = false);
+	static HBITMAP loadBmpFromPngResource(HMODULE hModule, int resourceId,
+		double scaleFactor = 1.0, bool force32 = false, int rightPad = 0);
 
+	HBITMAP createBmp(bool force32 = false, int rightPad = 0);
 	void getBmpAndMask(HBITMAP &hBitmap, HBITMAP &hMask,
-		bool updateSource = false);
-	HBITMAP createMask(bool updateSource = false);
+		bool updateSource = false, bool force32 = false);
+	HBITMAP createMask(bool updateSource = false, TCByte threshold = 128);
 #endif // WIN32
 protected:
 	virtual ~TCImage(void);
@@ -94,6 +106,7 @@ protected:
 	int bytesPerPixel;
 	int width;
 	int height;
+	int dpi;
 	int lineAlignment;
 	bool flipped;
 	char *formatName;

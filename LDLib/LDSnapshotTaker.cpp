@@ -50,7 +50,7 @@ using namespace TREGLExtensionsNS;
 class FBOHelper
 {
 public:
-	FBOHelper(bool useFBO, bool b16BPC) :
+	FBOHelper(bool useFBO, bool b16BPC, LDSnapshotTaker* snapshotTaker = NULL) :
 		m_useFBO(useFBO),
 		m_16BPC(b16BPC),
 		m_stencilBuffer(0)
@@ -139,6 +139,10 @@ public:
 				debugPrintf("FBO Failed!\n");
 			}
 		}
+		if (snapshotTaker != NULL && !snapshotTaker->hasRenderSize())
+		{
+			snapshotTaker->setRenderSize(FBO_SIZE, FBO_SIZE);
+		}
 		sm_active = true;
 	}
 	~FBOHelper()
@@ -183,8 +187,10 @@ m_grabSetupDone(false),
 m_gl2psAllowed(TCUserDefaults::boolForKey(GL2PS_ALLOWED_KEY, false, false)),
 m_useFBO(false),
 m_16BPC(false),
+m_canceled(false),
 m_width(-1),
-m_height(-1)
+m_height(-1),
+m_scaleFactor(1.0)
 {
 }
 
@@ -201,8 +207,10 @@ m_grabSetupDone(false),
 m_gl2psAllowed(TCUserDefaults::boolForKey(GL2PS_ALLOWED_KEY, false, false)),
 m_useFBO(false),
 m_16BPC(false),
+m_canceled(false),
 m_width(-1),
-m_height(-1)
+m_height(-1),
+m_scaleFactor(1.0f)
 {
 }
 
@@ -259,18 +267,17 @@ LDrawModelViewer::ExportType LDSnapshotTaker::exportTypeForFilename(
 	}
 }
 
-bool LDSnapshotTaker::exportFiles(void)
+bool LDSnapshotTaker::exportFiles(bool *tried /*= nullptr*/)
 {
 	bool retValue = false;
-	TCStringArray *unhandledArgs =
-		TCUserDefaults::getUnhandledCommandLineArgs();
+	bool exportFiles = false;
+	TCStringArray *unhandledArgs = getUnhandledCommandLineArgs(
+		EXPORT_FILES_LIST_KEY, exportFiles);
 
 	if (unhandledArgs)
 	{
 		int i;
 		int count = unhandledArgs->getCount();
-		bool exportFiles = TCUserDefaults::boolForKey(EXPORT_FILES_KEY,
-			false, false);
 		char *exportsDir = NULL;
 		const char *exportExt = NULL;
 		bool commandLineType = false;
@@ -279,6 +286,11 @@ bool LDSnapshotTaker::exportFiles(void)
 		std::string exportSuffix =
 			TCUserDefaults::commandLineStringForKey(EXPORT_SUFFIX_KEY);
 
+		if (!exportFiles)
+		{
+			exportFiles = TCUserDefaults::boolForKey(EXPORT_FILES_KEY,
+				false, false);
+		}
 		m_width = (int)TCUserDefaults::longForKey(SAVE_WIDTH_KEY, 640, false);
 		m_height = (int)TCUserDefaults::longForKey(SAVE_HEIGHT_KEY, 480, false);
 		if (!exportSuffix.empty())
@@ -409,7 +421,7 @@ bool LDSnapshotTaker::exportFiles(void)
 						exportFilename = exportFilename.substr(0,
 							exportFilename.rfind('.'));
 					}
-					delete baseFilename;
+					delete[] baseFilename;
 					exportFilename += mpdName;
 					exportFilename += exportExt;
 				}
@@ -421,7 +433,7 @@ bool LDSnapshotTaker::exportFiles(void)
 					if (tempFilename != NULL)
 					{
 						exportFilename = tempFilename;
-						delete tempFilename;
+						delete[] tempFilename;
 					}
 					if (exportFilename.size() > 0 && !commandLineType)
 					{
@@ -431,15 +443,37 @@ bool LDSnapshotTaker::exportFiles(void)
 				}
 				if (exportFilename.size() > 0)
 				{
+					updateModelFilename(arg);
 					retValue = exportFile(exportFilename, arg, zoomToFit) ||
 						retValue;
+					if (tried != NULL)
+					{
+						*tried = true;
+					}
 				}
 			}
 		}
-		delete exportsDir;
+		delete[] exportsDir;
 		unhandledArgs->release();
 	}
 	return retValue;
+}
+
+void LDSnapshotTaker::updateModelFilename(const char *modelFilename)
+{
+	if (m_modelViewer && m_modelViewer->getFilename())
+	{
+		m_modelViewer->setFilename(modelFilename);
+		m_modelViewer->loadModel();
+	}
+	else if (m_modelViewer)
+	{
+		m_modelViewer->setFilename(modelFilename);
+	}
+	else
+	{
+		m_modelFilename = modelFilename;
+	}
 }
 
 bool LDSnapshotTaker::exportFile(
@@ -447,8 +481,17 @@ bool LDSnapshotTaker::exportFile(
 	const char *modelPath,
 	bool zoomToFit)
 {
+	TCAlertManager::sendAlert(alertClass(), this, _UC("PreFbo"));
+#ifdef __APPLE__
+	FBOHelper fboHelper(m_useFBO, m_16BPC, this);
+#else // __APPLE__
 	FBOHelper fboHelper(m_useFBO, m_16BPC);
+#endif // !__APPLE__
 	grabSetup();
+	if (m_canceled)
+	{
+		return false;
+	}
 	m_modelViewer->setFilename(modelPath);
 	// Unfortunately, some of the camera setup is deferred until the first time
 	// the model is drawn, so draw it offscreen before doing the export.
@@ -473,18 +516,51 @@ bool LDSnapshotTaker::exportFile(
 	return false;
 }
 
-bool LDSnapshotTaker::saveImage(void)
+TCStringArray *LDSnapshotTaker::getUnhandledCommandLineArgs(
+	const char *listKey,
+	bool &foundList)
 {
-	bool retValue = false;
 	TCStringArray *unhandledArgs =
 		TCUserDefaults::getUnhandledCommandLineArgs();
+	std::string listFilename =
+		TCUserDefaults::commandLineStringForKey(listKey);
+
+	if (!listFilename.empty())
+	{
+		FILE *listFile = fopen(listFilename.c_str(), "rb");
+		if (listFile != NULL)
+		{
+			char buf[4096];
+			while (fgets(buf, sizeof(buf), listFile))
+			{
+				stripCRLF(buf);
+				if (buf[0] != '-' && buf[0] != 0)
+				{
+					if (unhandledArgs == NULL)
+					{
+						unhandledArgs = new TCStringArray;
+					}
+					unhandledArgs->addString(buf);
+					foundList = true;
+				}
+			}
+			fclose(listFile);
+		}
+	}
+	return unhandledArgs;
+}
+
+bool LDSnapshotTaker::saveImage(bool *tried /*= nullptr*/)
+{
+	bool retValue = false;
+	bool saveSnapshots = false;
+	TCStringArray *unhandledArgs = getUnhandledCommandLineArgs(
+		SAVE_SNAPSHOTS_LIST_KEY, saveSnapshots);
 
 	if (unhandledArgs)
 	{
 		int i;
 		int count = unhandledArgs->getCount();
-		bool saveSnapshots = TCUserDefaults::boolForKey(SAVE_SNAPSHOTS_KEY,
-			false, false);
 		char *saveDir = NULL;
 		const char *imageExt = NULL;
 		int width = (int)TCUserDefaults::longForKey(SAVE_WIDTH_KEY, 640, false);
@@ -494,7 +570,22 @@ bool LDSnapshotTaker::saveImage(void)
 		bool commandLineType = false;
 		std::string snapshotSuffix =
 			TCUserDefaults::commandLineStringForKey(SNAPSHOT_SUFFIX_KEY);
+		std::string commandLineScaleFactor =
+			TCUserDefaults::commandLineStringForKey(SAVE_SCALE_FACTOR_KEY);
 
+		if (!commandLineScaleFactor.empty())
+		{
+			double scaleFactor;
+			if (sscanf(commandLineScaleFactor.c_str(), "%lf", &scaleFactor) == 1)
+			{
+				m_scaleFactor = (TCFloat)scaleFactor;
+			}
+		}
+		if (!saveSnapshots)
+		{
+			saveSnapshots = TCUserDefaults::boolForKey(SAVE_SNAPSHOTS_KEY,
+				false, false);
+		}
 		if (TCUserDefaults::commandLineStringForKey(SAVE_IMAGE_TYPE_KEY).size()
 			> 0)
 		{
@@ -645,7 +736,7 @@ bool LDSnapshotTaker::saveImage(void)
 						imageFilename = imageFilename.substr(0,
 							imageFilename.rfind('.'));
 					}
-					delete baseFilename;
+					delete[] baseFilename;
 					imageFilename += mpdName;
 					imageFilename += imageExt;
 				}
@@ -657,7 +748,7 @@ bool LDSnapshotTaker::saveImage(void)
 					if (tempFilename != NULL)
 					{
 						imageFilename = tempFilename;
-						delete tempFilename;
+						delete[] tempFilename;
 					}
 					if (imageFilename.size() > 0 && !commandLineType)
 					{
@@ -667,25 +758,17 @@ bool LDSnapshotTaker::saveImage(void)
 				}
 				if (imageFilename.size() > 0)
 				{
-					if (m_modelViewer && m_modelViewer->getFilename())
-					{
-						m_modelViewer->setFilename(arg);
-						m_modelViewer->loadModel();
-					}
-					else if (m_modelViewer)
-					{
-						m_modelViewer->setFilename(arg);
-					}
-					else
-					{
-						m_modelFilename = arg;
-					}
+					updateModelFilename(arg);
 					retValue = saveImage(imageFilename.c_str(), width, height,
 						zoomToFit) || retValue;
+					if (tried != NULL)
+					{
+						*tried = true;
+					}
 				}
 			}
 		}
-		delete saveDir;
+		delete[] saveDir;
 		unhandledArgs->release();
 	}
 	return retValue;
@@ -710,7 +793,7 @@ bool LDSnapshotTaker::shouldZoomToFit(bool zoomToFit)
 			retValue = true;
 		}
 	}
-	delete cameraGlobe;
+	delete[] cameraGlobe;
 	return retValue;
 }
 
@@ -721,7 +804,14 @@ bool LDSnapshotTaker::saveImage(
 	bool zoomToFit)
 {
 	bool steps = false;
+	imageWidth = scale(imageWidth);
+	imageHeight = scale(imageHeight);
+	TCAlertManager::sendAlert(alertClass(), this, _UC("PreFbo"));
+#ifdef __APPLE__
+	FBOHelper fboHelper(m_useFBO, m_16BPC, this);
+#else // __APPLE__
 	FBOHelper fboHelper(m_useFBO, m_16BPC);
+#endif // !__APPLE__
 
 	if (!m_fromCommandLine || m_commandLineSaveSteps)
 	{
@@ -739,6 +829,10 @@ bool LDSnapshotTaker::saveImage(
 		if (!m_modelViewer)
 		{
 			grabSetup();
+		}
+		if (m_modelViewer == NULL)
+		{
+			return false;
 		}
 		origStep = m_modelViewer->getStep();
 		if (m_modelViewer->getMainModel() == NULL)
@@ -790,7 +884,7 @@ bool LDSnapshotTaker::saveImage(
 			retValue = saveStepImage(stepFilename.c_str(), imageWidth,
 				imageHeight, zoomToFit);
 		}
-		delete stepSuffix;
+		delete[] stepSuffix;
 		m_modelViewer->setStep(origStep);
 		if (viewPoint)
 		{
@@ -964,7 +1058,7 @@ bool LDSnapshotTaker::imageProgressCallback(CUCSTR message, float progress)
 		char *filename = filenameFromPath(m_currentImageFilename.c_str());
 		UCSTR ucFilename = mbstoucstring(filename);
 
-		delete filename;
+		delete[] filename;
 		if (stringHasCaseInsensitivePrefix(message, _UC("Saving")))
 		{
 			newMessage = TCLocalStrings::get(_UC("SavingPrefix"));
@@ -974,7 +1068,7 @@ bool LDSnapshotTaker::imageProgressCallback(CUCSTR message, float progress)
 			newMessage = TCLocalStrings::get(_UC("LoadingPrefix"));
 		}
 		newMessage += ucFilename;
-		delete ucFilename;
+		delete[] ucFilename;
 	}
 
 	TCProgressAlert::send("LDSnapshotTaker", newMessage.c_str(), progress,
@@ -994,6 +1088,7 @@ bool LDSnapshotTaker::writeImage(
 	bool retValue;
 	char comment[1024];
 
+	image->setDpi((int)72 * m_scaleFactor);
 	m_currentImageFilename = filename;
 	if (saveAlpha)
 	{
@@ -1078,6 +1173,12 @@ bool LDSnapshotTaker::writePng(
 	return writeImage(filename, width, height, buffer, "PNG", saveAlpha);
 }
 
+void LDSnapshotTaker::setRenderSize(int width, int height)
+{
+	m_width = width;
+	m_height = height;
+}
+
 void LDSnapshotTaker::calcTiling(
 	int desiredWidth,
 	int desiredHeight,
@@ -1104,6 +1205,17 @@ void LDSnapshotTaker::calcTiling(
 		numYTiles = 1;
 	}
 	bitmapHeight = desiredHeight / numYTiles;
+	if (m_scaleFactor != 1.0)
+	{
+		while (unscale(bitmapWidth) != bitmapWidth / m_scaleFactor)
+		{
+			--bitmapWidth;
+		}
+		while (unscale(bitmapHeight) != bitmapHeight / m_scaleFactor)
+		{
+			--bitmapHeight;
+		}
+	}
 }
 
 bool LDSnapshotTaker::canSaveAlpha(void)
@@ -1136,12 +1248,16 @@ void LDSnapshotTaker::grabSetup(void)
 	}
 	TCAlertManager::sendAlert(alertClass(), this, _UC("PreSave"));
 	m_grabSetupDone = true;
-	initModelViewer();
+	if (!m_canceled)
+	{
+		initModelViewer();
+	}
 }
 
 void LDSnapshotTaker::getViewportSize(int &width, int &height)
 {
 	GLint viewport[4] = {0};
+	glGetError(); // Flush any previous errors.
 	glGetIntegerv(GL_VIEWPORT, viewport);
 	GLenum glError = glGetError();
 	if (glError == GL_NO_ERROR)
@@ -1160,7 +1276,7 @@ void LDSnapshotTaker::initModelViewer(void)
 	if (!m_modelViewer)
 	{
 		LDPreferences *prefs;
-		if (m_width == -1 || m_height == -1)
+		if (!hasRenderSize())
 		{
 			getViewportSize(m_width, m_height);
 		}
@@ -1172,6 +1288,7 @@ void LDSnapshotTaker::initModelViewer(void)
 		prefs->loadSettings();
 		prefs->applySettings();
 		prefs->release();
+		m_modelViewer->setViewMode(LDrawModelViewer::VMExamine);
 	}
 }
 
@@ -1183,11 +1300,21 @@ TCByte *LDSnapshotTaker::grabImage(
 	bool *saveAlpha)
 {
 	FBOHelper *localHelper = NULL;
+	TCAlertManager::sendAlert(alertClass(), this, _UC("PreFbo"));
 	if (!FBOHelper::isActive())
-		{
+	{
+#ifdef __APPLE__
+		localHelper = new FBOHelper(m_useFBO, m_16BPC, this);
+#else // __APPLE__
 		localHelper = new FBOHelper(m_useFBO, m_16BPC);
-		}
+#endif // !__APPLE__
+	}
 	grabSetup();
+	if (m_canceled)
+	{
+		delete localHelper;
+		return NULL;
+	}
 
 	GLenum bufferFormat = GL_RGB;
 	GLenum componentType = GL_UNSIGNED_BYTE;
@@ -1196,8 +1323,9 @@ TCByte *LDSnapshotTaker::grabImage(
 	TCVector origCameraPosition = m_modelViewer->getCamera().getPosition();
 	TCFloat origXPan = m_modelViewer->getXPan();
 	TCFloat origYPan = m_modelViewer->getYPan();
-	int origWidth = m_modelViewer->getWidth();
-	int origHeight = m_modelViewer->getHeight();
+	TCFloat origWidth = m_modelViewer->getFloatWidth();
+	TCFloat origHeight = m_modelViewer->getFloatHeight();
+	TCFloat origScaleFactor = m_modelViewer->getScaleFactor();
 	bool origAutoCenter = m_modelViewer->getAutoCenter();
 	int newWidth, newHeight;
 	int numXTiles, numYTiles;
@@ -1221,6 +1349,7 @@ TCByte *LDSnapshotTaker::grabImage(
 	{
 		m_modelViewer->setStep(m_step);
 	}
+	m_modelViewer->setScaleFactor(m_scaleFactor);
 	if (m_useFBO)
 	{
 		newWidth = FBO_SIZE;
@@ -1232,15 +1361,16 @@ TCByte *LDSnapshotTaker::grabImage(
 	}
 	if (newWidth == 0 || newHeight == 0)
 	{
+		delete localHelper;
 		return NULL;
 	}
-	m_modelViewer->setWidth(newWidth);
-	m_modelViewer->setHeight(newHeight);
+	m_modelViewer->setWidth(unscale(newWidth));
+	m_modelViewer->setHeight(unscale(newHeight));
 	m_modelViewer->perspectiveView();
 	calcTiling(imageWidth, imageHeight, newWidth, newHeight, numXTiles,
 		numYTiles);
-	m_modelViewer->setWidth(newWidth);
-	m_modelViewer->setHeight(newHeight);
+	m_modelViewer->setWidth(unscale(newWidth));
+	m_modelViewer->setHeight(unscale(newHeight));
 	if (zoomToFit)
 	{
 		m_modelViewer->setForceZoomToFit(true);
@@ -1333,6 +1463,7 @@ TCByte *LDSnapshotTaker::grabImage(
 	m_modelViewer->setYTile(0);
 	m_modelViewer->setNumXTiles(1);
 	m_modelViewer->setNumYTiles(1);
+	m_modelViewer->setScaleFactor(origScaleFactor);
 	m_modelViewer->setWidth(origWidth);
 	m_modelViewer->setHeight(origHeight);
 	m_modelViewer->setSaveAlpha(false);
@@ -1361,9 +1492,9 @@ LDConsoleAlertHandler* LDSnapshotTaker::getConsoleAlertHandler(void)
 {
 	if (sm_consoleAlerts)
 	{
-		int verbosity = 0;
+		int verbosity = 1;
 		TCStringArray *unhandledArgs =
-		TCUserDefaults::getUnhandledCommandLineArgs();
+			TCUserDefaults::getUnhandledCommandLineArgs();
 		
 		if (unhandledArgs != NULL)
 		{
@@ -1371,33 +1502,45 @@ LDConsoleAlertHandler* LDSnapshotTaker::getConsoleAlertHandler(void)
 			for (int i = 0; i < count; ++i)
 			{
 				char *arg = unhandledArgs->stringAtIndex(i);
-				if (strcasecmp(arg, "-v") == 0)
+				if (strcasecmp(arg, "-q") == 0)
+				{
+					--verbosity;
+				}
+				else if (strcasecmp(arg, "-qq") == 0)
+				{
+					verbosity -= 2;
+				}
+				else if (strcasecmp(arg, "-v") == 0)
 				{
 					++verbosity;
 				}
-				if (strcasecmp(arg, "-vv") == 0)
-				{
-					verbosity += 2;
-				}
 			}
+			unhandledArgs->release();
 		}
 		return new LDConsoleAlertHandler(verbosity);
 	}
 	return NULL;
 }
 
-bool LDSnapshotTaker::doCommandLine(bool doSnapshots, bool doExports)
+bool LDSnapshotTaker::doCommandLine(
+	bool doSnapshots,
+	bool doExports,
+	bool *tried /*= nullptr*/)
 {
 	LDSnapshotTaker *snapshotTaker = new LDSnapshotTaker;
 	LDConsoleAlertHandler *consoleAlertHandler = getConsoleAlertHandler();
 	bool retValue = false;
+	if (tried != NULL)
+	{
+		*tried = false;
+	}
 	if (doSnapshots)
 	{
-		retValue = snapshotTaker->saveImage();
+		retValue = snapshotTaker->saveImage(tried);
 	}
 	if (doExports)
 	{
-		retValue = snapshotTaker->exportFiles() || retValue;
+		retValue = snapshotTaker->exportFiles(tried) || retValue;
 	}
 
 	snapshotTaker->release();
@@ -1422,7 +1565,7 @@ std::string LDSnapshotTaker::removeStepSuffix(
 	std::string newString;
 
 	newString = dirPart;
-	delete dirPart;
+	delete[] dirPart;
 #if defined(WIN32) || defined(__APPLE__)
 	// case-insensitive file systems
 	convertStringToLower(&fileString[0]);
@@ -1441,13 +1584,13 @@ std::string LDSnapshotTaker::removeStepSuffix(
 		// case-insensitive file systems
 		// Restore filename to original case
 		fileString = filePart;
-		delete filePart;
+		delete[] filePart;
 #endif // WIN32 || __APPLE__
 		fileString.erase(suffixLoc, i - suffixLoc);
 	}
 	else
 	{
-		delete filePart;
+		delete[] filePart;
 		return filename;
 	}
 	if (newString.size() > 0)
@@ -1457,7 +1600,7 @@ std::string LDSnapshotTaker::removeStepSuffix(
 	newString += fileString;
 	filePart = cleanedUpPath(newString.c_str());
 	newString = filePart;
-	delete filePart;
+	delete[] filePart;
 	return newString;
 }
 

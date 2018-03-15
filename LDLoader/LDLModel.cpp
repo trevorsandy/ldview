@@ -39,8 +39,8 @@ StringList LDLModel::sm_checkDirs;
 
 LDLModel::LDLModelCleanup::~LDLModelCleanup(void)
 {
-	delete LDLModel::sm_systemLDrawDir;
-	delete LDLModel::sm_defaultLDrawDir;
+	delete[] LDLModel::sm_systemLDrawDir;
+	delete[] LDLModel::sm_defaultLDrawDir;
 	LDLModel::sm_systemLDrawDir = NULL;
 	if (LDLModel::sm_lDrawIni)
 	{
@@ -55,10 +55,14 @@ LDLModel::LDLModel(void)
 	m_author(NULL),
 	m_description(NULL),
 	m_fileLines(NULL),
+	m_mpdTexmapModels(NULL),
+	m_mpdTexmapLines(NULL),
+	m_mpdTexmapImages(NULL),
 	m_mainModel(NULL),
 	m_activeLineCount(0),
 	m_activeMPDModel(NULL),
-	m_texmapImage(NULL)
+	m_texmapImage(NULL),
+	m_dataStartIndex(-1)
 {
 	// Initialize Private flags
 	m_flags.loadingPart = false;
@@ -99,6 +103,9 @@ LDLModel::LDLModel(const LDLModel &other)
 	m_author(copyString(other.m_author)),
 	m_description(copyString(other.m_description)),
 	m_fileLines(NULL),
+	m_mpdTexmapModels(NULL),
+	m_mpdTexmapLines(NULL),
+	m_mpdTexmapImages(NULL),
 	m_mainModel(other.m_mainModel),
 	m_stepIndices(other.m_stepIndices),
 	m_activeLineCount(other.m_activeLineCount),
@@ -114,15 +121,30 @@ LDLModel::LDLModel(const LDLModel &other)
 	{
 		m_fileLines = (LDLFileLineArray *)other.m_fileLines->copy();
 	}
+	if (other.m_mpdTexmapModels)
+	{
+		m_mpdTexmapModels = (LDLModelArray *)other.m_mpdTexmapModels->copy();
+	}
+	if (other.m_mpdTexmapLines)
+	{
+		m_mpdTexmapLines = (LDLCommentLineArray *)other.m_mpdTexmapLines->copy();
+	}
+	if (other.m_mpdTexmapImages)
+	{
+		m_mpdTexmapImages = (TCImageArray *)other.m_mpdTexmapImages->copy();
+	}
 }
 
 void LDLModel::dealloc(void)
 {
-	delete m_filename;
-	delete m_name;
-	delete m_author;
-	delete m_description;
+	delete[] m_filename;
+	delete[] m_name;
+	delete[] m_author;
+	delete[] m_description;
 	TCObject::release(m_fileLines);
+	TCObject::release(m_mpdTexmapModels);
+	TCObject::release(m_mpdTexmapLines);
+	TCObject::release(m_mpdTexmapImages);
 	TCObject::release(m_texmapImage);
 	sm_modelCount--;
 	TCObject::dealloc();
@@ -135,13 +157,13 @@ TCObject *LDLModel::copy(void) const
 
 void LDLModel::setFilename(const char *filename)
 {
-	delete m_filename;
+	delete[] m_filename;
 	m_filename = copyString(filename);
 }
 
 void LDLModel::setName(const char *name)
 {
-	delete m_name;
+	delete[] m_name;
 	m_name = copyString(name);
 }
 
@@ -224,7 +246,7 @@ LDLModel *LDLModel::subModelNamed(const char *subModelName, bool lowRes,
 		}
 		else
 		{
-			delete adjustedName;
+			delete[] adjustedName;
 			ancestorCheck = false;
 			return NULL;
 		}
@@ -239,19 +261,18 @@ LDLModel *LDLModel::subModelNamed(const char *subModelName, bool lowRes,
 	subModel = (LDLModel*)(subModelDict->objectForKey(dictName));
 	if (subModel == NULL)
 	{
-		FILE* subModelFile;
-		char subModelPath[1024];
+		std::ifstream subModelStream;
+		std::string subModelPath;
 
-		if ((subModelFile = openSubModelNamed(adjustedName, subModelPath,
+		if (openSubModelNamed(adjustedName, subModelPath, subModelStream,
 			knownPart, &loop))
-			!= NULL)
 		{
 			bool clearSubModel = false;
-			replaceStringCharacter(subModelPath, '\\', '/');
+			replaceStringCharacter(&subModelPath[0], '\\', '/');
 			subModel = new LDLModel;
-			subModel->setFilename(subModelPath);
+			subModel->setFilename(subModelPath.c_str());
 
-			if (!initializeNewSubModel(subModel, dictName, subModelFile))
+			if (!initializeNewSubModel(subModel, dictName, subModelStream))
 			{
 				clearSubModel = true;
 			}
@@ -268,7 +289,7 @@ LDLModel *LDLModel::subModelNamed(const char *subModelName, bool lowRes,
 	{
 		sendUnofficialWarningIfPart(subModel, fileLine, subModelName);
 	}
-	delete adjustedName;
+	delete[] adjustedName;
 	if (!subModel && !secondAttempt && !loop)
 	{
 		LDLFindFileAlert *alert = new LDLFindFileAlert(subModelName);
@@ -309,54 +330,62 @@ void LDLModel::sendUnofficialWarningIfPart(
 		sucprintf(szWarning, COUNT_OF(szWarning),
 			TCLocalStrings::get(_UC("LDLModelUnofficialPart")),
 			ucSubModelName);
-		delete ucSubModelName;
+		delete[] ucSubModelName;
 		reportWarning(LDLEUnofficialPart, *fileLine, szWarning);
 	}
 }
 
 // NOTE: static function
-FILE *LDLModel::openFile(const char *filename)
+bool LDLModel::openFile(const char *filename, std::ifstream &modelStream)
 {
-	FILE *modelFile = NULL;
 	char *newFilename = copyString(filename);
 
 	convertStringToLower(newFilename);
 	if (fileCaseCallback)
 	{
-		// Use binary mode to work around problem with fseek on a non-binary
-		// file.  The file parsing code will still work fine and strip out the
-		// extra data.
-		if ((modelFile = fopen(newFilename, "rb")) == NULL)
+		// Use binary mode to work with DOS and Unix line endings and allow
+		// seeking in the file.  The file parsing code will still work fine and
+		// strip out the extra data.
+		modelStream.open(newFilename, std::ios_base::binary);
+		if (modelStream.is_open() && !modelStream.fail())
 		{
-			convertStringToUpper(newFilename);
-			if ((modelFile = fopen(newFilename, "rb")) == NULL)
-			{
-				strcpy(newFilename, filename);
-				if ((modelFile = fopen(filename, "rb")) == NULL)
-				{
-					if (fileCaseCallback(newFilename))
-					{
-						modelFile = fopen(newFilename, "rb");
-					}
-				}
-			}
+			delete[] newFilename;
+			return true;
+		}
+		convertStringToUpper(newFilename);
+		modelStream.open(newFilename, std::ios_base::binary);
+		if (modelStream.is_open() && !modelStream.fail())
+		{
+			delete[] newFilename;
+			return true;
+		}
+		strcpy(newFilename, filename);
+		modelStream.open(newFilename, std::ios_base::binary);
+		if (modelStream.is_open() && !modelStream.fail())
+		{
+			delete[] newFilename;
+			return true;
+		}
+		if (fileCaseCallback(newFilename))
+		{
+			modelStream.open(newFilename, std::ios_base::binary);
 		}
 	}
 	else
 	{
-		modelFile = fopen(newFilename, "rb");
+		modelStream.open(newFilename, std::ios_base::binary);
 	}
-	delete newFilename;
-	return modelFile;
+	delete[] newFilename;
+	return modelStream.is_open();
 }
 
-FILE *LDLModel::openModelFile(
+bool LDLModel::openModelFile(
 	const char *filename,
+	std::ifstream &modelStream,
 	bool isText,
 	bool knownPart /*= false*/)
 {
-	FILE *modelFile = openFile(filename);
-	if (modelFile != NULL)
+	if (openFile(filename, modelStream))
 	{
 		if (knownPart)
 		{
@@ -367,24 +396,22 @@ FILE *LDLModel::openModelFile(
 			// Check for UTF-8 Byte order mark (BOM), and skip over it if
 			// present. Only do this on text files. (Right now, texture maps
 			// are the only binary files that get opened by this function.)
-			fpos_t origPos;
-			if (fgetpos(modelFile, &origPos) == 0)
+			std::streampos origPos = modelStream.tellg();
+			unsigned char bomBuf[3] = { 0, 0, 0 };
+			bool hasBom = false;
+			modelStream.read((char *)bomBuf, 3);
+			if (modelStream)
 			{
-				unsigned char bomBuf[3];
-				bool hasBom = false;
-				if (fread(bomBuf, 3, 1, modelFile) == 1)
-				{
-					hasBom = bomBuf[0] == 0xEF && bomBuf[1] == 0xBB &&
-						bomBuf[2] == 0xBF;
-				}
-				if (!hasBom)
-				{
-					fsetpos(modelFile, &origPos);
-				}
+				hasBom = bomBuf[0] == 0xEF && bomBuf[1] == 0xBB &&
+					bomBuf[2] == 0xBF;
+			}
+			if (!hasBom)
+			{
+				modelStream.seekg(origPos);
 			}
 		}
 	}
-	return modelFile;
+	return modelStream.is_open() && !modelStream.fail();
 }
 
 bool LDLModel::isSubPart(const char *subModelName)
@@ -402,24 +429,37 @@ bool LDLModel::isAbsolutePath(const char *path)
 #endif
 }
 
-FILE* LDLModel::openSubModelNamed(
+// NOTE: static function.
+void LDLModel::combinePathParts(
+	std::string &path,
+	const std::string &left,
+	const std::string& middle,
+	const std::string &right)
+{
+	path = left;
+	path += middle;
+	path += right;
+}
+
+bool LDLModel::openSubModelNamed(
 	const char* subModelName,
-	char* subModelPath,
+	std::string &subModelPath,
+	std::ifstream &subModelStream,
 	bool knownPart,
 	bool *pLoop /*= NULL*/,
 	bool isText /*= true*/)
 {
-	FILE* subModelFile;
 	TCStringArray *extraSearchDirs = m_mainModel->getExtraSearchDirs();
 
 	if (pLoop != NULL)
 	{
 		*pLoop = false;
 	}
-	strcpy(subModelPath, subModelName);
-	if (isAbsolutePath(subModelPath))
+	subModelPath = subModelName;
+	if (isAbsolutePath(subModelPath.c_str()))
 	{
-		return openModelFile(subModelPath, isText, knownPart);
+		return openModelFile(subModelPath.c_str(), subModelStream, isText,
+			knownPart);
 	}
 	else if (sm_lDrawIni && sm_lDrawIni->nSearchDirs > 0)
 	{
@@ -443,25 +483,25 @@ FILE* LDLModel::openSubModelNamed(
 			}
 			if ((searchDir->Flags & LDSDF_SKIP) == 0 && !skip)
 			{
-				sprintf(subModelPath, "%s/%s", searchDir->Dir, subModelName);
-				if ((subModelFile = openModelFile(subModelPath, isText)) !=
-					NULL)
+				combinePathParts(subModelPath, searchDir->Dir, "/",
+					subModelName);
+				if (openModelFile(subModelPath.c_str(), subModelStream, isText))
 				{
 					char *mainModelPath = copyString(m_mainModel->getFilename());
 #ifdef WIN32
 					replaceStringCharacter(mainModelPath, '\\', '/');
-					replaceStringCharacter(subModelPath, '\\', '/');
+					replaceStringCharacter(&subModelPath[0], '\\', '/');
 #endif // WIN32
-					if (strcasecmp(mainModelPath, subModelPath) == 0)
+					if (strcasecmp(mainModelPath, subModelPath.c_str()) == 0)
 					{
 						// Recursive call to main model.
 						delete[] mainModelPath;
-						fclose(subModelFile);
+						subModelStream.close();
 						if (pLoop != NULL)
 						{
 							*pLoop = true;
 						}
-						return NULL;
+						return false;
 					}
 					delete[] mainModelPath;
 					if (searchDir->Flags & LDSDF_DEFPRIM)
@@ -479,25 +519,25 @@ FILE* LDLModel::openSubModelNamed(
 							m_flags.loadingPart = true;
 						}
 					}
-					return subModelFile;
+					return true;
 				}
 			}
 		}
 	}
 	else
 	{
-		if ((subModelFile = openModelFile(subModelPath, isText)) != NULL)
+		if (openModelFile(subModelPath.c_str(), subModelStream, isText))
 		{
-			return subModelFile;
+			return true;
 		}
-		sprintf(subModelPath, "%s/P/%s", lDrawDir(), subModelName);
-		if ((subModelFile = openModelFile(subModelPath, isText)) != NULL)
+		combinePathParts(subModelPath, lDrawDir(), "/P/", subModelName);
+		if (openModelFile(subModelPath.c_str(), subModelStream, isText))
 		{
 			m_flags.loadingPrimitive = true;
-			return subModelFile;
+			return true;
 		}
-		sprintf(subModelPath, "%s/PARTS/%s", lDrawDir(), subModelName);
-		if ((subModelFile = openModelFile(subModelPath, isText)) != NULL)
+		combinePathParts(subModelPath, lDrawDir(), "/PARTS/", subModelName);
+		if (openModelFile(subModelPath.c_str(), subModelStream, isText))
 		{
 			if (isSubPart(subModelName))
 			{
@@ -507,12 +547,12 @@ FILE* LDLModel::openSubModelNamed(
 			{
 				m_flags.loadingPart = true;
 			}
-			return subModelFile;
+			return true;
 		}
-		sprintf(subModelPath, "%s/MODELS/%s", lDrawDir(), subModelName);
-		if ((subModelFile = openModelFile(subModelPath, isText)) != NULL)
+		combinePathParts(subModelPath, lDrawDir(), "/MODELS/", subModelName);
+		if (openModelFile(subModelPath.c_str(), subModelStream, isText))
 		{
-			return subModelFile;
+			return true;
 		}
 	}
 	if (extraSearchDirs)
@@ -522,18 +562,27 @@ FILE* LDLModel::openSubModelNamed(
 
 		for (i = 0; i < count; i++)
 		{
-			sprintf(subModelPath, "%s/%s", (*extraSearchDirs)[i], subModelName);
-			if ((subModelFile = openModelFile(subModelPath, isText)) != NULL)
+			combinePathParts(subModelPath, (*extraSearchDirs)[i], "/",
+				subModelName);
+			if (openModelFile(subModelPath.c_str(), subModelStream, isText))
 			{
-				return subModelFile;
+				return true;
 			}
 		}
 	}
-	return NULL;
+	return false;
 }
 
-bool LDLModel::initializeNewSubModel(LDLModel *subModel, const char *dictName,
-									 FILE *subModelFile)
+bool LDLModel::initializeNewSubModel(LDLModel *subModel, const char *dictName)
+{
+	std::ifstream closedStream;
+	return initializeNewSubModel(subModel, dictName, closedStream);
+}
+
+bool LDLModel::initializeNewSubModel(
+	LDLModel *subModel,
+	const char *dictName,
+	std::ifstream &subModelStream)
 {
 	TCDictionary* subModelDict = getLoadedModels();
 
@@ -559,7 +608,7 @@ bool LDLModel::initializeNewSubModel(LDLModel *subModel, const char *dictName,
 	{
 		subModel->m_flags.unofficial = true;
 	}
-	if (subModelFile && !subModel->load(subModelFile))
+	if (subModelStream.is_open() && !subModel->load(subModelStream))
 	{
 		subModelDict->removeObjectForKey(dictName);
 		return false;
@@ -617,7 +666,7 @@ void LDLModel::setLDrawDir(const char *value)
 {
 	if (value != sm_systemLDrawDir || !value)
 	{
-		delete sm_systemLDrawDir;
+		delete[] sm_systemLDrawDir;
 		if (value)
 		{
 			sm_systemLDrawDir = cleanedUpPath(value);
@@ -683,7 +732,7 @@ void LDLModel::initCheckDirs()
 		stripTrailingPathSeparators(homeLib);
 		strcat(homeLib, libDir);
 		sm_checkDirs.push_back(homeLib);
-		delete homeLib;
+		delete[] homeLib;
 	}
 	sm_checkDirs.push_back(libDir);
 	sm_checkDirs.push_back("/Applications/Bricksmith/LDraw");
@@ -697,7 +746,7 @@ void LDLModel::initCheckDirs()
 
 		stripTrailingPathSeparators(cleanHome);
 		homeLDraw = cleanHome;
-		delete cleanHome;
+		delete[] cleanHome;
 		homeLDraw += "/ldraw";
 		sm_checkDirs.push_back(homeLDraw);
 	}
@@ -711,17 +760,17 @@ void LDLModel::initCheckDirs()
 	strcat(ldviewLDrawDir, "/ldraw");
 	sm_checkDirs.push_back(ldviewLDrawDir);
 #ifndef COCOA
-	delete ldviewLDrawDir;
+	delete[] ldviewLDrawDir;
 	char *ldviewParentDir = directoryFromPath(ldviewDir);
 	stripTrailingPathSeparators(ldviewParentDir);
 	ldviewLDrawDir = copyString(ldviewParentDir, 10);
-	delete ldviewParentDir;
+	delete[] ldviewParentDir;
 	// LDView Dir/../ldraw
 	strcat(ldviewLDrawDir, "/ldraw");
 	sm_checkDirs.push_back(ldviewLDrawDir);
 #endif // COCOA
-	delete ldviewDir;
-	delete ldviewLDrawDir;
+	delete[] ldviewDir;
+	delete[] ldviewLDrawDir;
 }
 
 // NOTE: static function.
@@ -769,7 +818,7 @@ const char* LDLModel::lDrawDir(bool defaultValue /*= false*/)
 	{
 		sm_defaultLDrawDir = copyString(sm_systemLDrawDir);
 		setLDrawDir(origValue);
-		delete origValue;
+		delete[] origValue;
 		return sm_defaultLDrawDir;
 	}
 	else
@@ -943,9 +992,9 @@ static char *myFgets(char *buf, int bufSize, FILE *file)
 }
 */
 
-bool LDLModel::read(FILE *file)
+bool LDLModel::read(std::ifstream &stream)
 {
-	char buf[2048];
+	std::string line;
 	int lineNumber = 1;
 	bool done = false;
 	bool retValue = true;
@@ -953,12 +1002,12 @@ bool LDLModel::read(FILE *file)
 	m_fileLines = new LDLFileLineArray;
 	while (!done && !getLoadCanceled())
 	{
-		if (fgets(buf, sizeof(buf), file))
+		if (std::getline(stream, line))
 		{
 			LDLFileLine *fileLine;
 
-			stripCRLF(buf);
-			fileLine = LDLFileLine::initFileLine(this, buf, lineNumber);
+			stripCRLF(&line[0]);
+			fileLine = LDLFileLine::initFileLine(this, line.c_str(), lineNumber);
 			lineNumber++;
 			m_fileLines->addObject(fileLine);
 			fileLine->release();
@@ -979,7 +1028,7 @@ bool LDLModel::read(FILE *file)
 			done = true;
 		}
 	}
-	fclose(file);
+	stream.close();
 	m_activeMPDModel = NULL;
 	return retValue && !getLoadCanceled();
 }
@@ -1016,7 +1065,7 @@ void LDLModel::reportProgress(const wchar_t *message, float progress,
 	}
 }
 
-bool LDLModel::load(FILE *file, bool trackProgress)
+bool LDLModel::load(std::ifstream &stream, bool trackProgress)
 {
 	bool retValue;
 
@@ -1024,7 +1073,7 @@ bool LDLModel::load(FILE *file, bool trackProgress)
 	{
 		reportProgress(LOAD_MESSAGE, 0.0f);
 	}
-	if (!read(file))
+	if (!read(stream))
 	{
 		if (trackProgress)
 		{
@@ -1077,10 +1126,14 @@ int LDLModel::parseMPDMeta(int index, const char *filename)
 					subModel->m_fileLines->addObject(fileLine);
 				}
 				subModel->m_activeLineCount = subModel->m_fileLines->getCount();
+				LDLModel *oldActiveMpd = m_mainModel->m_activeMPDModel;
+				m_mainModel->m_activeMPDModel = this;
 				if (!subModel->parse())
 				{
+					m_mainModel->m_activeMPDModel = oldActiveMpd;
 					return -1;
 				}
+				m_mainModel->m_activeMPDModel = oldActiveMpd;
 			}
 			else
 			{
@@ -1133,22 +1186,85 @@ void LDLModel::endTexmap(void)
 	m_texmapImage = NULL;
 }
 
-FILE *LDLModel::openTexmap(const char *filename, char *path)
+bool LDLModel::openTexmap(
+	const char *filename,
+	std::ifstream &texmapStream,
+	std::string &path)
 {
-	FILE *texmapFile = openSubModelNamed(filename, path, false, NULL, false);
-
-	if (texmapFile == NULL)
+	if (!openSubModelNamed(filename, path, texmapStream, false, NULL, false))
 	{
 		LDLFindFileAlert *alert = new LDLFindFileAlert(filename);
 
 		TCAlertManager::sendAlert(alert, this);
 		if (alert->getFileFound())
 		{
-			texmapFile = fopen(alert->getFilename(), "rb");
+			path = alert->getFilename();
+			texmapStream.open(path.c_str(), std::ios_base::binary);
 		}
 		alert->release();
 	}
-	return texmapFile;
+	return texmapStream.is_open() && !texmapStream.fail();
+}
+
+void LDLModel::endData(int index, LDLCommentLine *commentLine)
+{
+	std::string base64Text;
+	for (int i = m_dataStartIndex + 1; i < index; ++i)
+	{
+		LDLFileLine *fileLine = (*m_fileLines)[i];
+		if (fileLine->getLineType() == LDLLineTypeComment)
+		{
+			LDLCommentLine *commentLine = (LDLCommentLine *)fileLine;
+			if (commentLine->isDataRowMeta())
+			{
+				const char *line = commentLine->getLine();
+				std::string base64Line;
+				base64Line.reserve(strlen(line));
+				for (const char *lineChar = strchr(line, ':') + 1; *lineChar; ++lineChar)
+				{
+					if (isInBase64Charset(*lineChar))
+					{
+						base64Line += *lineChar;
+					}
+				}
+				base64Text += base64Line;
+			}
+		}
+	}
+	if (!base64Decode(base64Text, m_data))
+	{
+		reportError(LDLEMetaCommand, *commentLine,
+			TCLocalStrings::get(_UC("LDLModelDataDecodeError")));
+	}
+}
+
+int LDLModel::parseDataMeta(int index, LDLCommentLine *commentLine)
+{
+	if (m_dataStartIndex >= 0)
+	{
+		if (commentLine->containsDataCommand("END"))
+		{
+			endData(index, commentLine);
+		}
+		else
+		{
+			reportError(LDLEMetaCommand, *commentLine,
+				TCLocalStrings::get(_UC("LDLModelDataUnexpectedCommand")));
+		}
+	}
+	else
+	{
+		if (commentLine->containsDataCommand("START"))
+		{
+			m_dataStartIndex = index;
+		}
+		else
+		{
+			reportError(LDLEMetaCommand, *commentLine,
+				TCLocalStrings::get(_UC("LDLModelDataUnexpectedCommand")));
+		}
+	}
+	return 0;
 }
 
 int LDLModel::parseTexmapMeta(LDLCommentLine *commentLine)
@@ -1156,7 +1272,7 @@ int LDLModel::parseTexmapMeta(LDLCommentLine *commentLine)
 	if (m_flags.texmapStarted && m_flags.texmapNext)
 	{
 		reportError(LDLEGeneral, *commentLine,
-			_UC("TEXMAP command immediately after TEXMAP NEXT."));
+			TCLocalStrings::get(_UC("LDLModelTexmapCommandAfterNext")));
 		endTexmap();
 	}
 	if (m_flags.texmapStarted)
@@ -1166,7 +1282,7 @@ int LDLModel::parseTexmapMeta(LDLCommentLine *commentLine)
 			if (m_flags.texmapFallback)
 			{
 				reportError(LDLEGeneral, *commentLine,
-					_UC("Multiple FALLBACK commands in TEXMAP block."));
+					TCLocalStrings::get(_UC("LDLModelTexmapMultipleFallback")));
 			}
 			else
 			{
@@ -1189,7 +1305,7 @@ int LDLModel::parseTexmapMeta(LDLCommentLine *commentLine)
 		else
 		{
 			reportError(LDLEMetaCommand, *commentLine,
-				_UC("Unexpected TEXMAP command."));
+				TCLocalStrings::get(_UC("LDLModelTexmapUnexpectedCommand")));
 		}
 	}
 	else
@@ -1219,13 +1335,13 @@ int LDLModel::parseTexmapMeta(LDLCommentLine *commentLine)
 			else
 			{
 				reportError(LDLEGeneral, *commentLine,
-					_UC("Unknown TEXMAP method."));
+					TCLocalStrings::get(_UC("LDLModelTexmapUnknownMethod")));
 				return -1;
 			}
 			if (commentLine->getNumWords() < 13 + extraParams)
 			{
 				reportError(LDLEParse, *commentLine,
-					_UC("Error parsing TEXMAP command."));
+					TCLocalStrings::get(_UC("LDLModelTexmapParseError")));
 				return -1;
 			}
 			for (int i = 0; i < 3; i++)
@@ -1235,6 +1351,10 @@ int LDLModel::parseTexmapMeta(LDLCommentLine *commentLine)
 					m_texmapPoints[i][j] =
 						(TCFloat)atof(commentLine->getWord(3 + i * 3 + j));
 				}
+			}
+			for (int i = 0; i < extraParams; ++i)
+			{
+				m_texmapExtra[i] = (TCFloat)atof(commentLine->getWord(12 + i));
 			}
 			m_flags.texmapStarted = true;
 			m_flags.texmapFallback = false;
@@ -1250,20 +1370,73 @@ int LDLModel::parseTexmapMeta(LDLCommentLine *commentLine)
 			{
 				std::string filename = commentLine->getWord(12 + extraParams);
 				std::string pathFilename = std::string("textures/") + filename;
-				char path[1024];
-				FILE *texmapFile = openTexmap(pathFilename.c_str(), path);
-				if (texmapFile == NULL)
+				bool delayedLoad = false;
+				std::string path;
+				TCDictionary* subModelDict = getLoadedModels();
+				LDLModel *texmapModel = (LDLModel*)subModelDict->objectForKey(filename.c_str());
+				if (texmapModel != NULL)
 				{
-					texmapFile = openTexmap(filename.c_str(), path);
+					LDLModel *activeMpd = m_mainModel->m_activeMPDModel;
+					if (activeMpd != NULL && activeMpd->m_filename != NULL)
+					{
+						char *baseName = filenameFromPath(activeMpd->m_filename);
+						combinePathParts(path, baseName, ":", filename);
+						delete[] baseName;
+					}
+					else
+					{
+						combinePathParts(path, "MPD:", filename);
+					}
+					if (texmapModel->m_data.empty())
+					{
+						if (m_mpdTexmapModels == NULL)
+						{
+							m_mpdTexmapModels = new LDLModelArray;
+							m_mpdTexmapLines = new LDLCommentLineArray;
+							m_mpdTexmapImages = new TCImageArray;
+						}
+						m_mpdTexmapModels->addObject(texmapModel);
+						m_mpdTexmapLines->addObject(commentLine);
+						m_mainModel->setHaveMpdTexmaps();
+						delayedLoad = true;
+					}
 				}
-				if (texmapFile != NULL)
+				std::ifstream texmapStream;
+				if (texmapModel == NULL)
+				{
+					if (!openTexmap(pathFilename.c_str(), texmapStream, path))
+					{
+						openTexmap(filename.c_str(), texmapStream, path);
+					}
+				}
+				if ((texmapStream.is_open() && !texmapStream.fail()) ||
+					texmapModel != NULL)
 				{
 					TCImage *image = new TCImage;
+					bool loaded = false;
 
 					image->setLineAlignment(4);
-					if (image->loadFile(texmapFile))
+					if (delayedLoad)
 					{
-						char *cleanPath = cleanedUpPath(path);
+						m_mpdTexmapImages->addObject(image);
+					}
+					else if (texmapModel != NULL)
+					{
+						loaded = image->loadData(&texmapModel->m_data[0],
+							texmapModel->m_data.size());
+					}
+					else
+					{
+						texmapStream.close();
+						// Image loading from a stream would require loading the
+						// entire image into memory and then doing an in-memory
+						// load. So close the stream and use the full path that
+						// was used to open the stream to load the image.
+						loaded = image->loadFile(path.c_str());
+					}
+					if (loaded || delayedLoad)
+					{
+						char *cleanPath = cleanedUpPath(path.c_str());
 
 						m_texmapImage = image;
 						convertStringToLower(cleanPath);
@@ -1279,14 +1452,13 @@ int LDLModel::parseTexmapMeta(LDLCommentLine *commentLine)
 					{
 						image->release();
 						reportError(LDLEMetaCommand, *commentLine,
-							_UC("Error loading TEXMAP image."));
+							TCLocalStrings::get(_UC("LDLModelTexmapImageLoadError")));
 					}
-					fclose(texmapFile);
 				}
 				else
 				{
 					reportError(LDLEMetaCommand, *commentLine,
-						_UC("TEXMAP image file not found."));
+						TCLocalStrings::get(_UC("LDLModelTexmapFileNotFound")));
 				}
 				if (m_texmapImage == NULL)
 				{
@@ -1298,9 +1470,37 @@ int LDLModel::parseTexmapMeta(LDLCommentLine *commentLine)
 		else
 		{
 			reportError(LDLEMetaCommand, *commentLine,
-				_UC("Unexpected TEXMAP command."));
+				TCLocalStrings::get(_UC("LDLModelTexmapUnexpectedCommand")));
 		}
 	}
+	return 0;
+}
+
+int LDLModel::loadMpdTexmaps(void)
+{
+	if (m_mpdTexmapModels == NULL)
+	{
+		return 0;
+	}
+	int count = m_mpdTexmapModels->getCount();
+	for (int i = 0; i < count; ++i)
+	{
+		LDLModel *texmapModel = (*m_mpdTexmapModels)[i];
+		TCImage *image = (*m_mpdTexmapImages)[i];
+		if (!image->loadData(&texmapModel->m_data[0],
+			texmapModel->m_data.size()))
+		{
+			LDLCommentLine *commentLine = (*m_mpdTexmapLines)[i];
+			reportError(LDLEMetaCommand, *commentLine,
+				TCLocalStrings::get(_UC("LDLModelTexmapImageLoadError")));
+		}
+	}
+	m_mpdTexmapModels->release();
+	m_mpdTexmapModels = NULL;
+	m_mpdTexmapLines->release();
+	m_mpdTexmapLines = NULL;
+	m_mpdTexmapImages->release();
+	m_mpdTexmapImages = NULL;
 	return 0;
 }
 
@@ -1468,9 +1668,13 @@ int LDLModel::parseComment(int index, LDLCommentLine *commentLine)
 	{
 		return parseTexmapMeta(commentLine);
 	}
+	else if (commentLine->isDataMeta())
+	{
+		return parseDataMeta(index, commentLine);
+	}
 	else if (index == 0)
 	{
-		delete m_description;
+		delete[] m_description;
 		m_description = copyString(&commentLine->getLine()[1]);
 		stripLeadingWhitespace(m_description);
 		stripTrailingWhitespace(m_description);
@@ -1530,7 +1734,8 @@ bool LDLModel::parse(void)
 					else
 					{
 						actionLine->setTexmapSettings(m_texmapType,
-							m_texmapFilename, m_texmapImage, m_texmapPoints);
+							m_texmapFilename, m_texmapImage, m_texmapPoints,
+							m_texmapExtra);
 						if (m_flags.texmapNext)
 						{
 							endTexmap();
@@ -1546,7 +1751,7 @@ bool LDLModel::parse(void)
 				{
 					((LDLCommentLine *)fileLine)->setTexmapSettings(
 						m_texmapType, m_texmapFilename, m_texmapImage,
-						m_texmapPoints);
+						m_texmapPoints, m_texmapExtra);
 				}
 			}
 			if (fileLine->parse())
@@ -1902,7 +2107,7 @@ LDLError *LDLModel::newError(LDLErrorType type, const LDLFileLine &fileLine,
 			extraInfo->addString(components[i]);
 		}
 		error = new LDLError(type, message, m_filename, fileLine,
-			fileLine.getLineNumber(), extraInfo);
+			fileLine.getFormattedLine(), fileLine.getLineNumber(), extraInfo);
 		extraInfo->release();
 #else // TC_NO_UNICODE
 		ucstringVector extraInfo;
@@ -1913,13 +2118,13 @@ LDLError *LDLModel::newError(LDLErrorType type, const LDLFileLine &fileLine,
 			extraInfo.push_back(components[i]);
 		}
 		error = new LDLError(type, message, m_filename, fileLine,
-			fileLine.getLineNumber(), extraInfo);
+			fileLine.getFormattedLine(), fileLine.getLineNumber(), extraInfo);
 #endif // TC_NO_UNICODE
 	}
 	else
 	{
 		error = new LDLError(type, message, m_filename, fileLine,
-			fileLine.getLineNumber());
+			fileLine.getFormattedLine(), fileLine.getLineNumber());
 	}
 	deleteStringArray(components, componentCount);
 	return error;
@@ -1959,7 +2164,8 @@ LDLError *LDLModel::newError(LDLErrorType type, CUCSTR format, va_list argPtr)
 		{
 			extraInfo->addString(components[i]);
 		}
-		error = new LDLError(type, message, m_filename, NULL, -1, extraInfo);
+		error = new LDLError(type, message, m_filename, NULL, NULL, -1,
+			extraInfo);
 		extraInfo->release();
 #else // TC_NO_UNICODE
 		ucstringVector extraInfo;
@@ -1969,12 +2175,13 @@ LDLError *LDLModel::newError(LDLErrorType type, CUCSTR format, va_list argPtr)
 		{
 			extraInfo.push_back(components[i]);
 		}
-		error = new LDLError(type, message, m_filename, NULL, -1, extraInfo);
+		error = new LDLError(type, message, m_filename, NULL, NULL, -1,
+			extraInfo);
 #endif // TC_NO_UNICODE
 	}
 	else
 	{
-		error = new LDLError(type, message, m_filename, NULL, -1);
+		error = new LDLError(type, message, m_filename, NULL, NULL, -1);
 	}
 	deleteStringArray(components, componentCount);
 	return error;

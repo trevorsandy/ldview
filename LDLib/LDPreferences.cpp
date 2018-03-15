@@ -93,9 +93,9 @@ void LDPreferences::setModelViewer(LDrawModelViewer *value)
 		//}
 		TCObject::release(m_modelViewer);
 		m_modelViewer = value;
-		m_modelViewer->retain();
 		if (m_modelViewer != NULL)
 		{
+			m_modelViewer->retain();
 			m_modelViewer->setPreferences(this);
 		}
 	}
@@ -187,16 +187,17 @@ void LDPreferences::applyLDrawSettings(void)
 		TCStringArray *extraDirs = new TCStringArray;
 		bool different = false;
 		unsigned int oldCount = 0;
+		size_t newCount = m_extraDirs.size();
 
 		if (oldExtraDirs)
 		{
 			oldCount = oldExtraDirs->getCount();
 		}
-		if (oldCount != m_extraDirs.size())
+		if (oldCount != newCount)
 		{
 			different = true;
 		}
-		for (int i = 0; i < (int)m_extraDirs.size(); i++)
+		for (int i = 0; i < (int)newCount; i++)
 		{
 			const char *extraDir = m_extraDirs[i].c_str();
 
@@ -335,7 +336,7 @@ void LDPreferences::applyUpdatesSettings(void)
 							TCWebClient::setProxyPort(proxyPort);
 						}
 					}
-					delete proxyServer;
+					delete[] proxyServer;
 				}
 			}
 			TCUserDefaults::setAppName(appName.c_str());
@@ -1268,7 +1269,7 @@ std::string LDPreferences::getStringSetting(
 	if (tmpString)
 	{
 		result = tmpString;
-		delete tmpString;
+		delete[] tmpString;
 	}
 	return result;
 }
@@ -2129,7 +2130,7 @@ std::string LDPreferences::getDefaultSaveDir(
 			char *temp = directoryFromPath(modelFilename.c_str());
 			std::string modelDir(temp);
 
-			delete temp;
+			delete[] temp;
 			return modelDir;
 		}
 	}

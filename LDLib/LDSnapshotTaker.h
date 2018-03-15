@@ -45,19 +45,25 @@ public:
 	{
 		return m_productVersion;
 	}
+	void setScaleFactor(TCFloat value) { m_scaleFactor = value; }
+	TCFloat getScaleFactor(void) const { return m_scaleFactor; }
+	void setRenderSize(int width, int height);
+	bool hasRenderSize(void) const { return m_width != -1 && m_height != -1; }
 	void calcTiling(int desiredWidth, int desiredHeight, int &bitmapWidth,
 		int &bitmapHeight, int &numXTiles, int &numYTiles);
 
 	bool saveImage(const char *filename, int imageWidth, int imageHeight,
 		bool zoomToFit);
-	bool saveImage(void);
-	bool exportFiles(void);
+	bool saveImage(bool *tried = nullptr);
+	bool exportFiles(bool *tried = nullptr);
 	TCByte *grabImage(int &imageWidth, int &imageHeight, bool zoomToFit,
 		TCByte *buffer, bool *saveAlpha);
+	void cancel(void) { m_canceled = true;  }
 	static void setShowConsoleAlerts(bool value) { sm_consoleAlerts = value; }
 	static LDConsoleAlertHandler* getConsoleAlertHandler(void);
 
-	static bool doCommandLine(bool doSnapshots = true, bool doExports = true);
+	static bool doCommandLine(bool doSnapshots = true, bool doExports = true,
+		bool *tried = nullptr);
 	static std::string removeStepSuffix(const std::string &filename,
 		const std::string &stepSuffix);
 	static std::string addStepSuffix(const std::string &filename,
@@ -91,6 +97,11 @@ protected:
 		bool zoomToFit);
 	bool saveGl2psStepImage(const char *filename, int imageWidth,
 		int imageHeight, bool zoomToFit);
+	int scale(int value) const { return (int)(value * m_scaleFactor); }
+	int unscale(int value) const { return (int)(value / m_scaleFactor); }
+	TCStringArray *getUnhandledCommandLineArgs(const char *listKey,
+		bool &foundList);
+	void updateModelFilename(const char *modelFilename);
 
 	static void getViewportSize(int &width, int &height);
 	static bool staticImageProgressCallback(CUCSTR message, float progress,
@@ -110,8 +121,10 @@ protected:
 	bool m_gl2psAllowed;
 	bool m_useFBO;
 	bool m_16BPC;
+	bool m_canceled;
 	int m_width;
 	int m_height;
+	TCFloat m_scaleFactor;
 	std::string m_modelFilename;
 	std::string m_currentImageFilename;
 	static bool sm_consoleAlerts;

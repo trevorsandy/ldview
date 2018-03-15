@@ -363,10 +363,13 @@ enum
 
 - (void)updateOtherStates
 {
-	bool flyThroughMode = [modelView flyThroughMode];
+	long viewMode = [modelView viewMode];
+	bool examineMode = viewMode == LDInputHandler::VMExamine;
+	bool flyThroughMode = viewMode == LDInputHandler::VMFlyThrough;
+//	bool walkMode = viewMode == LDInputHandler::VMWalk;
 
 	[[boundingBoxSegments cell] setSelected:[[BoundingBox sharedInstance] isVisible] forSegment:0];
-	[[latLonRotationSegments cell] setSelected:!flyThroughMode && examineLatLong forSegment:0];
+	[[latLonRotationSegments cell] setSelected:examineMode && examineLatLong forSegment:0];
 	[latLonRotationSegments setEnabled:!flyThroughMode forSegment:0];
 }
 
@@ -495,7 +498,7 @@ enum
 {
 	[self addToolbarItemWithIdentifier:@"ViewMode" label:nil control:&viewModeSegments highPriority:YES isDefault:YES];
 	[self setupSegments:viewModeSegments];
-	[self setFlyThroughMode:TCUserDefaults::longForKey(VIEW_MODE_KEY, LDInputHandler::VMExamine, false) == LDInputHandler::VMFlyThrough];
+	[self setViewMode:TCUserDefaults::longForKey(VIEW_MODE_KEY, LDInputHandler::VMExamine, false)];
 	[self setKeepRightSideUp:TCUserDefaults::boolForKey(KEEP_RIGHT_SIDE_UP_KEY, false, false)];
 	examineLatLong = TCUserDefaults::longForKey(EXAMINE_MODE_KEY, LDrawModelViewer::EMFree, false) == LDrawModelViewer::EMLatLong;
 	[self setExamineLatLong:examineLatLong];
@@ -595,16 +598,20 @@ enum
 	[modelView setKeepRightSideUp:value];
 }
 
-- (void)setFlyThroughMode:(bool)value
+- (void)setViewMode:(long)newViewMode;
 {
-	[modelView setFlyThroughMode:value];
-	if (value)
+	[modelView setViewMode:newViewMode];
+	switch (newViewMode)
 	{
-		[viewModeSegments selectSegmentWithTag:LDInputHandler::VMFlyThrough];
-	}
-	else
-	{
-		[viewModeSegments selectSegmentWithTag:LDInputHandler::VMExamine];
+		case LDInputHandler::VMExamine:
+			[viewModeSegments selectSegmentWithTag:0];
+			break;
+		case LDInputHandler::VMFlyThrough:
+			[viewModeSegments selectSegmentWithTag:1];
+			break;
+		case LDInputHandler::VMWalk:
+			[viewModeSegments selectSegmentWithTag:2];
+			break;
 	}
 	[self showStatusLatLon:[self haveLatLon]];
 }
@@ -628,7 +635,6 @@ enum
 	[self addToolbarItemWithIdentifier:@"Prefs" label:nil control:&prefsSegments menuItem:[[[controller prefsMenuItem] copy] autorelease] highPriority:NO isDefault:YES];
 	[printSegments setTarget:controller];
 	[self addToolbarItemWithIdentifier:@"Print" label:nil control:&printSegments highPriority:NO isDefault:NO];
-	[self addToolbarItemWithIdentifier:@"Customize" label:nil control:&customizeSegments highPriority:NO isDefault:NO];
 	[self addToolbarItemWithIdentifier:@"LatLonRotation" label:nil control:&latLonRotationSegments highPriority:NO isDefault:NO];
 	[self addToolbarItemWithIdentifier:@"BoundingBox" label:nil control:&boundingBoxSegments highPriority:NO isDefault:NO];
 	stepToolbarControls = [[NSArray alloc] initWithObjects:stepSegments, stepSegments2, stepPrevSegments, stepPrevSegments2, stepNextSegments, stepNextSegments2, stepFirstSegments, stepLastSegments, nil];
@@ -658,7 +664,7 @@ enum
 	
 	if (show)
 	{
-		if (![statusBar superview])
+		if ([statusBar isHidden])
 		{
 			NSRect modelViewFrame1 = [modelView frame];
 			float height = [statusBar frame].size.height;
@@ -666,20 +672,20 @@ enum
 			modelViewFrame1.size.height -= height;
 			modelViewFrame1.origin.y += height;
 			[modelView setFrame:modelViewFrame1];
-			[[window contentView] addSubview:statusBar];
+			[statusBar setHidden:NO];
 			changed = YES;
 		}
 	}
 	else
 	{
-		if ([statusBar superview])
+		if (![statusBar isHidden])
 		{
 			NSRect modelViewFrame2 = [modelView frame];
 			float height = [statusBar frame].size.height;
 			
 			modelViewFrame2.size.height += height;
 			modelViewFrame2.origin.y -= height;
-			[statusBar removeFromSuperview];
+			[statusBar setHidden:YES];
 			[modelView setFrame:modelViewFrame2];
 			changed = YES;
 		}
@@ -689,6 +695,8 @@ enum
 
 - (void)awakeFromNib
 {
+	progressWidth = [progress frame].size.width;
+	progressMargin = [progress frame].origin.x;
 	replaceSegments = true;
 	[stepsMenu release];
 	initialTitle = [[window title] retain];
@@ -716,7 +724,7 @@ enum
 	}
 	else
 	{
-		[stepField setStringValue:@"--"];
+		[stepField setStringValue:[OCLocalStrings get:@"DashDash"]];
 	}
 	for (i = 0; i < [stepToolbarControls count]; i++)
 	{
@@ -864,12 +872,12 @@ enum
 
 - (ErrorItem *)filteredRootErrorItem
 {
-	return [[ErrorsAndWarnings sharedInstance] filteredRootErrorItem:unfilteredRootErrorItem];
-//	if (!filteredRootErrorItem)
-//	{
-//		filteredRootErrorItem = [[[ErrorsAndWarnings sharedInstance] filteredRootErrorItem:unfilteredRootErrorItem] retain];
-//	}
-//	return filteredRootErrorItem;
+//	return [[ErrorsAndWarnings sharedInstance] filteredRootErrorItem:unfilteredRootErrorItem];
+	if (!filteredRootErrorItem)
+	{
+		filteredRootErrorItem = [[[ErrorsAndWarnings sharedInstance] filteredRootErrorItem:unfilteredRootErrorItem] retain];
+	}
+	return filteredRootErrorItem;
 }
 
 - (BOOL)openModel:(NSString *)filename
@@ -930,6 +938,11 @@ enum
 	[parent addChild:[[[ErrorItem alloc] initWithString:string error:error includeIcon:NO] autorelease]];
 }
 
+- (void)addErrorItem:(ErrorItem *)parent attributedString:(NSAttributedString *)attributedString error:(LDLError *)error
+{
+	[parent addChild:[[[ErrorItem alloc] initWithAttributedString:attributedString error:error] autorelease]];
+}
+
 - (void)ldlErrorCallback:(LDLError *)error
 {
 	if (![self isMyAlert:error] || !loading)
@@ -953,24 +966,48 @@ enum
 		lineString = [OCLocalStrings get:@"ErrorTreeUnknownFile"];
 	}
 	[self addErrorItem:errorItem string:lineString error:error];
-	if (error->getFileLine())
+	const char* formattedLine = error->getFormattedFileLine();
+	if (formattedLine != NULL)
 	{
 		int lineNumber = error->getLineNumber();
 		
 		if (lineNumber > 0)
 		{
 			lineString = [NSString stringWithFormat:[OCLocalStrings get:@"ErrorTreeLine#"], lineNumber];
+			[self addErrorItem:errorItem string:lineString error:error];
+			NSString *format = [OCLocalStrings get:@"ErrorTreeLine"];
+			lineString = [NSString stringWithFormat:format, formattedLine];
+			NSUInteger lineStart = [format rangeOfString:@"%s"].location;
+			if (lineStart == NSNotFound)
+			{
+				[self addErrorItem:errorItem string:lineString error:error];
+			}
+			else
+			{
+				NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] initWithString:lineString];
+				CGFloat fontSize = [NSFont systemFontSize];
+				[attributedString addAttribute:NSFontAttributeName value:[NSFont systemFontOfSize:fontSize] range:NSMakeRange(0, lineStart)];
+				NSFont *fixedFont = [NSFont fontWithName:@"Andale Mono" size:fontSize];
+				if (fixedFont == nil)
+				{
+					fixedFont = [NSFont userFixedPitchFontOfSize:fontSize];
+				}
+				[attributedString addAttribute:NSFontAttributeName value:fixedFont range:NSMakeRange(lineStart, [attributedString length] - lineStart)];
+				[self addErrorItem:errorItem attributedString:attributedString error:error];
+				[attributedString release];
+			}
 		}
 		else
 		{
 			lineString = [OCLocalStrings get:@"ErrorTreeUnknownLine#"];
+			[self addErrorItem:errorItem string:lineString error:error];
 		}
 	}
 	else
 	{
 		lineString = [OCLocalStrings get:@"ErrorTreeUnknownLine"];
+		[self addErrorItem:errorItem string:lineString error:error];
 	}
-	[self addErrorItem:errorItem string:lineString error:error];
 	if (extraInfo)
 	{
 		for (int i = 0; i < extraInfo->getCount(); i++)
@@ -991,6 +1028,21 @@ enum
 - (void)cancelLoad:(id)sender
 {
 	loadCanceled = true;
+}
+
+- (void)setProgressHidden:(BOOL)hidden
+{
+	CGFloat layoutConstant;
+	if (hidden)
+	{
+		layoutConstant = progressMargin;
+	}
+	else
+	{
+		layoutConstant = progressWidth + progressMargin * 2;
+	}
+	[progressMessageLeft setConstant:layoutConstant];
+	[progress setHidden:hidden];
 }
 
 - (void)progressAlertCallback:(TCProgressAlert *)alert
@@ -1024,8 +1076,8 @@ enum
 
 			if ([progress isHidden])
 			{
-				[progress setHidden:NO];
-				[self adjustProgressMessageSize: -progressAdjust]; 
+				[self setProgressHidden:NO];
+				[self adjustProgressMessageSize: -progressAdjust];
 			}
 			[window makeFirstResponder:progress];
 			[progress setDoubleValue:alertProgress];
@@ -1065,7 +1117,7 @@ enum
 		[progress setDoubleValue:1.0];
 		if (![progress isHidden] && !forceProgress)
 		{
-			[progress setHidden:YES];
+			[self setProgressHidden:YES];
 			[self adjustProgressMessageSize: progressAdjust]; 
 		}
 		//[self showStatusBar:showStatusBar];
@@ -1212,9 +1264,10 @@ enum
 
 - (void)updateUtilityWindows:(id)sender andShowErrorsIfNeeded:(BOOL)andShowErrorsIfNeeded
 {
+	ModelWindow *modelWindow = closing ? nil : self;
 	if ([ErrorsAndWarnings sharedInstanceIsVisible] || andShowErrorsIfNeeded)
 	{
-		[[ErrorsAndWarnings sharedInstance] update:self];
+		[[ErrorsAndWarnings sharedInstance] update:modelWindow];
 	}
 	if (andShowErrorsIfNeeded)
 	{
@@ -1222,7 +1275,7 @@ enum
 	}
 	if ([BoundingBox sharedInstanceIsVisible])
 	{
-		[[BoundingBox sharedInstance] update:sender];
+		[[BoundingBox sharedInstance] update:modelWindow];
 	}
 }
 
@@ -1354,8 +1407,10 @@ enum
 {
 	if ([aNotification object] == window)
 	{
+		closing = YES;
 		[self updateUtilityWindows:nil];
 		[window setDelegate:nil];
+		[self killPolling];
 		[controller modelWindowWillClose:self];
 	}
 }
@@ -1438,7 +1493,7 @@ enum
 
 - (BOOL)showStatusBar
 {
-	return showStatusBar;
+	return showStatusBar && ![self isFullScreen];
 }
 
 - (void)show
@@ -1542,6 +1597,14 @@ enum
 		{
 			snapshotTaker = [[SnapshotTaker alloc] initWithModelViewer:[modelView modelViewer] sharedContext:[modelView openGLContext]];
 		}
+		if ([saveSnapshotViewOwner matchWindowScale])
+		{
+			[snapshotTaker ldSnapshotTaker]->setScaleFactor([modelView modelViewer]->getScaleFactor());
+		}
+		else
+		{
+			[snapshotTaker ldSnapshotTaker]->setScaleFactor(1.0f);
+		}
 		[snapshotTaker setImageType:[saveSnapshotViewOwner imageType]];
 		[snapshotTaker setTrySaveAlpha:[saveSnapshotViewOwner transparentBackground]];
 		[snapshotTaker setAutoCrop:[saveSnapshotViewOwner autocrop]];
@@ -1556,7 +1619,7 @@ enum
 		forceProgress = false;
 		if (![progress isHidden])
 		{
-			[progress setHidden:YES];
+			[self setProgressHidden:YES];
 			[self adjustProgressMessageSize: progressAdjust];
 		}
 		[self updateFps];
@@ -1641,11 +1704,6 @@ enum
 	}
 }
 
-- (IBAction)toggleFullScreen:(id)sender
-{
-	[modelView toggleFullScreen:sender];
-}
-
 - (IBAction)zoomToFit:(id)sender
 {
 	[modelView zoomToFit:sender];
@@ -1692,8 +1750,8 @@ enum
 				[self copyStringToPasteboard:[NSString stringWithASCIICString:povCamera]];
 			}
 		}
-		delete message;
-		delete povCamera;
+		delete[] message;
+		delete[] povCamera;
 	}
 }
 
@@ -1702,7 +1760,7 @@ enum
 	switch ([[sender cell] tagForSegment:[sender selectedSegment]])
 	{
 		case 0:
-			[self toggleFullScreen:sender];
+			[[NSApplication sharedApplication] sendAction:@selector(toggleFullScreen:) to:nil from:sender];
 			break;
 		case 1:
 			[self zoomToFit:sender];
@@ -1968,13 +2026,19 @@ enum
 
 - (IBAction)examineMode:(id)sender
 {
-	[self setFlyThroughMode:false];
+	[self setViewMode:LDInputHandler::VMExamine];
 	[self updateOtherStates];
 }
 
 - (IBAction)flyThroughMode:(id)sender
 {
-	[self setFlyThroughMode:true];
+	[self setViewMode:LDInputHandler::VMFlyThrough];
+	[self updateOtherStates];
+}
+
+- (IBAction)walkMode:(id)sender
+{
+	[self setViewMode:LDInputHandler::VMWalk];
 	[self updateOtherStates];
 }
 
@@ -1989,9 +2053,14 @@ enum
 	return examineLatLong;
 }
 
-- (bool)flyThroughMode
+- (bool)examineMode
 {
-	return [modelView flyThroughMode];
+	return [modelView examineMode];
+}
+
+- (long)viewMode
+{
+	return [modelView viewMode];
 }
 
 - (bool)keepRightSideUp
@@ -2094,7 +2163,7 @@ enum
 			OpenGLDriverInfo *driverInfo = [[OpenGLDriverInfo alloc] init];
 			
 			[driverInfo showWithInfo:[NSString stringWithUCString:openGlMessage] numExtensions:numExtensions];
-			delete openGlMessage;
+			delete[] openGlMessage;
 			[driverInfo release];
 		}
 	}
@@ -2130,11 +2199,6 @@ enum
 	}
 }
 
-- (bool)fullScreen
-{
-	return [modelView fullScreen];;
-}
-
 - (NSSize)mainMarginSize
 {
 	NSSize contentSize = [modelView frame].size;
@@ -2162,6 +2226,44 @@ enum
 		windowFrame.origin.y = screenRect.origin.y;
 	}
 	[window setFrame:windowFrame display:YES];
+}
+
+- (NSApplicationPresentationOptions)window:(NSWindow *)window
+	  willUseFullScreenPresentationOptions:(NSApplicationPresentationOptions)proposedOptions
+{
+	return proposedOptions | NSApplicationPresentationAutoHideToolbar;
+}
+
+- (void)windowWillEnterFullScreen:(NSNotification *)notification
+{
+	[self showStatusBar:NO];
+}
+
+- (void)windowDidEnterFullScreen:(NSNotification *)notification
+{
+	[controller setStatusBarMenuItemDisabled:YES];
+}
+
+- (void)windowWillExitFullScreen:(NSNotification *)notification
+{
+	[controller setStatusBarMenuItemDisabled:NO];
+	if (showStatusBar)
+	{
+		[self showStatusBar:YES];
+	}
+}
+
+- (BOOL)isFullScreen
+{
+	return ([[NSApplication sharedApplication] currentSystemPresentationOptions] & NSApplicationPresentationFullScreen) != 0;
+}
+
+- (void)escapePressed
+{
+	if ([self isFullScreen])
+	{
+		[[NSApplication sharedApplication] sendAction:@selector(toggleFullScreen:) to:nil from:self];
+	}
 }
 
 @end

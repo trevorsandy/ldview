@@ -3,10 +3,12 @@
 #include <qgl.h>
 #include "LDViewMainWindow.h"
 #include "ModelViewerWidget.h"
+#include "SnapshotTaker.h"
 #include <TCFoundation/TCUserDefaults.h>
 #include <TCFoundation/TCLocalStrings.h>
 #include <TCFoundation/mystring.h>
 #include <LDLib/LDUserDefaultsKeys.h>
+#include <TRE/TREMainModel.h>
 #include <string.h>
 #include <QTranslator>
 #include <QLocale>
@@ -57,6 +59,24 @@ void setupDefaultFormat(void)
 	QGLFormat::setDefaultFormat(defaultFormat);
 }
 
+bool doCommandLine()
+{
+	SnapshotTaker *snapshotTaker = new SnapshotTaker();
+	// Load stud texture
+	QImage studImage(":/images/images/StudLogo.png");
+#if QT_VERSION < 0x40600
+	long len = studImage.numBytes();
+#else
+	long len = studImage.byteCount();
+#endif
+	TREMainModel::setRawStudTextureData(studImage.bits(), len);
+	LDLModel::setFileCaseCallback(ModelViewerWidget::staticFileCaseCallback);
+
+	bool retValue = snapshotTaker->doCommandLine();
+	TCObject::release(snapshotTaker);
+	return retValue;
+}
+
 int main(int argc, char *argv[])
 {
 	QLocale::setDefault(QLocale::system());
@@ -88,6 +108,10 @@ int main(int argc, char *argv[])
 	QString qloc = QString("Windows-")+QString::number(TCLocalStrings::getCodePage());
 	//QTextCodec::setCodecForLocale(QTextCodec::codecForName(qloc.toLatin1()));
 	TCUserDefaults::setAppName("LDView");
+	if (doCommandLine())
+	{
+		return 0;
+	}
 #ifdef DEBUG
 	FILE *logFile = fopen("/tmp/LDView.log", "w");
 	if (logFile != NULL)
@@ -117,7 +141,8 @@ int main(int argc, char *argv[])
 		!translator.load(QString("ldview_")+QString(locale)+".qm",
 						 "/usr/share/ldview") &&
 		!translator.load(QString("ldview_")+QString(locale)+".qm",
-						QDir( QCoreApplication::applicationDirPath() + "/../share/ldview").absolutePath()))
+						QDir( QCoreApplication::applicationDirPath() + "/../share/ldview").absolutePath()) &&
+		QString(locale).compare("en")!=0)
 		printf ("Failed to load translation %s\n",locale);
 	a.installTranslator(&translator);
     LDViewMainWindow *w = new LDViewMainWindow(&a);

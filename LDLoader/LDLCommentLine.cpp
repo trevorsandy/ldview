@@ -34,7 +34,7 @@ LDLCommentLine::~LDLCommentLine(void)
 
 void LDLCommentLine::dealloc(void)
 {
-	delete m_processedLine;
+	delete[] m_processedLine;
 	TCObject::release(m_words);
 	LDLFileLine::dealloc();
 }
@@ -70,8 +70,8 @@ bool LDLCommentLine::parse(void)
 			setWarning(LDLEMovedTo,
 				TCLocalStrings::get(_UC("LDLComPartRenamed")), ucPartName,
 				ucNewName);
-			delete ucPartName;
-			delete ucNewName;
+			delete[] ucPartName;
+			delete[] ucNewName;
 		}
 		else
 		{
@@ -291,9 +291,19 @@ bool LDLCommentLine::isTexmapMeta(void) const
 	return stringHasPrefix(m_processedLine, "0 !TEXMAP ");
 }
 
+bool LDLCommentLine::isDataMeta(void) const
+{
+	return stringHasPrefix(m_processedLine, "0 !DATA ");
+}
+
 bool LDLCommentLine::isNewGeometryMeta(void) const
 {
 	return stringHasPrefix(m_processedLine, "0 !: ");
+}
+
+bool LDLCommentLine::isDataRowMeta(void) const
+{
+	return stringHasPrefix(m_processedLine, "0 !:");
 }
 
 bool LDLCommentLine::isBBoxIgnoreMeta(void) const
@@ -576,6 +586,15 @@ bool LDLCommentLine::containsBFCCommand(const char *command) const
 bool LDLCommentLine::containsTexmapCommand(const char *command) const
 {
 	if (isTexmapMeta())
+	{
+		return containsCommand(command, 1, true, 1);
+	}
+	return false;
+}
+
+bool LDLCommentLine::containsDataCommand(const char *command) const
+{
+	if (isDataMeta())
 	{
 		return containsCommand(command, 1, true, 1);
 	}
