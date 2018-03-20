@@ -23,6 +23,7 @@
 win32:HOST = $$system(systeminfo | findstr /B /C:"OS Name")
 unix:!macx:HOST = $$system(. /etc/os-release 2>/dev/null; [ -n \"$PRETTY_NAME\" ] && echo \"$PRETTY_NAME\" || echo `uname`)
 macx:HOST = $$system(echo `sw_vers -productName` `sw_vers -productVersion`)
+isEmpty(HOST):HOST = UNKNOWN HOST
 
 # some funky processing to get the install prefix passed in on the command line
 3RD_ARG = $$find(CONFIG, 3RD_PARTY_INSTALL.*)
@@ -63,14 +64,14 @@ contains(DEFINES, _QT):     CONFIG += _QT_GUI
 contains(DEFINES, _OSMESA): CONFIG += _OSM_CUI
 
 # platform switch
-if (contains(QT_ARCH, x86_64)|contains(QT_ARCH, arm64)) {
-    ARCH = 64
+BUILD_ARCH = $$(TARGET_CPU)
+if (contains(QT_ARCH, x86_64)|contains(QT_ARCH, arm64)|contains(BUILD_ARCH, aarch64)) {
+    ARCH     = 64
+    LIB_ARCH = 64
 } else {
-    ARCH = 32
+    ARCH     = 32
+    LIB_ARCH =
 }
-# for libraries
-equals(ARCH, 64): LIB_ARCH = 64
-else:             LIB_ARCH =
 
 # build type
 CONFIG(debug, debug|release) {

@@ -63,9 +63,10 @@
 #        `--- /libjpeg
 #        |     |--- 3rdParty_jpeg.pro      3rdParty library project file - consumes 3rdParty.pri
 #
-win32:HOST = $$system(systeminfo | findstr /B /C:"OS Name")
+win32:HOST = $$system(systeminfo | findstr /B /C:\"OS Name\")
 unix:!macx:HOST = $$system(. /etc/os-release 2>/dev/null; [ -n \"$PRETTY_NAME\" ] && echo \"$PRETTY_NAME\" || echo `uname`)
 macx:HOST = $$system(echo `sw_vers -productName` `sw_vers -productVersion`)
+isEmpty(HOST):HOST = UNKNOWN HOST
 
 # qmake Configuration settings
 # CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_linux_3rdparty
@@ -192,7 +193,7 @@ USE_SYSTEM_LIBS {
         3rdParty_gl2ps.file       = $$PWD/3rdParty/gl2ps/3rdParty_gl2ps.pro
         3rdParty_gl2ps.makefile   = $${MAKEFILE_3RDPARTY}
         3rdParty_gl2ps.target     = sub-3rdParty_gl2ps
-        3rdParty_gl2ps.depends    = 3rdParty_png   
+        3rdParty_gl2ps.depends    = 3rdParty_png
     }
 }
 
@@ -332,12 +333,13 @@ contains(BUILD_CUI, YES) {
     USE_3RD_PARTY_LIBS:!USE_SYSTEM_LIBS: LDView_CUI_OSMesa.depends += 3rdParty_zlib
 }
 
-CONFIG(debug, debug|release) {
-    message("~~~ LDVIEW DEBUG BUILD ON $$upper($$HOST) ~~~")
-} else {
-    message("~~~ LDVIEW RELEASE BUILD ON $$upper($$HOST) ~~~")
-}
-
 OTHER_FILES += $$PWD/LDViewMessages.ini \
                $$PWD/cleanup.sh \
                $$PWD/.gitignore
+
+BUILD_ARCH = $$(TARGET_CPU)
+!contains(QT_ARCH, unknown):  BUILD_ARCH = $$QT_ARCH
+else: isEmpty(BUILD_ARCH):    BUILD_ARCH = UNKNOWN ARCH
+CONFIG(debug, debug|release): BUILD = DEBUG BUILD
+else:                         BUILD = RELEASE BUILD
+message("~~~ LDVIEW $$upper($$BUILD_ARCH) $${BUILD} ON $$upper($$HOST) ~~~")
