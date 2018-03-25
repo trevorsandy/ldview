@@ -26,7 +26,6 @@ SSModelWindow::SSModelWindow(CUIWindow* parentWindow, int x, int y,
 				   DEFAULT_SS_SPEED)),
 			   ssRotationSpeed(TCUserDefaults::longForKey(SS_ROTATION_SPEED_KEY,
 				   DEFAULT_SS_ROT_SPEED)),
-			   ssFilename(NULL),
 			   ssFileMode(TCUserDefaults::longForKey(SS_FILE_MODE_KEY,
 			       DEFAULT_SS_FILE_MODE)),
 			   ssSleepWorkaround(TCUserDefaults::longForKey(
@@ -35,8 +34,6 @@ SSModelWindow::SSModelWindow(CUIWindow* parentWindow, int x, int y,
 				   SS_RANDOM_PREF_SET_KEY, DEFAULT_SS_RANDOM_PREF_SET, false)
 				   != 0)
 {
-	char *installPath = SSConfigure::getInstallPath();
-
 	srand(GetTickCount());
 	if (ssRandomPrefSet)
 	{
@@ -59,11 +56,6 @@ SSModelWindow::SSModelWindow(CUIWindow* parentWindow, int x, int y,
 			}
 			sessionNames->release();
 		}
-	}
-	if (installPath)
-	{
-		modelViewer->setProgramPath(installPath);
-		delete installPath;
 	}
 	modelViewer->setDistanceMultiplier(1.01f);
 	ssPassword = new SSPassword;
@@ -90,7 +82,6 @@ SSModelWindow::~SSModelWindow(void)
 
 void SSModelWindow::dealloc(void)
 {
-	delete ssFilename;
 	if (ssPassword)
 	{
 		ssPassword->release();
@@ -101,26 +92,30 @@ void SSModelWindow::dealloc(void)
 void SSModelWindow::getMatchingFiles(char *dir, char *filespec,
 									 TCStringArray *filenames)
 {
-	char fullFilespec[MAX_PATH];
-	char fullPath[MAX_PATH];
+	UCCHAR fullFilespec[MAX_PATH];
+	UCCHAR fullPath[MAX_PATH];
 	WIN32_FIND_DATA findData;
 	HANDLE hFind;
 
-	sprintf(fullFilespec, "%s\\%s", dir, filespec);
+	sucprintf(fullFilespec, COUNT_OF(fullFilespec), _UC("%s\\%s"), dir, filespec);
 	hFind = FindFirstFile(fullFilespec, &findData);
 	if (hFind != INVALID_HANDLE_VALUE)
 	{
 		if ((findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
 		{
-			sprintf(fullPath, "%s\\%s", dir, findData.cFileName);
-			filenames->addString(fullPath);
+			sucprintf(fullPath, COUNT_OF(fullPath), _UC("%s\\%s"), dir, findData.cFileName);
+			std::string utf8Path;
+			ucstringtoutf8(utf8Path, fullPath);
+			filenames->addString(utf8Path.c_str());
 		}
 		while (FindNextFile(hFind, &findData))
 		{
 			if ((findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
 			{
-				sprintf(fullPath, "%s\\%s", dir, findData.cFileName);
-				filenames->addString(fullPath);
+				sucprintf(fullPath, COUNT_OF(fullPath), _UC("%s\\%s"), dir, findData.cFileName);
+				std::string utf8Path;
+				ucstringtoutf8(utf8Path, fullPath);
+				filenames->addString(utf8Path.c_str());
 			}
 		}
 		FindClose(hFind);
@@ -131,7 +126,7 @@ void SSModelWindow::initSSFilename(void)
 {
 	if (ssFileMode == 0)
 	{
-		ssFilename = TCUserDefaults::stringForKey(SS_FILENAME_KEY);
+		ssFilename = TCUserDefaults::stringForKeyUC(SS_FILENAME_KEY);
 	}
 	else
 	{
@@ -148,7 +143,7 @@ void SSModelWindow::initSSFilename(void)
 			count = filenames->getCount();
 			if (count)
 			{
-				ssFilename = copyString((*filenames)[rand() % count]);
+				utf8toucstring(ssFilename, (*filenames)[rand() % count]);
 			}
 			filenames->release();
 			delete dir;
@@ -171,7 +166,7 @@ int SSModelWindow::loadModel(void)
 
 void SSModelWindow::verifySsFilename(void)
 {
-	if (ssFilename == NULL)
+	if (ssFilename.empty())
 	{
 		ssFilename = SSConfigure::defaultFilename();
 	}
@@ -196,7 +191,7 @@ void SSModelWindow::finalSetup(void)
 		initSSFilename();
 		resize(ssSize, ssSize);
 		verifySsFilename();
-		((LDViewWindow*)parentWindow)->openModel(ssFilename);
+		((LDViewWindow*)parentWindow)->openModel(ssFilename.c_str());
 		ShowCursor(FALSE);
 	}
 }

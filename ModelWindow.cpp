@@ -82,11 +82,11 @@ void ErrorInfo::dealloc(void)
 	TCObject::dealloc();
 }
 
-void ErrorInfo::setTypeName(const char *typeName)
+void ErrorInfo::setTypeName(CUCSTR typeName)
 {
 	if (typeName != m_typeName)
 	{
-		delete m_typeName;
+		delete[] m_typeName;
 		m_typeName = copyString(typeName);
 	}
 }
@@ -146,7 +146,7 @@ warningCount(0)
 ,remoteMessageID(0)
 #endif // !_NO_BOOST
 {
-	char *programPath = LDViewPreferences::getLDViewPath();
+	UCSTR programPath = LDViewPreferences::getLDViewPath();
 	HRSRC hStudLogoResource = FindResource(NULL,
 		MAKEINTRESOURCE(IDR_STUDLOGO_PNG), RT_PNGDATA_1X);
 	HRSRC hFontResource = FindResource(NULL, MAKEINTRESOURCE(IDR_SANS_FONT),
@@ -216,12 +216,11 @@ warningCount(0)
 		(TCAlertCallback)&ModelWindow::releaseAlertCallback);
 	TCAlertManager::registerHandler(LDSnapshotTaker::alertClass(), this,
 		(TCAlertCallback)&ModelWindow::snapshotTakerAlertCallback);
-	if (programPath)
+	if (programPath != NULL)
 	{
-		modelViewer->setProgramPath(programPath);
 		TCUserDefaults::setStringForKey(programPath, INSTALL_PATH_KEY, false);
 		TCUserDefaults::setStringForKey(programPath, INSTALL_PATH_4_1_KEY, false);
-		delete programPath;
+		delete[] programPath;
 	}
 #if defined(USE_CPP11) || !defined(_NO_BOOST)
 	if (remoteListener)
@@ -274,7 +273,7 @@ void ModelWindow::dealloc(void)
 #if defined(USE_CPP11) || !defined(_NO_BOOST)
 
 #define PIPE_BUFSIZE 4096
-#define PIPE_FILENAME "\\\\.\\pipe\\LDViewRemoteControl"
+#define PIPE_FILENAME _UC("\\\\.\\pipe\\LDViewRemoteControl")
 
 void ModelWindow::shutDownRemoteListener(void)
 {
@@ -326,11 +325,10 @@ void ModelWindow::launchRemoteListener(void)
 	remoteCommandMap["highlight_line"] = RCHighlightLine;
 	remoteCommandMap["highlight_lines"] = RCHighlightLine;
 	remoteCommandMap["get_version"] = RCGetVersion;
-	char *tmpVersion = ucstringtoutf8(((LDViewWindow *)parentWindow)->getProductVersion());
-	ldviewVersion = tmpVersion;
-	delete[] tmpVersion;
+	ucstringtoutf8(ldviewVersion,
+		((LDViewWindow *)parentWindow)->getProductVersion());
 	exiting = false;
-	remoteMessageID = RegisterWindowMessage("LDViewRemoteControl");
+	remoteMessageID = RegisterWindowMessage(_UC("LDViewRemoteControl"));
 	try
 	{
 #ifdef USE_CPP11
@@ -583,7 +581,7 @@ void ModelWindow::modelViewerAlertCallback(TCAlert *alert)
 	if (alert)
 	{
 		stopAnimation();
-		MessageBox(hWindow, alert->getMessage(), "LDView",
+		MessageBox(hWindow, alert->getMessageUC(), _UC("LDView"),
 			MB_OK | MB_ICONWARNING);
 	}
 }
@@ -660,9 +658,9 @@ void ModelWindow::loadSaveSettings(void)
 	saveAlpha = TCUserDefaults::longForKey(SAVE_ALPHA_KEY, 0, false) != 0;
 	autoCrop = TCUserDefaults::boolForKey(AUTO_CROP_KEY, false, false);
 	saveAllSteps = TCUserDefaults::boolForKey(SAVE_STEPS_KEY, false, false);
-	delete saveStepSuffix;
+	delete[] saveStepSuffix;
 	saveStepSuffix = TCUserDefaults::stringForKeyUC(SAVE_STEPS_SUFFIX_KEY,
-		TCLocalStrings::get(_UC("DefaultStepSuffix")), false);
+		ls(_UC("DefaultStepSuffix")), false);
 	saveStepsSameScale = TCUserDefaults::boolForKey(SAVE_STEPS_SAME_SCALE_KEY,
 		true, false);
 }
@@ -700,14 +698,16 @@ bool ModelWindow::getFileTime(FILETIME* fileTime)
 
 bool ModelWindow::getFileInfo(FILETIME* fileTime, DWORD* fileSizeHigh, DWORD* fileSizeLow)
 {
-	char* filename;
+	const char *filename;
 
 	if (modelViewer && (filename = modelViewer->getFilename()) != NULL)
 	{
 		WIN32_FIND_DATA findBuf;
 		HANDLE findHandle;
+		ucstring ucFilename;
 
-		findHandle = FindFirstFile(filename, &findBuf);
+		utf8toucstring(ucFilename, filename);
+		findHandle = FindFirstFile(ucFilename.c_str(), &findBuf);
 		if (findHandle != INVALID_HANDLE_VALUE)
 		{
 			if (fileTime != NULL)
@@ -754,9 +754,6 @@ void ModelWindow::checkFileForUpdates(void)
 				lastWriteTime = newWriteTime;
 				if (pollSetting == POLL_PROMPT)
 				{
-					char message[1024];
-
-					sprintf(message, TCLocalStrings::get("PollReloadCheck"));
 					if (captureCount)
 					{
 						while (captureCount)
@@ -766,8 +763,8 @@ void ModelWindow::checkFileForUpdates(void)
 						inputHandler->cancelMouseDrag();
 					}
 					stopAnimation();
-					if (MessageBox(hWindow, message,
-						TCLocalStrings::get("PollFileUpdate"),
+					if (MessageBox(hWindow, ls(_UC("PollReloadCheck")),
+						ls(_UC("PollFileUpdate")),
 						MB_OKCANCEL | MB_APPLMODAL | MB_ICONQUESTION) !=
 						IDOK)
 					{
@@ -1138,8 +1135,8 @@ void ModelWindow::getTreeViewLine(HWND hTreeView, HTREEITEM hItem,
 								  TCStringArray *lines)
 {
 	TVITEM item;
-	char buf1[1024];
-	char buf2[1024] = "";
+	UCCHAR buf[1024];
+	ucstring line;
 	int depth = 0;
 	HTREEITEM hParentItem = hItem;
 
@@ -1149,18 +1146,20 @@ void ModelWindow::getTreeViewLine(HWND hTreeView, HTREEITEM hItem,
 	}
 	item.mask = TVIF_TEXT;
 	item.hItem = hItem;
-	item.pszText = buf1;
-	item.cchTextMax = 1024 - depth;
+	item.pszText = buf;
+	item.cchTextMax = COUNT_OF(buf);
 	if (TreeView_GetItem(hTreeView, &item))
 	{
 		int i;
 
 		for (i = 0; i < depth; i++)
 		{
-			strcat(buf2, "\t");
+			line += _UC('\t');
 		}
-		strcat(buf2, buf1);
-		lines->addString(buf2);
+		line += item.pszText;
+		std::string utf8Buf;
+		ucstringtoutf8(utf8Buf, line);
+		lines->addString(utf8Buf.c_str());
 	}
 }
 
@@ -1268,23 +1267,23 @@ BOOL ModelWindow::doErrorTreeNotify(LPNMHDR notification)
 		if (hSelectedItem)
 		{
 			TVITEM selectedItem;
-			char buf[1024];
+			UCCHAR buf[1024];
 
 			selectedItem.mask = TVIF_TEXT;
 			selectedItem.hItem = hSelectedItem;
 			selectedItem.pszText = buf;
-			selectedItem.cchTextMax = 1024;
+			selectedItem.cchTextMax = COUNT_OF(buf);
 			if (TreeView_GetItem(hErrorTree, &selectedItem))
 			{
-				if (stringHasPrefix(buf,
-					TCLocalStrings::get("ErrorTreeFilePrefix")))
+				if (stringHasPrefix(selectedItem.pszText,
+					ls(_UC("ErrorTreeFilePrefix"))))
 				{
-					char *editor = TCUserDefaults::stringForKey(EDITOR_KEY,
-						"notepad.exe", false);
+					UCSTR editor = TCUserDefaults::stringForKeyUC(EDITOR_KEY,
+						_UC("notepad.exe"), false);
 
-					ShellExecute(hWindow, NULL, editor, buf + 6, ".",
+					ShellExecute(hWindow, NULL, editor, buf + 6, _UC("."),
 						SW_SHOWNORMAL);
-					delete editor;
+					delete[] editor;
 				}
 			}
 		}
@@ -1518,8 +1517,8 @@ BOOL ModelWindow::doDialogGetMinMaxInfo(HWND hDlg, LPMINMAXINFO minMaxInfo)
 		calcSystemSizes();
 		minMaxInfo->ptMaxSize.x = systemMaxWidth;
 		minMaxInfo->ptMaxSize.y = systemMaxHeight;
-		minMaxInfo->ptMinTrackSize.x = 475;
-		minMaxInfo->ptMinTrackSize.y = 260;
+		minMaxInfo->ptMinTrackSize.x = scalePoints(475);
+		minMaxInfo->ptMinTrackSize.y = scalePoints(260);
 		minMaxInfo->ptMaxTrackSize.x = systemMaxTrackWidth;
 		minMaxInfo->ptMaxTrackSize.y = systemMaxTrackHeight;
 		return TRUE;
@@ -1558,11 +1557,10 @@ BOOL ModelWindow::doErrorClick(int controlId, HWND /*controlHWnd*/)
 		}
 		break;
 	case IDC_SHOW_WARNINGS:
-		int value;
-
-		value = (int)SendDlgItemMessage(hErrorWindow, controlId, BM_GETCHECK,
-			0, 0);
-		TCUserDefaults::setLongForKey(value, SHOW_WARNINGS_KEY, false);
+		bool showWarnings;
+		
+		showWarnings = CUIDialog::buttonGetCheck(hErrorWindow, controlId);
+		TCUserDefaults::setBoolForKey(showWarnings, SHOW_WARNINGS_KEY, false);
 		clearErrorTree();
 		populateErrorTree();
 		break;
@@ -1598,8 +1596,8 @@ BOOL ModelWindow::doPageSetupClick(int controlId, HWND /*controlHWnd*/)
 	switch (controlId)
 	{
 	case IDC_PRINT_BACKGROUND:
-		printBackground = SendDlgItemMessage(hPageSetupDialog,
-			IDC_PRINT_BACKGROUND, BM_GETCHECK, 0, 0) ? true : false;
+		printBackground = CUIDialog::buttonGetCheck(hPageSetupDialog,
+			IDC_PRINT_BACKGROUND);
 		break;
 	default:
 		return FALSE;
@@ -1657,8 +1655,8 @@ BOOL ModelWindow::doDialogHelp(HWND hDlg, LPHELPINFO helpInfo)
 	}
 	if (dialogId)
 	{
-		char* helpPath = LDViewPreferences::getLDViewPath(
-			TCLocalStrings::get("LDView.hlp"));
+		UCSTR helpPath = LDViewPreferences::getLDViewPath(
+			ls(_UC("LDView.hlp")));
 		DWORD helpId;
 
 		helpId = 0x80000000 | (dialogId << 16) | (DWORD)helpInfo->iCtrlId;
@@ -1717,8 +1715,8 @@ void ModelWindow::hideProgress(void)
 {
 	if (loading)
 	{
-		SendMessage(hProgressBar, PBM_SETPOS, 0, 0);
-		SendMessage(hStatusBar, SB_SETTEXT, 1, (LPARAM)"");
+		progressBarSetPos(hProgressBar, 0);
+		statusBarSetText(hStatusBar, 1, _UC(""));
 		((LDViewWindow *)parentWindow)->redrawStatusBar();
 		EnumThreadWindows(GetWindowThreadProcessId(hParentWindow, NULL),
 			enableNonModalWindow, (LPARAM)hParentWindow);
@@ -1729,16 +1727,17 @@ void ModelWindow::hideProgress(void)
 	}
 }
 
-HTREEITEM ModelWindow::addErrorLine(HTREEITEM parent, char* line,
+HTREEITEM ModelWindow::addErrorLine(HTREEITEM parent, CUCSTR line,
 									LDLError* error, int imageIndex)
 {
 	TVINSERTSTRUCT insertStruct;
 	TVITEMEX item;
+	ucstring lineCopy = line;
 
-	stripCRLF(line);
+	stripCRLF(&lineCopy[0]);
 	memset(&item, 0, sizeof(item));
 	item.mask = TVIF_TEXT | TVIF_PARAM;
-	item.pszText = line;
+	item.pszText = &lineCopy[0];
 	item.lParam = (LPARAM)error;
 	insertStruct.hParent = parent;
 	insertStruct.hInsertAfter = TVI_LAST;
@@ -1761,65 +1760,65 @@ HTREEITEM ModelWindow::addErrorLine(HTREEITEM parent, char* line,
 
 bool ModelWindow::addError(LDLError* error)
 {
-	char *buf;
-	const char* string;
+	CUCSTR string;
 	HTREEITEM parent;
 
 	if (!showsError(error))
 	{
 		return false;
 	}
-	string = error->getMessage();
+	string = error->getMessageUC();
 	if (!string)
 	{
-		string = "";
+		string = _UC("");
 	}
-	buf = copyString(string);
-	parent = addErrorLine(NULL, buf, error,
+	parent = addErrorLine(NULL, string, error,
 		errorImageIndices[error->getType()]);
-	delete buf;
 
 	if (parent)
 	{
 		TCStringArray *extraInfo;
+		ucstring filename;
+		utf8toucstring(filename, error->getFilename());
+		ucstring line;
 
-   		string = error->getFilename();
-		buf = new char[strlen(string) + 512];
-		if (string)
+		if (!filename.empty())
 		{
-			sprintf(buf, "%s%s", TCLocalStrings::get("ErrorTreeFilePrefix"),
-				string);
+			line = ls(_UC("ErrorTreeFilePrefix"));
+			line += filename;
 		}
 		else
 		{
-			sprintf(buf, TCLocalStrings::get("ErrorTreeUnknownFile"));
+			line = ls(_UC("ErrorTreeUnknownFile"));
 		}
-		addErrorLine(parent, buf, error);
-		delete buf;
-		string = error->getFormattedFileLine();
-		if (string)
+		addErrorLine(parent, line.c_str(), error);
+		ucstring formattedLine;
+		utf8toucstring(formattedLine, error->getFormattedFileLine());
+		if (!formattedLine.empty())
 		{
 			int lineNumber = error->getLineNumber();
-
-			buf = new char[strlen(string) + 512];
 			if (lineNumber > 0)
 			{
-				sprintf(buf, TCLocalStrings::get("ErrorTreeLine#"), lineNumber);
+				CUCSTR lineNumberFormat = ls(_UC("ErrorTreeLine#"));
+				size_t len = ucstrlen(lineNumberFormat) + 128;
+				line.resize(len);
+				sucprintf(&line[0], len, lineNumberFormat, lineNumber);
+				addErrorLine(parent, line.c_str(), error);
 			}
 			else
 			{
-				sprintf(buf, TCLocalStrings::get("ErrorTreeUnknownLine#"));
+				addErrorLine(parent, ls(_UC("ErrorTreeUnknownLine#")), error);
 			}
-			addErrorLine(parent, buf, error);
-			sprintf(buf, TCLocalStrings::get("ErrorTreeLine"), string);
+			CUCSTR lineFormat = ls(_UC("ErrorTreeLine"));
+			size_t len = formattedLine.size() + ucstrlen(lineFormat) + 1;
+			line.resize(len);
+			sucprintf(&line[0], len, lineFormat, formattedLine.c_str());
+			addErrorLine(parent, line.c_str(), error);
 		}
 		else
 		{
-			buf = new char[512];
-			sprintf(buf, TCLocalStrings::get("ErrorTreeUnknownLine"));
+			addErrorLine(parent, ls(_UC("ErrorTreeUnknownLine")), error);
 		}
-		addErrorLine(parent, buf, error);
-		delete buf;
 		if ((extraInfo = error->getExtraInfo()) != NULL)
 		{
 			int i;
@@ -1827,7 +1826,9 @@ bool ModelWindow::addError(LDLError* error)
 
 			for (i = 0; i < count; i++)
 			{
-				addErrorLine(parent, extraInfo->stringAtIndex(i), error);
+				ucstring extraLine;
+				utf8toucstring(extraLine, extraInfo->stringAtIndex(i));
+				addErrorLine(parent, extraLine.c_str(), error);
 			}
 		}
 	}
@@ -1840,7 +1841,7 @@ bool ModelWindow::showsError(LDLError *error)
 
 	if (error->getLevel() == LDLAWarning)
 	{
-		if (TCUserDefaults::longForKey(SHOW_WARNINGS_KEY, 0, false))
+		if (TCUserDefaults::boolForKey(SHOW_WARNINGS_KEY, false, false))
 		{
 			return TCUserDefaults::longForKey(getErrorKey(errorType), 0, false)
 				!= 0;
@@ -1875,7 +1876,7 @@ void ModelWindow::populateErrorInfos(void)
 			LDLErrorType type = (LDLErrorType)i;
 
 			errorInfo->setType(type);
-			errorInfo->setTypeName(LDLError::getTypeName(type));
+			errorInfo->setTypeName(LDLError::getTypeNameUC(type));
 			errorInfos->addObject(errorInfo);
 			errorInfo->release();
 		}
@@ -1887,7 +1888,8 @@ void ModelWindow::setupErrorWindow(void)
 	HIMAGELIST himl;  // handle to image list
 	HBITMAP hbmp;     // handle to bitmap
 	HBITMAP hMask;
-	long showWarnings = TCUserDefaults::longForKey(SHOW_WARNINGS_KEY, 0, false);
+	bool showWarnings = TCUserDefaults::boolForKey(SHOW_WARNINGS_KEY, false,
+		false);
 
 	populateErrorInfos();
 	populateErrorList();
@@ -1912,12 +1914,12 @@ void ModelWindow::setupErrorWindow(void)
 	errorWindowResizer->addSubWindow(IDC_ERROR_LIST,
 		CUIFloatLeft | CUISizeVertical);
 
-	SendDlgItemMessage(hErrorWindow, IDC_SHOW_WARNINGS, BM_SETCHECK,
-		showWarnings, 0);
+	CUIDialog::buttonSetChecked(hErrorWindow, IDC_SHOW_WARNINGS, showWarnings);
 	// Create the image list.
 	UINT flags = CUIScaler::imageListCreateFlags();
 	double scaleFactor = getScaleFactor();
-	SIZE size = { (LONG)(16 * scaleFactor), (LONG)(16 * scaleFactor) };
+	SIZE size;
+	size.cx = size.cy = scalePoints(16);
 	if ((himl = ImageList_Create(size.cx, size.cy, flags, 12, 0)) == NULL)
 		return;
 
@@ -1962,19 +1964,20 @@ void ModelWindow::setupProgress(void)
 void ModelWindow::registerErrorWindowClass(void)
 {
 	WNDCLASSEX windowClass;
-	char prefsClassName[1024];
+	UCCHAR prefsClassName[1024];
 
 	if (!hProgressWindow)
 	{
 		createProgress();
 	}
 	GetClassName(hProgressWindow, prefsClassName, 1024);
+	memset(&windowClass, 0, sizeof(windowClass));
 	windowClass.cbSize = sizeof(windowClass);
 	GetClassInfoEx(getLanguageModule(), prefsClassName, &windowClass);
 	windowClass.hIcon = LoadIcon(getLanguageModule(),
 		MAKEINTRESOURCE(IDI_APP_ICON));
 	windowClass.lpszMenuName = NULL;
-	windowClass.lpszClassName = "LDViewErrorWindow";
+	windowClass.lpszClassName = _UC("LDViewErrorWindow");
 	RegisterClassEx(&windowClass);
 }
 
@@ -1986,6 +1989,7 @@ void ModelWindow::initCommonControls(DWORD mask)
 	{
 		INITCOMMONCONTROLSEX initCtrls;
 
+		memset(&initCtrls, 0, sizeof(initCtrls));
 		initCtrls.dwSize = sizeof(INITCOMMONCONTROLSEX);
 		initCtrls.dwICC = mask;
 		InitCommonControlsEx(&initCtrls);
@@ -2004,9 +2008,9 @@ void ModelWindow::createErrorWindow(void)
 		registerErrorWindowClass();
 		hErrorWindow = createDialog(IDD_ERRORS, FALSE);
 		hErrorStatusWindow = CreateStatusWindow(
-			WS_CHILD | WS_VISIBLE | SBARS_SIZEGRIP, "", hErrorWindow,
+			WS_CHILD | WS_VISIBLE | SBARS_SIZEGRIP, _UC(""), hErrorWindow,
 			2000);
-		setStatusBarParts(hErrorStatusWindow, 1, parts);
+		statusBarSetParts(hErrorStatusWindow, 1, parts);
 		originalErrorDlgProc = (WNDPROC)GetWindowLongPtr(hErrorWindow,
 			DWLP_DLGPROC);
 		SetWindowLongPtr(hErrorWindow, GWLP_USERDATA, (LONG_PTR)this);
@@ -2116,7 +2120,7 @@ void ModelWindow::populateErrorList(void)
 
 int ModelWindow::populateErrorTree(void)
 {
-	char buf[128] = "";
+	UCCHAR buf[1024] = _UC("");
 
 	if (!windowShown)
 	{
@@ -2170,30 +2174,31 @@ int ModelWindow::populateErrorTree(void)
 	{
 		if (errorCount == 1)
 		{
-			sprintf(buf, TCLocalStrings::get("ErrorTreeOneError"));
+			ucstrcpy(buf, ls(_UC("ErrorTreeOneError")));
 		}
 		else
 		{
-			sprintf(buf, TCLocalStrings::get("ErrorTreeNErrors"), errorCount);
+			sucprintf(buf, COUNT_OF(buf), ls(_UC("ErrorTreeNErrors")), errorCount);
 		}
 		if (warningCount > 0)
 		{
-			strcat(buf, ", ");
+			ucstrcat(buf, _UC(", "));
 		}
 	}
 	if (warningCount > 0)
 	{
 		if (warningCount == 1)
 		{
-			strcat(buf, TCLocalStrings::get("ErrorTreeOneWarning"));
+			ucstrcat(buf, ls(_UC("ErrorTreeOneWarning")));
 		}
 		else
 		{
-			sprintf(buf + strlen(buf),
-				TCLocalStrings::get("ErrorTreeNWarnings"), warningCount);
+			size_t len = ucstrlen(buf);
+			sucprintf(buf + len, COUNT_OF(buf) - len,
+				ls(_UC("ErrorTreeNWarnings")), warningCount);
 		}
 	}
-	SendMessage(hErrorStatusWindow, SB_SETTEXT, 0, (LPARAM)buf);
+	statusBarSetText(hErrorStatusWindow, 0, buf);
 	return errorCount;
 }
 
@@ -2253,26 +2258,10 @@ int ModelWindow::loadModel(void)
 	makeCurrent();
 	if (strlen(filename) < 900)
 	{
-#ifdef TC_NO_UNICODE
-		char title[1024];
-
-		sprintf(title, "LDView: %s", filename);
-		SetWindowText(parentWindow->getHWindow(), title);
-#else // TC_NO_UNICODE
-		LPWSTR wFilename;
-		LPWSTR title;
-		int bufferSize = MultiByteToWideChar(GetACP(), 0, filename, -1, NULL,
-			0);
-		int titleSize = bufferSize + 32;
-
-		wFilename = new WCHAR[bufferSize];
-		MultiByteToWideChar(GetACP(), 0, filename, -1, wFilename, bufferSize);
-		title = new WCHAR[titleSize];
-		sucprintf(title, titleSize, _UC("LDView: %s"), wFilename);
-		parentWindow->setTitle(title);
-		delete wFilename;
-		delete title;
-#endif // TC_NO_UNICODE
+		ucstring ucFilename;
+		utf8toucstring(ucFilename, filename);
+		ucstring title = _UC("LDView: ") + ucFilename;
+		parentWindow->setTitle(title.c_str());
 	}
 	else
 	{
@@ -2470,17 +2459,17 @@ int ModelWindow::progressCallback(
 	}
 	if (message && message[0])
 	{
-		setStatusText(hStatusBar, 1, message);
+		setStatusText(hStatusBar, 1, message, true);
 	}
 	if (progress >= 0.0f)
 	{
 		int oldProgress;
 		int newProgress = (int)(progress * 100);
 
-		oldProgress = (int)SendMessage(hProgressBar, PBM_GETPOS, 0, 0);
+		oldProgress = progressBarGetPos(hProgressBar);
 		if (oldProgress != newProgress)
 		{
-			SendMessage(hProgressBar, PBM_SETPOS, newProgress, 0);
+			progressBarSetPos(hProgressBar, newProgress);
 		}
 	}
 	if (thisProgressUpdate < lastProgressUpdate || thisProgressUpdate >
@@ -2541,8 +2530,8 @@ LRESULT ModelWindow::doCreate(HWND hWnd, LPCREATESTRUCT lpcs)
 
 LRESULT ModelWindow::doDropFiles(HDROP hDrop)
 {
-	char buf[1024];
-	if (DragQueryFile(hDrop, 0, buf, 1024) > 0)
+	UCCHAR buf[1024];
+	if (DragQueryFile(hDrop, 0, buf, COUNT_OF(buf)) > 0)
 	{
 		DragFinish(hDrop);
 		((LDViewWindow*)parentWindow)->openModel(buf);
@@ -2554,33 +2543,39 @@ LRESULT ModelWindow::doDropFiles(HDROP hDrop)
 void ModelWindow::checkForPart(void)
 {
 	bool isPart = false;
-	char buf[MAX_PATH];
-	char *filePart;
+	UCCHAR buf[MAX_PATH];
+	UCSTR filePart;
+	ucstring filename;
+	utf8toucstring(filename, modelViewer->getFilename());
 
-	if (GetFullPathName(modelViewer->getFilename(), sizeof(buf), buf,
-		&filePart))
+	if (GetFullPathName(filename.c_str(), COUNT_OF(buf), buf, &filePart))
 	{
 		char partsDir[1024];
+		std::string fullPath;
+		ucstringtoutf8(fullPath, buf);
 
 		*filePart = 0;
 		stripTrailingPathSeparators(buf);
 		strcpy(partsDir, LDLModel::lDrawDir());
 		strcat(partsDir, "\\PARTS");
 		convertStringToUpper(partsDir);
-		convertStringToUpper(buf);
-		replaceStringCharacter(buf, '/', '\\');
+		convertStringToUpper(&fullPath[0]);
+		replaceStringCharacter(&fullPath[0], '/', '\\');
 		replaceStringCharacter(partsDir, '/', '\\');
-		if (strcmp(buf, partsDir) == 0)
+		if (fullPath == partsDir)
 		{
 			isPart = true;
 		}
 		else
 		{
-			char shortPath[1024];
+			ucstring ucPartsDir;
+			utf8toucstring(ucPartsDir, partsDir);
+			UCCHAR shortPath[1024];
 
-			if (GetShortPathName(partsDir, shortPath, 1024))
+			if (GetShortPathName(ucPartsDir.c_str(), shortPath,
+				COUNT_OF(shortPath)))
 			{
-				if (strcmp(buf, shortPath) == 0)
+				if (ucstrcmp(buf, shortPath) == 0)
 				{
 					isPart = true;
 				}
@@ -2590,17 +2585,17 @@ void ModelWindow::checkForPart(void)
 	modelViewer->setFileIsPart(isPart);
 }
 
-bool ModelWindow::chDirFromFilename(const char* filename, char* outFilename)
+bool ModelWindow::chDirFromFilename(CUCSTR filename, UCSTR outFilename)
 {
-	char buf[MAX_PATH];
-	char* fileSpot;
+	UCCHAR buf[MAX_PATH];
+	UCCHAR* fileSpot;
 	DWORD result = GetFullPathName(filename, MAX_PATH, buf, &fileSpot);
 
 	if (result <= MAX_PATH && result > 0)
 	{
 //		if (strlen(fileSpot) < strlen(filename))
 		{
-			strcpy(outFilename, buf);
+			ucstrcpy(outFilename, buf);
 		}
 		*fileSpot = 0;
 		if (SetCurrentDirectory(buf))
@@ -2615,11 +2610,11 @@ void ModelWindow::printSystemError(void)
 {
 #ifdef _DEBUG
 	DWORD error = GetLastError();
-	char* buf;
+	UCSTR buf;
 
 	FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
 		FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, error,
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&buf,
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (UCSTR)&buf,
 		0, NULL);
 	_CrtDbgReport(_CRT_WARN, NULL, 0, NULL, "%s\n", buf);
 	LocalFree(buf);
@@ -2637,16 +2632,13 @@ void ModelWindow::setupLighting(void)
 	modelViewer->setup();
 }
 
-#ifndef TC_NO_UNICODE
-void ModelWindow::setStatusText(HWND hStatus, int part, const char *text)
+void ModelWindow::setStatusText(
+	HWND hStatus,
+	int part,
+	CUCSTR text,
+	bool redraw)
 {
-	((LDViewWindow*)parentWindow)->setStatusText(hStatus, part, text);
-}
-#endif // TC_NO_UNICODE
-
-void ModelWindow::setStatusText(HWND hStatus, int part, CUCSTR text)
-{
-	((LDViewWindow*)parentWindow)->setStatusText(hStatus, part, text);
+	((LDViewWindow*)parentWindow)->setStatusText(hStatus, part, text, redraw);
 }
 
 void ModelWindow::drawFPS(void)
@@ -2674,12 +2666,12 @@ void ModelWindow::drawFPS(void)
 				if (fps > 0.0f)
 				{
 					sucprintf(fpsString, COUNT_OF(fpsString),
-						TCLocalStrings::get(_UC("FPSFormat")), fps);
+						ls(_UC("FPSFormat")), fps);
 				}
 				else
 				{
 					ucstrcpy(fpsString,
-						TCLocalStrings::get(_UC("FPSSpinPrompt")));
+						ls(_UC("FPSSpinPrompt")));
 				}
 			}
 			setStatusText(hStatusBar, 1, fpsString);
@@ -2687,7 +2679,7 @@ void ModelWindow::drawFPS(void)
 	}
 	else if (hStatusBar)
 	{
-		setStatusText(hStatusBar, 1, "");
+		setStatusText(hStatusBar, 1, _UC(""));
 	}
 }
 
@@ -2776,12 +2768,14 @@ void ModelWindow::swapBuffers(void)
 	if (!SwapBuffers(hdc))
 	{
 		DWORD error = GetLastError();
-		char buf[1024];
+		UCCHAR buf[1024];
 
 		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
 			FORMAT_MESSAGE_IGNORE_INSERTS, NULL, error, 0, buf,
 			1024, NULL);
-		debugPrintf("swapBuffers error: %s\n", buf);
+		char *errorMessage = ucstringtombs(buf);
+		debugPrintf("swapBuffers error: %s\n", errorMessage);
+		delete[] errorMessage;
 	}
 	if (frontBufferFPS())
 	{
@@ -3447,7 +3441,7 @@ void ModelWindow::grabCleanup(RECT origRect, bool origSlowClear)
 }
 
 bool ModelWindow::saveImage(
-	char *filename,
+	UCSTR filename,
 	int imageWidth,
 	int imageHeight,
 	bool zoomToFit)
@@ -3470,12 +3464,15 @@ bool ModelWindow::saveImage(
 	snapshotTaker->setImageType(getSaveImageType());
 	snapshotTaker->setTrySaveAlpha(saveAlpha);
 	snapshotTaker->setAutoCrop(autoCrop);
-	char *tmpVersion = ucstringtoutf8(((LDViewWindow *)parentWindow)->getProductVersion());
-	snapshotTaker->setProductVersion(tmpVersion);
-	delete[] tmpVersion;
+	std::string productVersion;
+	ucstringtoutf8(productVersion,
+		((LDViewWindow *)parentWindow)->getProductVersion());
+	snapshotTaker->setProductVersion(productVersion);
 	grabSetup(imageWidth, imageHeight, origRect, origSlowClear);
-	retValue = snapshotTaker->saveImage(filename, imageWidth, imageHeight,
-		zoomToFit);
+	std::string utf8Filename;
+	ucstringtoutf8(utf8Filename, filename);
+	retValue = snapshotTaker->saveImage(utf8Filename.c_str(), imageWidth,
+		imageHeight, zoomToFit);
 	grabCleanup(origRect, origSlowClear);
 	return retValue;
 }
@@ -3780,7 +3777,7 @@ bool ModelWindow::printPage(const PRINTDLG &pd)
 				{
 					modelViewer->setYTile(yTile);
 				}
-				progressCallback(TCLocalStrings::get(_UC("PrintingModel")),
+				progressCallback(ls(_UC("PrintingModel")),
 					0.0f, false);
 				for (xTile = 0; xTile < numXTiles && !canceled; xTile++)
 				{
@@ -3978,8 +3975,8 @@ bool ModelWindow::pageSetup(void)
 		if (!parseDevMode(psd.hDevMode))
 		{
 			MessageBox(hParentWindow,
-				TCLocalStrings::get("PrintCustomPaperError"),
-				TCLocalStrings::get("PrintPaperSize"),
+				ls(_UC("PrintCustomPaperError")),
+				ls(_UC("PrintPaperSize")),
 				MB_OK | MB_ICONEXCLAMATION);
 		}
 		TCUserDefaults::setLongForKey(psd.rtMargin.left, LEFT_MARGIN_KEY,
@@ -4013,7 +4010,7 @@ bool ModelWindow::print(void)
 	{
 		DOCINFO di;
 		int printJobId;
-		char *docName = ucstringtombs(parentWindow->getWindowTitle());
+		CUCSTR docName = parentWindow->getWindowTitle();
 
 		parseDevMode(pd.hDevMode);
 		TCUserDefaults::setLongForKey(usePrinterDPI ? 1 : 0,
@@ -4042,7 +4039,6 @@ bool ModelWindow::print(void)
 				AbortDoc(pd.hDC);
 			}
 		}
-		delete docName;
 	}
 	return retValue;
 }
@@ -4054,8 +4050,6 @@ void ModelWindow::disableSaveSize(void)
 
 void ModelWindow::enableSaveSize(BOOL enable /*= TRUE*/)
 {
-	char buf[128];
-
 	EnableWindow(hSaveWidthLabel, enable);
 	EnableWindow(hSaveWidth, enable);
 	EnableWindow(hSaveHeightLabel, enable);
@@ -4063,23 +4057,18 @@ void ModelWindow::enableSaveSize(BOOL enable /*= TRUE*/)
 	EnableWindow(hSaveZoomToFitButton, enable);
 	if (enable)
 	{
-		sprintf(buf, "%d", saveWidth);
-		SendDlgItemMessage(hSaveDialog, IDC_SAVE_WIDTH, WM_SETTEXT, 0, (LPARAM)buf);
+		CUIDialog::windowSetValue(hSaveDialog, IDC_SAVE_WIDTH, saveWidth);
 		SendDlgItemMessage(hSaveDialog, IDC_SAVE_WIDTH, EM_LIMITTEXT, 4, 0);
-		sprintf(buf, "%d", saveHeight);
-		SendDlgItemMessage(hSaveDialog, IDC_SAVE_HEIGHT, WM_SETTEXT, 0,
-			(LPARAM)buf);
+		CUIDialog::windowSetValue(hSaveDialog, IDC_SAVE_HEIGHT, saveHeight);
 		SendDlgItemMessage(hSaveDialog, IDC_SAVE_HEIGHT, EM_LIMITTEXT, 4, 0);
-		SendDlgItemMessage(hSaveDialog, IDC_SAVE_ZOOMTOFIT, BM_SETCHECK,
-			saveZoomToFit ? 1 : 0, 0);
+		CUIDialog::buttonSetChecked(hSaveDialog, IDC_SAVE_ZOOMTOFIT,
+			saveZoomToFit);
 	}
 	else
 	{
-		SendDlgItemMessage(hSaveDialog, IDC_SAVE_WIDTH, WM_SETTEXT, 0,
-			(LPARAM)"");
-		SendDlgItemMessage(hSaveDialog, IDC_SAVE_HEIGHT, WM_SETTEXT, 0,
-			(LPARAM)"");
-		SendDlgItemMessage(hSaveDialog, IDC_SAVE_ZOOMTOFIT, BM_SETCHECK, 0, 0);
+		CUIDialog::windowSetText(hSaveDialog, IDC_SAVE_WIDTH, _UC(""));
+		CUIDialog::windowSetText(hSaveDialog, IDC_SAVE_HEIGHT, _UC(""));
+		CUIDialog::buttonSetChecked(hSaveDialog, IDC_SAVE_ZOOMTOFIT, false);
 	}
 }
 
@@ -4100,8 +4089,7 @@ void ModelWindow::enableSaveSeries(BOOL enable /*= TRUE*/)
 	}
 	else
 	{
-		SendDlgItemMessage(hSaveDialog, IDC_SAVE_DIGITS, WM_SETTEXT, 0,
-			(LPARAM)"");
+		CUIDialog::windowSetText(hSaveDialog, IDC_SAVE_DIGITS, _UC(""));
 	}
 }
 
@@ -4119,22 +4107,20 @@ void ModelWindow::enableSaveAllSteps(BOOL enable /*= TRUE*/)
 	EnableWindow(hSaveStepsSameScaleButton, sameScaleEnable);
 	if (enable)
 	{
-		sendDlgItemMessageUC(hSaveDialog, IDC_STEP_SUFFIX, WM_SETTEXT, 0,
-			(LPARAM)saveStepSuffix);
+		CUIDialog::windowSetText(hSaveDialog, IDC_STEP_SUFFIX, saveStepSuffix);
 	}
 	else
 	{
-		SendDlgItemMessage(hSaveDialog, IDC_STEP_SUFFIX, WM_SETTEXT, 0,
-			(LPARAM)"");
+		CUIDialog::windowSetText(hSaveDialog, IDC_STEP_SUFFIX, _UC(""));
 	}
 	if (sameScaleEnable)
 	{
-		SendDlgItemMessage(hSaveDialog, IDC_SAME_SCALE, BM_SETCHECK,
-			saveStepsSameScale ? 1 : 0, 0);
+		CUIDialog::buttonSetChecked(hSaveDialog, IDC_SAME_SCALE,
+			saveStepsSameScale);
 	}
 	else
 	{
-		SendDlgItemMessage(hSaveDialog, IDC_SAME_SCALE, BM_SETCHECK, 0, 0);
+		CUIDialog::buttonSetChecked(hSaveDialog, IDC_SAME_SCALE, false);
 	}
 }
 
@@ -4143,17 +4129,12 @@ void ModelWindow::updatePrintDPIField(void)
 	if (usePrinterDPI)
 	{
 		EnableWindow(hPrintDPI, FALSE);
-		SendDlgItemMessage(hPrintDialog, IDC_PRINT_DPI, WM_SETTEXT, 0,
-			(LPARAM)"");
+		CUIDialog::windowSetText(hPrintDialog, IDC_PRINT_DPI, _UC(""));
 	}
 	else
 	{
-		char buf[128];
-
-		sprintf(buf, "%d", printDPI);
 		EnableWindow(hPrintDPI, TRUE);
-		SendDlgItemMessage(hPrintDialog, IDC_PRINT_DPI, WM_SETTEXT, 0,
-			(LPARAM)buf);
+		CUIDialog::windowSetValue(hPrintDialog, IDC_PRINT_DPI, printDPI);
 	}
 }
 
@@ -4169,20 +4150,20 @@ void ModelWindow::setupPrintExtras(void)
 	iconPoint.y = iconRect.top;
 	ScreenToClient(hPrintDialog, &iconPoint);
 	MoveWindow(hIconWindow, iconPoint.x, iconPoint.y, 114, 36, TRUE);
-	SendDlgItemMessage(hPrintDialog, IDC_PRINT_PRINTER_DPI, BM_SETCHECK,
-		usePrinterDPI ? 1 : 0, 0);
-	SendDlgItemMessage(hPrintDialog, IDC_PRINT_SPECIFY_DPI, BM_SETCHECK,
-		usePrinterDPI ? 0 : 1, 0);
-	SendDlgItemMessage(hPrintDialog, IDC_PRINT_BACKGROUND, BM_SETCHECK,
-		printBackground ? 1 : 0, 0);
+	CUIDialog::buttonSetChecked(hPrintDialog, IDC_PRINT_PRINTER_DPI,
+		usePrinterDPI);
+	CUIDialog::buttonSetChecked(hPrintDialog, IDC_PRINT_SPECIFY_DPI,
+		!usePrinterDPI);
+	CUIDialog::buttonSetChecked(hPrintDialog, IDC_PRINT_BACKGROUND,
+		printBackground);
 	SendDlgItemMessage(hPrintDialog, IDC_PRINT_DPI, EM_LIMITTEXT, 4, 0);
 	updatePrintDPIField();
 }
 
 void ModelWindow::setupPageSetupExtras(void)
 {
-	SendDlgItemMessage(hPageSetupDialog, IDC_PRINT_BACKGROUND, BM_SETCHECK,
-		printBackground ? 1 : 0, 0);
+	CUIDialog::buttonSetChecked(hPageSetupDialog, IDC_PRINT_BACKGROUND,
+		printBackground);
 }
 
 void ModelWindow::updateSaveSizeEnabled(void)
@@ -4246,7 +4227,7 @@ void ModelWindow::saveImageTypeUpdated(void)
 		enable = TRUE;
 		transBg = saveAlpha ? 1 : 0;
 	}
-	SendMessage(hSaveTransBgButton, BM_SETCHECK, transBg, 0);
+	buttonSetChecked(hSaveTransBgButton, transBg);
 	EnableWindow(hSaveTransBgButton, enable);
 }
 
@@ -4279,19 +4260,15 @@ void ModelWindow::setupSaveExtras(void)
 	hSaveStepSuffixLabel = GetDlgItem(hSaveDialog, IDC_STEP_SUFFIX_LABEL);
 	hSaveStepSuffixField = GetDlgItem(hSaveDialog, IDC_STEP_SUFFIX);
 	hSaveStepsSameScaleButton = GetDlgItem(hSaveDialog, IDC_SAME_SCALE);
-	SendDlgItemMessage(hSaveDialog, IDC_SAVE_ACTUAL_SIZE, BM_SETCHECK,
-		saveActualSize ? 0 : 1, 0);
-	SendDlgItemMessage(hSaveDialog, IDC_SAVE_SERIES, BM_SETCHECK,
-		saveSeries ? 1 : 0, 0);
+	CUIDialog::buttonSetChecked(hSaveDialog, IDC_SAVE_ACTUAL_SIZE,
+		!saveActualSize);
+	CUIDialog::buttonSetChecked(hSaveDialog, IDC_SAVE_SERIES, saveSeries);
 	SendDlgItemMessage(hSaveDialog, IDC_SAVE_DIGITS_SPIN, UDM_SETRANGE32, 1, 5);
 	SendDlgItemMessage(hSaveDialog, IDC_SAVE_DIGITS_SPIN, UDM_SETPOS, 0,
 		MAKELONG(saveDigits, 0));
-	SendDlgItemMessage(hSaveDialog, IDC_IGNORE_PBUFFER, BM_SETCHECK,
-		ignorePBuffer ? 1 : 0, 0);
-	SendDlgItemMessage(hSaveDialog, IDC_AUTO_CROP, BM_SETCHECK,
-		autoCrop ? 1 : 0, 0);
-	SendDlgItemMessage(hSaveDialog, IDC_ALL_STEPS, BM_SETCHECK,
-		saveAllSteps ? 1 : 0, 0);
+	CUIDialog::buttonSetChecked(hSaveDialog, IDC_IGNORE_PBUFFER, ignorePBuffer);
+	CUIDialog::buttonSetChecked(hSaveDialog, IDC_AUTO_CROP, autoCrop);
+	CUIDialog::buttonSetChecked(hSaveDialog, IDC_ALL_STEPS, saveAllSteps);
 	updateSaveSizeEnabled();
 	updateSaveSeriesEnabled();
 	updateSaveAllStepsEnabled();
@@ -4302,21 +4279,16 @@ void ModelWindow::updateSaveWidth(void)
 {
 	if (!saveActualSize)
 	{
-		char buf[128];
 		int temp;
 
-		SendDlgItemMessage(hSaveDialog, IDC_SAVE_WIDTH, WM_GETTEXT, 128,
-			(LPARAM)buf);
-		if (sscanf(buf, "%d", &temp) == 1 && temp > 0 &&
-			temp <= MAX_SNAPSHOT_WIDTH)
+		if (CUIDialog::windowGetValue(hSaveDialog, IDC_SAVE_WIDTH, temp) &&
+			temp > 0 && temp <= MAX_SNAPSHOT_WIDTH)
 		{
 			saveWidth = temp;
 		}
 		else
 		{
-			sprintf(buf, "%d", saveWidth);
-			SendDlgItemMessage(hSaveDialog, IDC_SAVE_WIDTH, WM_SETTEXT, 0,
-				(LPARAM)buf);
+			CUIDialog::windowSetValue(hSaveDialog, IDC_SAVE_WIDTH, saveWidth);
 			MessageBeep(MB_OK);
 		}
 	}
@@ -4326,21 +4298,16 @@ void ModelWindow::updateSaveHeight(void)
 {
 	if (!saveActualSize)
 	{
-		char buf[128];
 		int temp;
 
-		SendDlgItemMessage(hSaveDialog, IDC_SAVE_HEIGHT, WM_GETTEXT, 128,
-			(LPARAM)buf);
-		if (sscanf(buf, "%d", &temp) == 1 && temp > 0 &&
-			temp <= MAX_SNAPSHOT_HEIGHT)
+		if (CUIDialog::windowGetValue(hSaveDialog, IDC_SAVE_HEIGHT, temp) &&
+			temp > 0 && temp <= MAX_SNAPSHOT_HEIGHT)
 		{
 			saveHeight = temp;
 		}
 		else
 		{
-			sprintf(buf, "%d", saveHeight);
-			SendDlgItemMessage(hSaveDialog, IDC_SAVE_HEIGHT, WM_SETTEXT, 0,
-				(LPARAM)buf);
+			CUIDialog::windowSetValue(hSaveDialog, IDC_SAVE_HEIGHT, saveHeight);
 			MessageBeep(MB_OK);
 		}
 	}
@@ -4350,39 +4317,18 @@ void ModelWindow::updateStepSuffix(void)
 {
 	if (saveAllSteps)
 	{
-		std::string newSuffix;
+		ucstring newSuffix;
 
 		CUIDialog::windowGetText(hSaveDialog, IDC_STEP_SUFFIX, newSuffix);
 		delete saveStepSuffix;
-		saveStepSuffix = mbstoucstring(newSuffix.c_str(),
-			(int)newSuffix.size());
+		saveStepSuffix = copyString(newSuffix.c_str());
 	}
 	updateSaveFilename();
-	//std::string filename;
-	//HWND hDlg = GetParent(hSaveDialog);
-
-	//CUIDialog::windowGetText(hDlg, edt1, filename);
-	//if (filename.size() > 0 && saveAllSteps)
-	//{
-	//	char *oldSuffix = ucstringtombs(saveStepSuffix);
-	//	std::string newFilename;
-	//	std::string newSuffix;
-
-	//	newFilename = LDSnapshotTaker::removeStepSuffix(filename, oldSuffix);
-	//	delete oldSuffix;
-	//	CUIDialog::windowGetText(hSaveDialog, IDC_STEP_SUFFIX, newSuffix);
-	//	newFilename = LDSnapshotTaker::addStepSuffix(newFilename, newSuffix, 1,
-	//		modelViewer->getNumSteps());
-	//	SendMessage(hDlg, CDM_SETCONTROLTEXT, edt1,
-	//		(LPARAM)newFilename.c_str());
-	//	delete saveStepSuffix;
-	//	saveStepSuffix = mbstoucstring(newSuffix.c_str());
-	//}
 }
 
 void ModelWindow::updateSaveFilename(void)
 {
-	char buf[1024];
+	UCCHAR buf[1024];
 
 	if (calcSaveFilename(buf, 1024))
 	{
@@ -4393,12 +4339,10 @@ void ModelWindow::updateSaveFilename(void)
 
 void ModelWindow::updateSaveDigits(void)
 {
-	char buf[128];
 	int temp;
 
-	SendDlgItemMessage(hSaveDialog, IDC_SAVE_DIGITS, WM_GETTEXT, sizeof(buf),
-		(LPARAM)buf);
-	if (sscanf(buf, "%d", &temp) == 1 && temp > 0 && temp <= 6)
+	if (CUIDialog::windowGetValue(hSaveDialog, IDC_SAVE_DIGITS, temp) &&
+		temp > 0 && temp <= 6)
 	{
 		saveDigits = temp;
 	}
@@ -4451,40 +4395,32 @@ BOOL ModelWindow::doSaveClick(int controlId, HWND /*hControlWnd*/)
 		doSaveOptionsClick();
 		break;
 	case IDC_SAVE_ACTUAL_SIZE:
-		saveActualSize = SendDlgItemMessage(hSaveDialog, controlId, BM_GETCHECK,
-			0, 0) ? false : true;
+		saveActualSize = !CUIDialog::buttonGetCheck(hSaveDialog, controlId);
 		updateSaveSizeEnabled();
 		updateSaveAllStepsEnabled();
 		break;
 	case IDC_SAVE_SERIES:
-		saveSeries = SendDlgItemMessage(hSaveDialog, controlId, BM_GETCHECK, 0,
-			0) ? true : false;
+		saveSeries = CUIDialog::buttonGetCheck(hSaveDialog, controlId);
 		updateSaveSeriesEnabled();
 		break;
 	case IDC_ALL_STEPS:
-		saveAllSteps = SendDlgItemMessage(hSaveDialog, controlId, BM_GETCHECK,
-			0, 0) ? true : false;
+		saveAllSteps = CUIDialog::buttonGetCheck(hSaveDialog, controlId);
 		updateSaveAllStepsEnabled();
 		break;
 	case IDC_IGNORE_PBUFFER:
-		ignorePBuffer = SendDlgItemMessage(hSaveDialog, controlId, BM_GETCHECK,
-			0, 0) ? true : false;
+		ignorePBuffer = CUIDialog::buttonGetCheck(hSaveDialog, controlId);
 		break;
 	case IDC_TRANSPARENT_BACKGROUND:
-		saveAlpha = SendDlgItemMessage(hSaveDialog, controlId, BM_GETCHECK, 0,
-			0) ? true : false;
+		saveAlpha = CUIDialog::buttonGetCheck(hSaveDialog, controlId);
 		break;
 	case IDC_AUTO_CROP:
-		autoCrop = SendDlgItemMessage(hSaveDialog, controlId, BM_GETCHECK, 0,
-			0) ? true : false;
+		autoCrop = CUIDialog::buttonGetCheck(hSaveDialog, controlId);
 		break;
 	case IDC_SAME_SCALE:
-		saveStepsSameScale = SendDlgItemMessage(hSaveDialog, controlId,
-			BM_GETCHECK, 0, 0) ? true : false;
+		saveStepsSameScale = CUIDialog::buttonGetCheck(hSaveDialog, controlId);
 		break;
 	case IDC_SAVE_ZOOMTOFIT:
-		saveZoomToFit = SendDlgItemMessage(hSaveDialog, controlId, BM_GETCHECK,
-			0, 0) ? true : false;
+		saveZoomToFit = CUIDialog::buttonGetCheck(hSaveDialog, controlId);
 		updateSaveAllStepsEnabled();
 		break;
 	default:
@@ -4518,7 +4454,7 @@ BOOL ModelWindow::doSaveNotify(int /*controlId*/, LPOFNOTIFY notification)
 	{
 	case CDN_TYPECHANGE:
 		{
-			char buf[1024];
+			UCCHAR buf[1024];
 
 			saveType = notification->lpOFN->nFilterIndex;
 			switch (curSaveOp)
@@ -4589,8 +4525,7 @@ BOOL ModelWindow::doPrintClick(int controlId, HWND /*hControlWnd*/)
 		updatePrintDPIField();
 		break;
 	case IDC_PRINT_BACKGROUND:
-		printBackground = SendDlgItemMessage(hPrintDialog, IDC_PRINT_BACKGROUND,
-			BM_GETCHECK, 0, 0) ? true : false;
+		printBackground = CUIDialog::buttonGetCheck(hPrintDialog, controlId);
 		break;
 	default:
 		return FALSE;
@@ -4600,20 +4535,16 @@ BOOL ModelWindow::doPrintClick(int controlId, HWND /*hControlWnd*/)
 
 void ModelWindow::updatePrintDPI(void)
 {
-	char buf[1024];
 	int temp;
 
-	SendDlgItemMessage(hPrintDialog, IDC_PRINT_DPI, WM_GETTEXT, 128,
-		(LPARAM)buf);
-	if (sscanf(buf, "%d", &temp) == 1 && temp > 0 && temp <= 2400)
+	if (CUIDialog::windowGetValue(hPrintDialog, IDC_PRINT_DPI, temp) && temp > 0
+		&& temp <= 2400)
 	{
 		printDPI = temp;
 	}
 	else
 	{
-		sprintf(buf, "%d", printDPI);
-		SendDlgItemMessage(hPrintDialog, IDC_PRINT_DPI, WM_SETTEXT, 0,
-			(LPARAM)buf);
+		CUIDialog::windowSetValue(hSaveDialog, IDC_PRINT_DPI, printDPI);
 		MessageBeep(MB_OK);
 	}
 }
@@ -4672,7 +4603,7 @@ UINT_PTR CALLBACK ModelWindow::staticSaveHook(
 	}
 }
 
-const char *ModelWindow::saveExtension(int type /*= -1*/) const
+CUCSTR ModelWindow::saveExtension(int type /*= -1*/) const
 {
 	if (type == -1)
 	{
@@ -4681,23 +4612,23 @@ const char *ModelWindow::saveExtension(int type /*= -1*/) const
 	switch (type)
 	{
 	case BMP_IMAGE_TYPE_INDEX:
-		return "bmp";
+		return _UC("bmp");
 	case JPG_IMAGE_TYPE_INDEX:
-		return "jpg";
+		return _UC("jpg");
 	case SVG_IMAGE_TYPE_INDEX:
-		return "svg";
+		return _UC("svg");
 	case EPS_IMAGE_TYPE_INDEX:
-		return "eps";
+		return _UC("eps");
 	case PDF_IMAGE_TYPE_INDEX:
-		return "pdf";
+		return _UC("pdf");
 	default:
-		return "png";
+		return _UC("png");
 	}
 }
 
 bool ModelWindow::calcSaveFilename(
-	char* saveFilename,
-	int /*len*/)
+	UCSTR saveFilename,
+	int len)
 {
 	char* filename = filenameFromPath(modelViewer->getFilename());
 
@@ -4708,7 +4639,7 @@ bool ModelWindow::calcSaveFilename(
 		size_t dotSpot;
 		LDLModel *mpdChild = modelViewer->getMpdChild();
 
-		delete filename;
+		delete[] filename;
 		dotSpot = baseFilename.rfind('.');
 		if (dotSpot < baseFilename.size())
 		{
@@ -4733,6 +4664,8 @@ bool ModelWindow::calcSaveFilename(
 			baseFilename += '-';
 			baseFilename += mpdName;
 		}
+		ucstring ucBaseFilename;
+		utf8toucstring(ucBaseFilename, baseFilename.c_str());
 		if (curSaveOp == LDPreferences::SOExport)
 		{
 			LDExporter *exporter = modelViewer->getExporter(
@@ -4747,46 +4680,53 @@ bool ModelWindow::calcSaveFilename(
 			{
 				extension = "pov";
 			}
-			sprintf(saveFilename, "%s.%s", baseFilename.c_str(),
-				extension.c_str());
+			ucstring ucExtension;
+			utf8toucstring(ucExtension, extension.c_str());
+			sucprintf(saveFilename, len, _UC("%s.%s"), ucBaseFilename.c_str(),
+				ucExtension.c_str());
 			return true;
 		}
 		else
 		{
-			const char *extension = saveExtension();
-			char format[32] = "%s.%s";
+			CUCSTR extension = saveExtension();
+			UCCHAR format[32] = _UC("%s.%s");
 			int max;
 			int i;
 
 			if (saveSeries)
 			{
-				sprintf(format, "%%s%%0%dd.%%s", saveDigits);
+				sucprintf(format, COUNT_OF(format), _UC("%%s%%0%dd.%%s"), saveDigits);
 				max = (int)(pow(10.0, saveDigits) + 0.1);
 			}
 			else
 			{
 				max = 2;
 			}
+			std::string utf8SaveFilename;
 			for (i = 1; i < max && !found; i++)
 			{
 				if (saveSeries)
 				{
-					sprintf(saveFilename, format, baseFilename.c_str(), i,
+					sucprintf(saveFilename, len, format, ucBaseFilename.c_str(), i,
 						extension);
 				}
 				else
 				{
-					sprintf(saveFilename, format, baseFilename.c_str(), extension);
+					sucprintf(saveFilename, len, format, ucBaseFilename.c_str(), extension);
 				}
 				if (saveAllSteps)
 				{
-					char *suffix = ucstringtombs(saveStepSuffix);
-					std::string temp = LDSnapshotTaker::addStepSuffix(saveFilename,
+					std::string suffix;
+					ucstringtoutf8(suffix, saveStepSuffix);
+					ucstringtoutf8(utf8SaveFilename, saveFilename);
+					std::string temp = LDSnapshotTaker::addStepSuffix(utf8SaveFilename,
 						suffix, 1, modelViewer->getNumSteps());
-					delete suffix;
-					strcpy(saveFilename, temp.c_str());
+					ucstring ucTemp;
+					utf8toucstring(ucTemp, temp.c_str());
+					ucstrcpy(saveFilename, ucTemp.c_str());
 				}
-				if (!LDrawModelViewer::fileExists(saveFilename))
+				utf8SaveFilename = ucstringtoutf8(saveFilename);
+				if (!LDrawModelViewer::fileExists(utf8SaveFilename.c_str()))
 				{
 					found = true;
 				}
@@ -4834,21 +4774,21 @@ std::string ModelWindow::getSaveDir(void)
 	return getSaveDir(curSaveOp);
 }
 
-void ModelWindow::fillSnapshotFileTypes(char *fileTypes)
+void ModelWindow::fillSnapshotFileTypes(UCSTR fileTypes)
 {
-	memset(fileTypes, 0, 2);
-	addFileType(fileTypes, ls("PngFileType"), "*.png");
-	addFileType(fileTypes, ls("BmpFileType"), "*.bmp");
-	addFileType(fileTypes, ls("JpgFileType"), "*.jpg");
+	memset(fileTypes, 0, 2 * sizeof(fileTypes[0]));
+	addFileType(fileTypes, ls(_UC("PngFileType")), _UC("*.png"));
+	addFileType(fileTypes, ls(_UC("BmpFileType")), _UC("*.bmp"));
+	addFileType(fileTypes, ls(_UC("JpgFileType")), _UC("*.jpg"));
 	if (TCUserDefaults::boolForKey(GL2PS_ALLOWED_KEY, false, false))
 	{
-		addFileType(fileTypes, ls("SvgFileType"), "*.svg");
-		addFileType(fileTypes, ls("EpsFileType"), "*.eps");
-		addFileType(fileTypes, ls("PdfFileType"), "*.pdf");
+		addFileType(fileTypes, ls(_UC("SvgFileType")), _UC("*.svg"));
+		addFileType(fileTypes, ls(_UC("EpsFileType")), _UC("*.eps"));
+		addFileType(fileTypes, ls(_UC("PdfFileType")), _UC("*.pdf"));
 	}
 }
 
-void ModelWindow::fillExportFileTypes(char *fileTypes)
+void ModelWindow::fillExportFileTypes(UCSTR fileTypes)
 {
 	memset(fileTypes, 0, 2 * sizeof(fileTypes[0]));
 	for (int i = LDrawModelViewer::ETFirst; i <= LDrawModelViewer::ETLast; i++)
@@ -4859,26 +4799,26 @@ void ModelWindow::fillExportFileTypes(char *fileTypes)
 		if (exporter != NULL)
 		{
 			ucstring fileType = exporter->getTypeDescription();
-			char *aFileType = ucstringtombs(fileType.c_str(),
-				(int)fileType.size());
-			std::string extension = "*.";
+			ucstring extension = _UC("*.");
+			std::string exporterExtension = exporter->getExtension();
+			ucstring ucExporterExtension;
+			utf8toucstring(ucExporterExtension, exporterExtension);
 
-			extension += exporter->getExtension();
-			addFileType(fileTypes, aFileType, extension.c_str());
-			delete aFileType;
+			extension += ucExporterExtension;
+			addFileType(fileTypes, fileType.c_str(), extension.c_str());
 		}
 	}
 }
 
 bool ModelWindow::getSaveFilename(
-	char* saveFilename,
+	UCSTR saveFilename,
 	int len)
 {
 	OPENFILENAME openStruct;
-	char fileTypes[1024];
+	UCCHAR fileTypes[1024];
 	std::string initialDir = getSaveDir();
 	int maxImageType = 3;
-	char defaultExt[32];
+	ucstring defaultExt;
 
 	stopAnimation();
 	memset(&openStruct, 0, sizeof(OPENFILENAME));
@@ -4899,12 +4839,12 @@ bool ModelWindow::getSaveFilename(
 			modelViewer->setExportType(
 				(LDrawModelViewer::ExportType)saveExportType);
 			saveType = saveExportType;
-			openStruct.lpstrTitle = ls("ExportModel");
+			openStruct.lpstrTitle = ls(_UC("ExportModel"));
 			openStruct.Flags |= OFN_ENABLETEMPLATE | OFN_ENABLEHOOK;
 			openStruct.hInstance = getLanguageModule();
 			openStruct.lpTemplateName = MAKEINTRESOURCE(IDD_EXPORT_SAVE_OPTIONS);
 			openStruct.lpfnHook = staticSaveHook;
-			strcpy(defaultExt, extension.c_str());
+			utf8toucstring(defaultExt, extension);
 		}
 		break;
 	case LDPreferences::SOSnapshot:
@@ -4915,12 +4855,12 @@ bool ModelWindow::getSaveFilename(
 			saveImageType = 1;
 		}
 		saveType = saveImageType;
-		openStruct.lpstrTitle = ls("SaveSnapshot");
+		openStruct.lpstrTitle = ls(_UC("SaveSnapshot"));
 		openStruct.Flags |= OFN_ENABLETEMPLATE | OFN_ENABLEHOOK;
 		openStruct.hInstance = getLanguageModule();
 		openStruct.lpTemplateName = MAKEINTRESOURCE(IDD_SAVE_OPTIONS);
 		openStruct.lpfnHook = staticSaveHook;
-		strcpy(defaultExt, saveExtension());
+		defaultExt = saveExtension();
 		break;
 	}
 	openStruct.lStructSize = getOpenFilenameSize(false);
@@ -4928,21 +4868,24 @@ bool ModelWindow::getSaveFilename(
 	openStruct.lpstrFilter = fileTypes;
 	openStruct.nFilterIndex = saveType;
 	openStruct.lpstrFile = saveFilename;
-	openStruct.lpstrDefExt = defaultExt;
+	openStruct.lpstrDefExt = defaultExt.c_str();
 	openStruct.nMaxFile = len;
-	openStruct.lpstrInitialDir = initialDir.c_str();
+	ucstring ucInitialDir;
+	utf8toucstring(ucInitialDir, initialDir);
+	openStruct.lpstrInitialDir = ucInitialDir.c_str();
 	openStruct.lCustData = (LPARAM)this;
 	if (GetSaveFileName(&openStruct))
 	{
 		int index = (int)openStruct.nFilterIndex;
-		char *dir = directoryFromPath(saveFilename);
+		ucstring dir = directoryFromPath(saveFilename);
 		LDPreferences *ldPrefs = prefs->getLDPrefs();
 
 		if (ldPrefs != NULL)
 		{
-			ldPrefs->setLastSaveDir(curSaveOp, dir, true);
+			std::string utf8Dir;
+			ucstringtoutf8(utf8Dir, dir);
+			ldPrefs->setLastSaveDir(curSaveOp, utf8Dir.c_str(), true);
 		}
-		delete dir;
 		switch (curSaveOp)
 		{
 		case LDPreferences::SOExport:
@@ -4981,62 +4924,46 @@ bool ModelWindow::getSaveFilename(
 	return false;
 }
 
-bool ModelWindow::shouldOverwriteFile(char* filename)
-{
-	char buf[256];
-
-	sprintf(buf, TCLocalStrings::get("OverwritePrompt"),
-		filename);
-	if (MessageBox(hWindow, buf, "LDView", MB_YESNO | MB_ICONQUESTION) ==
-		IDYES)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
 void ModelWindow::exportModel(void)
 {
-	char filename[1024];
+	UCCHAR filename[1024];
 
 	curSaveOp = LDPreferences::SOExport;
 	if (getSaveFilename(filename, COUNT_OF(filename)))
 	{
 		LDViewWindow *ldviewWindow = ((LDViewWindow *)parentWindow);
-		char *tmpCopyright = ucstringtoutf8(ldviewWindow->getLegalCopyright());
-		std::string copyright = tmpCopyright;
-		delete[] tmpCopyright;
-		char *copyrightSym = "\xC2\xA9";
+		std::string copyright;
+		ucstringtoutf8(copyright, ldviewWindow->getLegalCopyright());
+		std::string copyrightSym = "\xC2\xA9"; // UTF-8 character sequence
 		size_t index = copyright.find(copyrightSym);
 
 		if (index < copyright.size())
 		{
-			copyright = copyright.substr(0, index) + "(C)" +
-				copyright.substr(index + 2);
+			copyright.replace(index, copyrightSym.size(), "(C)");
 		}
 		modelViewer->setExportType(
 			(LDrawModelViewer::ExportType)saveExportType);
 		setWaitCursor();
-		char *tmpProductVersion = ucstringtoutf8(ldviewWindow->getProductVersion());
-		modelViewer->exportCurModel(filename, tmpProductVersion);
-		delete[] tmpProductVersion;
+		std::string utf8ProductVersion;
+		ucstringtoutf8(utf8ProductVersion, ldviewWindow->getProductVersion());
+		std::string utf8Filename;
+		ucstringtoutf8(utf8Filename, filename);
+		modelViewer->exportCurModel(utf8Filename.c_str(),
+			utf8ProductVersion.c_str());
 		setArrowCursor();
 	}
 }
 
 bool ModelWindow::saveSnapshot(void)
 {
-	char saveFilename[1024] = "";
+	UCCHAR saveFilename[1024] = _UC("");
 	bool retValue = saveSnapshot(saveFilename);
 
 	forceRedraw();
 	return retValue;
 }
 
-bool ModelWindow::saveSnapshot(char *saveFilename, bool fromCommandLine,
+bool ModelWindow::saveSnapshot(UCSTR saveFilename, bool fromCommandLine,
 							   bool notReallyCommandLine)
 {
 	bool externalFilename = saveFilename[0] != 0;
@@ -5045,45 +4972,42 @@ bool ModelWindow::saveSnapshot(char *saveFilename, bool fromCommandLine,
 	savingFromCommandLine = fromCommandLine && !notReallyCommandLine;
 	if (saveFilename[0])
 	{
-		char *snapshotSuffix = TCUserDefaults::stringForKey(SNAPSHOT_SUFFIX_KEY,
-			NULL, false);
+		UCSTR snapshotSuffixTemp =
+			TCUserDefaults::stringForKeyUC(SNAPSHOT_SUFFIX_KEY, NULL, false);
+		ucstring snapshotSuffix(snapshotSuffixTemp);
+		delete[] snapshotSuffixTemp;
 
-		if (!snapshotSuffix)
+		if (snapshotSuffix.empty())
 		{
-			char *suffixSpot = strrchr(saveFilename, '.');
+			UCCHAR *suffixSpot = ucstrrchr(saveFilename, _UC('.'));
 
-			if (suffixSpot)
+			if (suffixSpot != NULL)
 			{
-				snapshotSuffix = copyString(suffixSpot);
-			}
-			else
-			{
-				snapshotSuffix = copyString("");
+				snapshotSuffix = suffixSpot;
 			}
 		}
-		if (stringHasCaseInsensitiveSuffix(snapshotSuffix, ".png"))
+		if (stringHasCaseInsensitiveSuffix(snapshotSuffix.c_str(), _UC(".png")))
 		{
 			saveImageType = PNG_IMAGE_TYPE_INDEX;
 		}
-		else if (stringHasCaseInsensitiveSuffix(snapshotSuffix, ".bmp"))
+		else if (stringHasCaseInsensitiveSuffix(snapshotSuffix.c_str(),
+			_UC(".bmp")))
 		{
 			saveImageType = BMP_IMAGE_TYPE_INDEX;
 		}
-		else if (stringHasCaseInsensitiveSuffix(snapshotSuffix, ".jpg"))
+		else if (stringHasCaseInsensitiveSuffix(snapshotSuffix.c_str(),
+			_UC(".jpg")))
 		{
 			saveImageType = JPG_IMAGE_TYPE_INDEX;
 		}
 		else
 		{
-			delete snapshotSuffix;
 			if (fromCommandLine)
 			{
-				consolePrintf(TCLocalStrings::get(
-					_UC("ConsoleSnapshotFailed")));
+				consolePrintf(ls(_UC("ConsoleSnapshotFailed")));
 			}
 			return false;
 		}
-		delete snapshotSuffix;
 	}
 	if (saveFilename[0] || getSaveFilename(saveFilename, 1024))
 	{
@@ -5147,7 +5071,7 @@ BOOL ModelWindow::setupPFD(void)
 			WGL_STENCIL_BITS_ARB, 2,
 			0, 0
 		};
-		int numIntValues = sizeof(intValues) / sizeof(intValues[0]);
+		int numIntValues = COUNT_OF(intValues);
 
 		if (currentAntialiasType)
 		{
@@ -5455,8 +5379,8 @@ bool ModelWindow::performHotKey(int hotKeyIndex)
 
 void ModelWindow::initFail(char * /*reason*/)
 {
-	MessageBox(hWindow, TCLocalStrings::get("OpenGlInitFailed"),
-		TCLocalStrings::get("FatalError"), MB_OK | MB_ICONERROR);
+	MessageBox(hWindow, ls(_UC("OpenGlInitFailed")),
+		ls(_UC("FatalError")), MB_OK | MB_ICONERROR);
 	PostQuitMessage(-1);
 }
 

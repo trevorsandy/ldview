@@ -1629,7 +1629,7 @@ void LDrawModelViewer::loadVGAFont(const char *fontFilename)
 {
 	if (fontImage1x == NULL)
 	{
-		FILE *fontFile = fopen(fontFilename, "rb");
+		FILE *fontFile = ucfopen(fontFilename, "rb");
 
 		if (fontFile)
 		{
@@ -4111,9 +4111,9 @@ LDPartsList *LDrawModelViewer::getPartsList(void)
 }
 
 // NOTE: static function
-bool LDrawModelViewer::fileExists(char* filename)
+bool LDrawModelViewer::fileExists(const char* filename)
 {
-	FILE* file = fopen(filename, "r");
+	FILE* file = ucfopen(filename, "r");
 
 	if (file)
 	{

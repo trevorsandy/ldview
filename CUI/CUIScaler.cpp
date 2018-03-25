@@ -1,12 +1,8 @@
 #include "CUIScaler.h"
 #include "CUIModuleHolder.h"
-
-#ifdef _DEBUG
 #include <VersionHelpers.h>
+
 bool CUIScaler::sm_use32bit = IsWindowsXPOrGreater();
-#else // _DEBUG
-bool CUIScaler::sm_use32bit = false;
-#endif // !_DEBUG
 
 typedef enum MONITOR_DPI_TYPE {
 	MDT_EFFECTIVE_DPI = 0,
@@ -33,7 +29,7 @@ class ShcoreHolder : public CUIModuleHolder
 {
 public:
 	ShcoreHolder(void)
-		: CUIModuleHolder("Shcore.dll")
+		: CUIModuleHolder(_UC("Shcore.dll"))
 		, getDpiForMonitor(NULL)
 	{
 		if (m_hModule != NULL)
@@ -53,7 +49,7 @@ class User32Holder : public CUIModuleHolder
 {
 public:
 	User32Holder(void)
-		: CUIModuleHolder("User32.dll")
+		: CUIModuleHolder(_UC("User32.dll"))
 		, adjustWindowRectExForDpi(NULL)
 	{
 		if (m_hModule != NULL)

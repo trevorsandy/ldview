@@ -1,5 +1,6 @@
 #include "CUIPropertySheet.h"
 #include "CUIScaler.h"
+#include "CUIDialog.h"
 #include <commctrl.h>
 #include <TCFoundation/mystring.h>
 
@@ -156,7 +157,7 @@ INT_PTR CUIPropertySheet::createPropSheet(void)
 	return propertySheetUC(&psHeader);
 }
 
-void CUIPropertySheet::addPage(int resourceId, char* title)
+void CUIPropertySheet::addPage(int resourceId, CUCSTR title)
 {
 	PROPSHEETPAGE page;
 
@@ -217,10 +218,46 @@ int CALLBACK CUIPropertySheet::staticPropSheetProc(HWND hDlg, UINT,
 	return 0;
 }
 
+void CUIPropertySheet::checkForDpiChange(void)
+{
+	// Note: It is VERY important that the call with true as its parameter
+	// happen AFTER the call with no parameters.
+	if (getScaleFactor() != getScaleFactor(true))
+	{
+		int count = hwndArray->getCount();
+		for (int i = 0; i < count; ++i)
+		{
+			HWND hwnd = (*hwndArray)[i];
+			if (hwnd)
+			{
+				CUIWindow::fixDialogSizes(hwnd);
+			}
+		}
+		handleDpiChange();
+	}
+}
+
+BOOL CUIPropertySheet::doDialogInit(
+	HWND hDlg,
+	HWND /*hFocusWindow*/,
+	LPARAM /*lParam*/)
+{
+	CUIWindow::fixDialogSizes(hDlg);
+	return TRUE;
+}
+
 BOOL CUIPropertySheet::doDialogNotify(HWND hDlg, int controlId,
 									  LPNMHDR notification)
 {
 //	debugPrintf("CUIPropertySheet::doDialogNotify: %d\n", notification->code);
+	// We don't get told when the DPI changes, but it does seem to send at least
+	// one notification. So, any time we get a notification, check for DPI
+	// changes. Note that when the LDViewWindow gets a DPI changed message, it
+	// tells us to check then too. That's probably not necessary, but it won't
+	// hurt. And if the user moves the Preferences from one monitor to another,
+	// and the DPI changes because of that, the LDViewWindow won't get a DPI
+	// change message.
+	checkForDpiChange();
 	if (hPropSheet == NULL)
 	{
 		hPropSheet = notification->hwndFrom;

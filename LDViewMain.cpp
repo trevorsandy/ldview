@@ -14,7 +14,6 @@
 #include "SSPreview.h"
 #include "Resource.h"
 #include <LDLib/LDUserDefaultsKeys.h>
-// #include <GLInfo.h>
 #include <stdio.h>
 #include <ctime>
 
@@ -22,6 +21,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #endif
+#include <cstdlib>
 
 //#include <TCFoundation/TCImage.h>
 //#include <TCFoundation/TCJpegOptions.h>
@@ -61,29 +61,30 @@ void createConsole(void)
 
 bool isScreenSaver(void)
 {
-	char *programName;
+	UCSTR programName;
 	bool retVal;
-	char *commandLine = NULL;
+	UCSTR commandLine = NULL;
+	UCSTR spot;
 
 	commandLine = copyString(GetCommandLine());
 	if (commandLine[0] == '"')
 	{
-		if (strchr(commandLine + 1, '"'))
+		if ((spot = ucstrchr(commandLine + 1, '"')) != NULL)
 		{
-			*strchr(commandLine + 1, '"') = 0;
+			*spot = 0;
 		}
 		programName = commandLine + 1;
 	}
 	else
 	{
-		if (strchr(commandLine, ' '))
+		if ((spot = ucstrchr(commandLine, ' ')) != NULL)
 		{
-			*strchr(commandLine, ' ') = 0;
+			*spot = 0;
 		}
 		programName = commandLine;
 	}
-	retVal = strlen(programName) > 4 &&
-		stricmp(programName + strlen(programName) - 4, ".scr") == 0;
+	retVal = ucstrlen(programName) > 4 &&
+		ucstrcasecmp(programName + ucstrlen(programName) - 4, _UC(".scr")) == 0;
 	delete commandLine;
 	return retVal;
 }
@@ -97,7 +98,7 @@ void debugOut(char * /*fmt*/, ...)
 	{
 		debugPath = std::string(userProfile) + "\\LDViewDebug.txt";
 	}
-	FILE* debugFile = fopen(debugPath.c_str(), "a+");
+	FILE* debugFile = ucfopen(debugPath.c_str(), "a+");
 
 	if (debugFile)
 	{
@@ -238,7 +239,7 @@ void screenSaverLoop(HINSTANCE /*hInstance*/, HWND hWindow)
         // If GetMessage returns FALSE, it's quitting time.
         if( !GetMessage( &msg, NULL, 0, 0 ) )
         {
-			debugFile = fopen("LDViewDebug.txt", "a+");
+			debugFile = ucfopen("LDViewDebug.txt", "a+");
 
 			if (debugFile)
 			{
@@ -251,7 +252,7 @@ void screenSaverLoop(HINSTANCE /*hInstance*/, HWND hWindow)
 
         TranslateMessage( &msg );
 		DispatchMessage( &msg );
-		debugFile = fopen("LDViewDebug.txt", "a+");
+		debugFile = ucfopen("LDViewDebug.txt", "a+");
 		if (debugFile)
 		{
 			fprintf(debugFile, "Message: 0x%08X\n", msg.message);
@@ -259,7 +260,7 @@ void screenSaverLoop(HINSTANCE /*hInstance*/, HWND hWindow)
 		}
 		if (msg.message == WM_DESTROY)
 		{
-			debugFile = fopen("LDViewDebug.txt", "a+");
+			debugFile = ucfopen("LDViewDebug.txt", "a+");
 
 			if (debugFile)
 			{
@@ -273,9 +274,9 @@ void screenSaverLoop(HINSTANCE /*hInstance*/, HWND hWindow)
 */
 }
 
-int doPreview(HINSTANCE hInstance, LPSTR lpCmdLine)
+int doPreview(HINSTANCE hInstance, LPCSTR lpCmdLine)
 {
-	char *spot = strchr(lpCmdLine, ' ');
+	const char *spot = strchr(lpCmdLine, ' ');
 
 	debugOut("Command line: %s\n", lpCmdLine);
 	if (spot)
@@ -357,21 +358,21 @@ static void loadLanguageModule(void)
 	// LoadLibrary call will find language modules in that directory, so that
 	// if we're running as a screensaver, it will still find the language
 	// modules.
-	char originalPath[1024];
-	DWORD maxPath = sizeof(originalPath) / sizeof(originalPath[0]);
+	UCCHAR originalPath[1024];
+	DWORD maxPath = COUNT_OF(originalPath);
 	DWORD dirResult = GetCurrentDirectory(maxPath, originalPath);
 	bool dirChange = false;
 
 	if (dirResult > 0 && dirResult <= maxPath)
 	{
-		char *installPath =
-			TCUserDefaults::stringForKey(INSTALL_PATH_4_1_KEY, NULL, false);
+		UCSTR installPath =
+			TCUserDefaults::stringForKeyUC(INSTALL_PATH_4_1_KEY, NULL, false);
 
 		if (installPath)
 		{
 			SetCurrentDirectory(installPath);
+			delete[] installPath;
 			dirChange = true;
-			delete installPath;
 		}
 	}
 	// The following forces CUIWindow to load (and cache) the language module.
@@ -387,23 +388,23 @@ std::string iniFileStatus(const char *iniPath )
 #ifdef __USE_GNU
         errno = 0;
 #endif
-    FILE *iniFile = fopen(iniPath, "r+b");
+  FILE *iniFile = ucfopen(iniPath, "r+b");
 
-    if (!iniFile)
-    {
+  if (!iniFile)
+  {
 #ifdef __USE_GNU
-            return formatString("%s: Could not open file %s; %s",
-                                program_invocation_short_name, iniPath, strerror(errno));
+    return formatString("%s: Could not open file %s; %s",
+                          program_invocation_short_name, iniPath, strerror(errno));
 #else
-            return formatString("LDView: Cound not open file %s", iniPath);
+    return formatString("LDView: Cound not open file %s", iniPath);
 #endif
-    }
-    // we should never get here, but if we do ...
-    return NULL;
+  }
+  // we should never get here, but if we do ...
+  return NULL;
 }
 
 static bool setupUserDefaults(
-	LPSTR lpCmdLine,
+	LPCSTR lpCmdLine,
 	bool screenSaver,
 	bool removableDrive)
 {
@@ -412,6 +413,15 @@ static bool setupUserDefaults(
 	bool retValue = true;
 
 	TCUserDefaults::setCommandLine(lpCmdLine);
+	std::string haveStdOut =
+		TCUserDefaults::commandLineStringForKey("HaveStdOut");
+	if (!haveStdOut.empty())
+	{
+		if (std::strtol(haveStdOut.c_str(), NULL, 10) != 0)
+		{
+			runningWithConsole();
+		}
+	}
 	// IniFile can be specified on the command line; if so, don't load a
 	// different one.
 	if (removableDrive && !TCUserDefaults::isIniFileSet())
@@ -437,8 +447,8 @@ static bool setupUserDefaults(
 	loadLanguageModule();
 	if (screenSaver)
 	{
-		char *ldrawDir =
-			TCUserDefaults::stringForKey(LDRAWDIR_KEY, NULL, false);
+		UCSTR ldrawDir =
+			TCUserDefaults::stringForKeyUC(LDRAWDIR_KEY, NULL, false);
 
 		appName = "Travis Cobbs/LDView Screen Saver";
 		TCUserDefaults::setAppName(appName);
@@ -464,15 +474,15 @@ static bool setupUserDefaults(
 
 static bool isRemovableDrive(HINSTANCE hInstance)
 {
-	char filename[2048];
+	UCCHAR filename[2048];
 
-	if (GetModuleFileName(hInstance, filename, sizeof(filename)) > 0)
+	if (GetModuleFileName(hInstance, filename, COUNT_OF(filename)) > 0)
 	{
 		if (isalpha(filename[0]) && filename[1] == ':')
 		{
-			char driveRoot[4] = "";
+			UCCHAR driveRoot[4] = _UC("");
 
-			strncpy(driveRoot, filename, 2);
+			ucstrncpy(driveRoot, filename, 2);
 			driveRoot[2] = '\\';
 			if (GetDriveType(driveRoot) == DRIVE_REMOVABLE)
 			{
@@ -532,89 +542,76 @@ static bool isRemovableDrive(HINSTANCE hInstance)
 //	}
 //}
 
-int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/,
+#ifdef TC_NO_UNICODE
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/,
 				   LPSTR lpCmdLine, int nCmdShow)
+#else // TC_NO_UNICODE
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/,
+					LPWSTR lpCmdLine, int nCmdShow)
+#endif // !TC_NO_UNICODE
 {
+#ifdef _DEBUG
+//	MessageBox(NULL, _UC("Attach a debugger now..."), _UC("Debug"), MB_OK);
+#endif
 	ModelLoader* modelLoader;
 	bool screenSaver = isScreenSaver();
 	int retValue;
 	STARTUPINFO startupInfo;
-	bool fromConsole = false;
 
-	debugOut("Command Line: <<%s>>\n", lpCmdLine);
-	//HMODULE hThumbs = LoadLibrary("LDViewThumbs.dll");
-	//if (hThumbs != NULL)
-	//{
-	//	PFNDLLREGISTERSERVER pDllRegisterServer =
-	//		(PFNDLLREGISTERSERVER)GetProcAddress(hThumbs, "DllRegisterServer");
-
-	//	CoInitialize(NULL);
-	//	if (pDllRegisterServer != NULL)
-	//	{
-	//		pDllRegisterServer();
-	//	}
-	//}
-	memset(&startupInfo, 0, sizeof(startupInfo));
-	startupInfo.cb = sizeof(startupInfo);
-	GetStartupInfo(&startupInfo);
-	if (startupInfo.lpTitle != NULL &&
-		stringHasCaseInsensitivePrefix(startupInfo.lpTitle, "command line ")
-		&& strcasestr(startupInfo.lpTitle, "ldview") != NULL)
-	{
-		runningWithConsole();
-		fromConsole = true;
-	}
+	debugOut("Command Line: <<%ls>>\n", lpCmdLine);
+	std::string utf8CmdLine;
+	ucstringtoutf8(utf8CmdLine, lpCmdLine);
+	bool udok = setupUserDefaults(utf8CmdLine.c_str(), screenSaver,
+		isRemovableDrive(hInstance));
 #ifdef _DEBUG
 	int _debugFlag = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
 	_debugFlag |= _CRTDBG_LEAK_CHECK_DF;
 	_CrtSetDbgFlag(_debugFlag);
 	_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG);
-	if (!fromConsole)
+	if (!haveConsole())
 	{
 		createConsole();
 	}
-//	MessageBox(NULL, "Attach a debugger now...", "Debug", MB_OK);
 #endif // _DEBUG
-	bool udok = setupUserDefaults(lpCmdLine, screenSaver,
-		isRemovableDrive(hInstance));
 	setupLocalStrings();
-	if (fromConsole && TCUserDefaults::boolForKey("Info", false, false))
+	if (haveConsole() && TCUserDefaults::boolForKey("Info", false, false))
 	{
-		std::string message = "Command Line:\n";
-		message += lpCmdLine;
+	  std::string message = "Command Line:\n";
+	  message += lpCmdLine;
 	  printf("Arguments = %s", message.c_str());
 	}
 	if (TCUserDefaults::boolForKey(DEBUG_COMMAND_LINE_KEY, false, false))
 	{
-		std::string message = "Command Line:\n";
+		ucstring message = _UC("Command Line:\n");
 
 		message += lpCmdLine;
-		MessageBox(NULL, message.c_str(), "LDView", MB_OK);
+		MessageBox(NULL, message.c_str(), _UC("LDView"), MB_OK);
 	}
 	if (!udok && !TCUserDefaults::longForKey("IniFailureShown", 0, 0))
 	{
 		UCCHAR message[2048];
-		UCSTR iniPath = mbstoucstring(TCUserDefaults::getIniPath());
+		ucstring iniPath;
+		utf8toucstring(iniPath, TCUserDefaults::getIniPath());
 
 		sucprintf(message, COUNT_OF(message),
-			TCLocalStrings::get(_UC("IniFailure")), iniPath);
+			TCLocalStrings::get(_UC("IniFailure")), iniPath.c_str());
 		CUIWindow::messageBoxUC(NULL, message, _UC("LDView"), MB_OK);
-		delete iniPath;
 		TCUserDefaults::setLongForKey(1, "IniFailureShown", false);
 	}
 	if (screenSaver)
 	{
-		if (strncasecmp(lpCmdLine, "/p", 2) == 0 ||
-			strncasecmp(lpCmdLine, "-p", 2) == 0 ||
-			strncasecmp(lpCmdLine, "p", 1) == 0)
+		if (strncasecmp(utf8CmdLine.c_str(), "/p", 2) == 0 ||
+			strncasecmp(utf8CmdLine.c_str(), "-p", 2) == 0 ||
+			strncasecmp(utf8CmdLine.c_str(), "p", 1) == 0)
 		{
 			// preview mode
-			return doPreview(hInstance, lpCmdLine);
+			int retValue = doPreview(hInstance, utf8CmdLine.c_str());
+			return retValue;
 		}
-		if (strncasecmp(lpCmdLine, "/c", 2) == 0 ||
-			strncasecmp(lpCmdLine, "-c", 2) == 0 ||
-			strncasecmp(lpCmdLine, "c", 1) == 0 ||
-			strlen(lpCmdLine) == 0)
+		if (strncasecmp(utf8CmdLine.c_str(), "/c", 2) == 0 ||
+			strncasecmp(utf8CmdLine.c_str(), "-c", 2) == 0 ||
+			strncasecmp(utf8CmdLine.c_str(), "c", 1) == 0 ||
+			utf8CmdLine.empty())
 		{
 			SSConfigure *configure;
 
@@ -631,7 +628,7 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/,
 		// bunch of copies of the LDView screensaver running at once.  This
 		// might not fix things entirely, but it will at least prevent it
 		// from launching multiple times concurrently.
-		CreateMutex(NULL, FALSE, "LDView Screensaver");
+		CreateMutex(NULL, FALSE, _UC("LDView Screensaver"));
 		if (GetLastError() == ERROR_ALREADY_EXISTS)
 		{
 			return 0;

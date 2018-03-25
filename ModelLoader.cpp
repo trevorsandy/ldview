@@ -133,11 +133,8 @@ void ModelLoader::startup(void)
 	}
 	if (parentWindow->initWindow())
 	{
-		char *commandLineFilename = getCommandLineFilename();
-		char *snapshotFilename =
-			TCUserDefaults::stringForKey(SAVE_SNAPSHOT_KEY, NULL, false);
-		char *exportFilename =
-			TCUserDefaults::stringForKey(EXPORT_FILE_KEY, NULL, false);
+		UCSTR snapshotFilename =
+			TCUserDefaults::stringForKeyUC(SAVE_SNAPSHOT_KEY, NULL, false);
 		bool savedSnapshot = false;
 		bool saveSnapshots = TCUserDefaults::boolForKey(SAVE_SNAPSHOTS_KEY, 0,
 			false);
@@ -146,29 +143,19 @@ void ModelLoader::startup(void)
 
 		modelWindow = parentWindow->getModelWindow();
 		modelWindow->retain();
-		if (snapshotFilename || exportFilename)
+		if (snapshotFilename != NULL)
 		{
-			char originalDir[MAX_PATH];
-			char fullFilename[MAX_PATH];
+			UCCHAR originalDir[MAX_PATH];
+			UCCHAR fullFilename[MAX_PATH];
 
-			GetCurrentDirectory(sizeof(originalDir), originalDir);
-			if (snapshotFilename)
+			GetCurrentDirectory(COUNT_OF(originalDir), originalDir);
+			if (snapshotFilename != NULL)
 			{
 				if (ModelWindow::chDirFromFilename(snapshotFilename,
 					fullFilename))
 				{
-					delete snapshotFilename;
+					delete[] snapshotFilename;
 					snapshotFilename = copyString(fullFilename);
-					SetCurrentDirectory(originalDir);
-				}
-			}
-			if (exportFilename)
-			{
-				if (ModelWindow::chDirFromFilename(exportFilename,
-					fullFilename))
-				{
-					delete exportFilename;
-					exportFilename = copyString(fullFilename);
 					SetCurrentDirectory(originalDir);
 				}
 			}
@@ -190,9 +177,13 @@ void ModelLoader::startup(void)
 			}
 			if (!screenSaver)
 			{
-				if (commandLineFilename && snapshotFilename)
+				char *commandLineFilename = getCommandLineFilename();
+				ucstring ucCommandLineFilename;
+				utf8toucstring(ucCommandLineFilename, commandLineFilename);
+				delete[] commandLineFilename;
+				if (!ucCommandLineFilename.empty() && snapshotFilename != NULL)
 				{
-					parentWindow->openModel(commandLineFilename);
+					parentWindow->openModel(ucCommandLineFilename.c_str());
 					if (modelWindow->saveSnapshot(snapshotFilename, true))
 					{
 						parentWindow->shutdown();
@@ -204,17 +195,15 @@ void ModelLoader::startup(void)
 						TCUserDefaults::commandLineStringForKey(STEP_KEY);
 					long step;
 
-					parentWindow->openModel(commandLineFilename);
-					if (commandLineFilename != NULL && stepString.size() > 0 &&
-						sscanf(stepString.c_str(), "%li", &step) == 1)
+					parentWindow->openModel(ucCommandLineFilename.c_str());
+					if (!ucCommandLineFilename.empty() && stepString.size() > 0
+						&& sscanf(stepString.c_str(), "%li", &step) == 1)
 					{
 						parentWindow->setStep(step);
 					}
 				}
 			}
 		}
-		delete commandLineFilename;
-		delete snapshotFilename;
 	}
 }
 

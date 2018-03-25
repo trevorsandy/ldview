@@ -58,7 +58,7 @@ m_spacing(spacing)
 			WM_GETFONT, 0, 0), 0);
 		if (setting.getBoolValue())
 		{
-			SendMessage(m_hCheck, BM_SETCHECK, TRUE, 0);
+			CUIWindow::buttonSetChecked(m_hCheck, true);
 		}
 		// When the check box's command goes to the canvas, or it receives the
 		// keyboard focus, we need a way to get back to here.
@@ -113,17 +113,17 @@ int GroupOptionUI::updateLayout(
 
 	// boxHeight below the height of one line of label text.  We need this in
 	// order to center the top line of the box with the actual label.
-	boxHeight = calcTextHeight(hdc, m_label, 1920, newWidth);
+	boxHeight = CUIWindow::calcTextHeight(hdc, m_label, 1920, newWidth);
 	height = boxHeight;
 	if (m_hLabel != NULL)
 	{
 		// Label height will be the height of one line of text times how ever
 		// many lines are needed to fit in the given width.
-		labelHeight = calcTextHeight(hdc, m_label, textWidth, labelWidth);
+		labelHeight = CUIWindow::calcTextHeight(hdc, m_label, textWidth, labelWidth);
 	}
 	if (m_hCheck != NULL)
 	{
-		labelHeight = calcCheckHeight(m_hCheck, hdc, m_checkBoxWidth, textWidth,
+		labelHeight = CUIWindow::calcCheckHeight(m_hCheck, hdc, m_checkBoxWidth, textWidth,
 			labelWidth);
 		//// The check is 16 pixels wide (need to check if this needs to be
 		//// another number that gets converted into dialog units).

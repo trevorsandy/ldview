@@ -271,7 +271,7 @@ bool LDHtmlInventory::generateHtml(
 	LDPartsList *partsList,
 	const char *modelName)
 {
-	FILE *file = fopen(filename, "w");
+	FILE *file = ucfopen(filename, "w");
 	size_t nSlashSpot;
 
 	m_lastFilename = filename;
@@ -327,7 +327,7 @@ bool LDHtmlInventory::generateHtml(
 FILE *LDHtmlInventory::safeOpenCssFile(const std::string &cssFilename,
 									   bool &match)
 {
-	FILE *cssFile = fopen(cssFilename.c_str(), "r");
+	FILE *cssFile = ucfopen(cssFilename.c_str(), "r");
 
 	match = false;
 	if (cssFile)
@@ -355,7 +355,7 @@ FILE *LDHtmlInventory::safeOpenCssFile(const std::string &cssFilename,
 		fclose(cssFile);
 		return NULL;
 	}
-	return fopen(cssFilename.c_str(), "w");
+	return ucfopen(cssFilename.c_str(), "w");
 }
 
 bool LDHtmlInventory::writeExternalCss(void)
@@ -434,17 +434,17 @@ void LDHtmlInventory::writeHeaderCell(
 	LDPartListColumn column,
 	int colSpan)
 {
-	char *utf8ColumnName = ucstringtoutf8(getColumnNameUC(column));
+	std::string utf8ColumnName;
+	ucstringtoutf8(utf8ColumnName, getColumnNameUC(column));
 	if (colSpan == 1)
 	{
-		fprintf(file, "			<th>%s</th>\n", utf8ColumnName);
+		fprintf(file, "			<th>%s</th>\n", utf8ColumnName.c_str());
 	}
 	else
 	{
 		fprintf(file, "			<th colspan=\"%d\">%s</th>\n", colSpan,
-			utf8ColumnName);
+			utf8ColumnName.c_str());
 	}
-	delete[] utf8ColumnName;
 }
 
 void LDHtmlInventory::writeHeaderCell(FILE *file, LDPartListColumn column)
@@ -868,7 +868,7 @@ bool LDHtmlInventory::isSnapshotNeeded(void) const
 		else
 		{
 			const char *snapshotPath = getSnapshotPath();
-			FILE *pFile = fopen(snapshotPath, "rb");
+			FILE *pFile = ucfopen(snapshotPath, "rb");
 
 			if (pFile)
 			{

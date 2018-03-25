@@ -78,19 +78,19 @@ std::string iniFileStatus(const char *iniPath )
 #ifdef __USE_GNU
         errno = 0;
 #endif
-    FILE *iniFile = fopen(iniPath, "r+b");
+  FILE *iniFile = ucfopen(iniPath, "r+b");
 
-    if (!iniFile)
-    {
+  if (!iniFile)
+  {
 #ifdef __USE_GNU
-            return formatString("%s: Could not open file %s; %s",
-                                program_invocation_short_name, iniPath, strerror(errno));
+    return formatString("%s: Could not open file %s; %s",
+                          program_invocation_short_name, iniPath, strerror(errno));
 #else
-            return formatString("LDView: Cound not open file %s", iniPath);
+    return formatString("LDView: Cound not open file %s", iniPath);
 #endif
-    }
-    // we should never get here, but if we do ...
-    return NULL;
+  }
+  // we should never get here, but if we do ...
+  return NULL;
 }
 
 int setupDefaults(char *argv[])

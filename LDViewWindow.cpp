@@ -126,7 +126,6 @@ hExtraDirsImageList(NULL),
 hStatusBar(NULL),
 //hToolbar(NULL),
 //hDeactivatedTooltip(NULL),
-userLDrawDir(NULL),
 fullScreen(false),
 fullScreenActive(false),
 switchingModes(false),
@@ -204,9 +203,9 @@ mpdDialog(NULL)
 	sucprintf(ucUserAgent, COUNT_OF(ucUserAgent),
 		_UC("LDView/%s  (Windows; ldview@gmail.com; ")
 		_UC("http://ldview.sf.net/)"), getProductVersion());
-	char *userAgent = ucstringtoutf8(ucUserAgent);
-	TCWebClient::setUserAgent(userAgent);
-	delete[] userAgent;
+	std::string userAgent;
+	ucstringtoutf8(userAgent, ucUserAgent);
+	TCWebClient::setUserAgent(userAgent.c_str());
 	maxStandardSize.cx = 0;
 	maxStandardSize.cy = 0;
 //	DeleteObject(hBackgroundBrush);
@@ -226,8 +225,6 @@ void LDViewWindow::dealloc(void)
 	TCObject::release(boundingBoxDialog);
 	TCObject::release(mpdDialog);
 	TCObject::release(toolbarStrip);
-	delete userLDrawDir;
-	userLDrawDir = NULL;
 	delete videoModes;
 	videoModes = NULL;
 	if (hOpenGLInfoWindow)
@@ -346,15 +343,15 @@ void LDViewWindow::setScreenSaver(bool flag)
 	}
 }
 
-const char* LDViewWindow::windowClassName(void)
+const UCCHAR* LDViewWindow::windowClassName(void)
 {
 	if (fullScreen || screenSaver)
 	{
-		return "LDViewFullScreenWindow";
+		return _UC("LDViewFullScreenWindow");
 	}
 	else
 	{
-		return "LDViewWindow";
+		return _UC("LDViewWindow");
 	}
 }
 
@@ -381,37 +378,23 @@ LRESULT LDViewWindow::doEraseBackground(RECT* updateRect)
 		updateRect->bottom - updateRect->top);
 	if (!fullScreen && !screenSaver && !hParentWindow)
 	{
-		int bottomMargin = 2;
-		int topMargin = 2;
+		LONG margin = 0;
+		LONG bottomMargin = margin;
+		LONG topMargin = margin;
 
-		if (updateRect->left < 2)
-		{
-			updateRect->left = 2;
-		}
-		if (updateRect->top < 2)
-		{
-			updateRect->top = 2;
-		}
-		if (updateRect->right > width - 2)
-		{
-			updateRect->right = width - 2;
-		}
+		updateRect->left = std::max(updateRect->left, margin);
+		updateRect->right = std::min(updateRect->right, width - margin);
 		if (showStatusBar || showStatusBarOverride)
 		{
 			bottomMargin += getStatusBarHeight();
 		}
-		if (updateRect->bottom > height - bottomMargin)
-		{
-			updateRect->bottom = height - bottomMargin;
-		}
+		updateRect->bottom = std::min(updateRect->bottom,
+			height - bottomMargin);
 		if (showToolbar)
 		{
 			topMargin += getToolbarHeight();
 		}
-		if (updateRect->top < topMargin)
-		{
-			updateRect->top = topMargin;
-		}
+		updateRect->top = std::max(updateRect->top, topMargin);
 	}
 	debugPrintf(2, "updateRect size2: %d, %d\n",
 		updateRect->right - updateRect->left,
@@ -493,27 +476,27 @@ void LDViewWindow::showStatusIcon(
 	if ((showStatusBar || showStatusBarOverride) && hStatusBar)
 	{
 		HICON hModeIcon = hExamineIcon;
-		CUCSTR tipText = TCLocalStrings::get(_UC("ExamineMode"));
+		CUCSTR tipText = ls(_UC("ExamineMode"));
 		int iconPart = 2;
 
 		if (inLatLonMode())
 		{
 			iconPart = 3;
-			SendMessage(hStatusBar, SB_SETICON, 2, (LPARAM)NULL);
-			SendMessage(hStatusBar, SB_SETTIPTEXT, 2, (LPARAM)"");
+			statusBarSetIcon(hStatusBar, 2, NULL);
+			statusBarSetTipText(hStatusBar, 2, _UC(""));
 		}
 		if (viewMode == LDrawModelViewer::VMFlyThrough)
 		{
 			hModeIcon = hFlythroughIcon;
-			tipText = TCLocalStrings::get(_UC("FlyThroughMode"));
+			tipText = ls(_UC("FlyThroughMode"));
 		}
 		else if (viewMode == LDrawModelViewer::VMWalk)
 		{
 			hModeIcon = hWalkIcon;
-			tipText = TCLocalStrings::get(_UC("WalkMode"));
+			tipText = ls(_UC("WalkMode"));
 		}
-		SendMessage(hStatusBar, SB_SETICON, iconPart, (LPARAM)hModeIcon);
-		sendMessageUC(hStatusBar, SB_SETTIPTEXT, iconPart, (LPARAM)tipText);
+		statusBarSetIcon(hStatusBar, iconPart, hModeIcon);
+		statusBarSetTipText(hStatusBar, iconPart, tipText);
 		if (redraw)
 		{
 			redrawStatusBar();
@@ -563,77 +546,6 @@ void LDViewWindow::createToolbar(void)
 	toolbarStrip->create(this);
 	if (showToolbar)
 	{
-		//TBADDBITMAP addBitmap;
-		//TBBUTTON *buttons;
-		//char buttonTitle[128];
-		//int i;
-		//int count;
-
-		//populateTbButtonInfos();
-		//ModelWindow::initCommonControls(ICC_BAR_CLASSES | ICC_WIN95_CLASSES);
-		//hToolbar = CreateWindowEx(0, TOOLBARCLASSNAME, NULL,
-		//	WS_CHILD | TBSTYLE_FLAT | TBSTYLE_TOOLTIPS | TBSTYLE_TRANSPARENT,
-		//	0, 0, 0, 0, hWindow, (HMENU)ID_TOOLBAR, hInstance, NULL);
-		//SendMessage(hToolbar, TB_SETEXTENDEDSTYLE, 0,
-		//	TBSTYLE_EX_DRAWDDARROWS | WS_EX_TRANSPARENT);
-		//memset(buttonTitle, 0, sizeof(buttonTitle));
-		//SendMessage(hToolbar, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
-		//SendMessage(hToolbar, TB_SETBUTTONWIDTH, 0, MAKELONG(25, 25));
-		//SendMessage(hToolbar, TB_SETBUTTONSIZE, 0, MAKELONG(25, 16));
-		//if (newToolbar())
-		//{
-		//	HIMAGELIST imageList = ImageList_Create(16, 16, ILC_COLOR24 | ILC_MASK,
-		//		10, 10);
-		//	// Should the toolbar bitmap be language-specific?
-		//	HBITMAP hBitmap = (HBITMAP)LoadImage(getLanguageModule(),
-		//		MAKEINTRESOURCE(IDB_TOOLBAR), IMAGE_BITMAP, 0, 0, LR_DEFAULTCOLOR);
-		//	HBITMAP hMask = createMask(hBitmap, RGB(255, 0, 254));
-
-		//	// ImageList_AddMask works fine in XP, and avoids the necessity of
-		//	// creating the mask via the createMask function above, but according
-		//	// to the documentation, it isn't supposed to work on bitmaps whose
-		//	// color depth is greater than 8bpp.  Ours is 24bpp.
-		//	ImageList_Add(imageList, hBitmap, hMask);
-		//	DeleteObject(hBitmap);
-		//	DeleteObject(hMask);
-		//	SendMessage(hToolbar, TB_SETIMAGELIST, 0, (LPARAM)imageList);
-		//	stdBitmapStartId = tbBitmapStartId = 0;
-		//}
-		//else
-		//{
-		//	addBitmap.hInst = HINST_COMMCTRL;
-		//	addBitmap.nID = IDB_STD_SMALL_COLOR;
-		//	stdBitmapStartId = SendMessage(hToolbar, TB_ADDBITMAP, 0,
-		//		(LPARAM)&addBitmap);
-		//	// Should the toolbar bitmap be language-specific?
-		//	addBitmap.hInst = getLanguageModule();
-		//	// This doesn't actually work!!!
-		//	addBitmap.nID = IDB_TOOLBAR;//256;
-		//	// The 10 on the following line is the number of buttons in the bitmap.
-		//	tbBitmapStartId = SendMessage(hToolbar, TB_ADDBITMAP, 10,
-		//		(LPARAM)&addBitmap);
-		//}
-		//// Note: buttonTitle is an empty string.  No need for Unicode.
-		//SendMessage(hToolbar, TB_ADDSTRING, 0, (LPARAM)buttonTitle);
-		//count = (int)tbButtonInfos.size();
-		//buttons = new TBBUTTON[count];
-		//for (i = 0; i < count; i++)
-		//{
-		//	TbButtonInfo &buttonInfo = tbButtonInfos[i];
-
-		//	buttons[i].iBitmap = buttonInfo.getBmpId(stdBitmapStartId,
-		//		tbBitmapStartId);
-		//	buttons[i].idCommand = buttonInfo.getCommandId();
-		//	buttons[i].fsState = buttonInfo.getState();
-		//	buttons[i].fsStyle = buttonInfo.getStyle();
-		//	buttons[i].dwData = (DWORD)this;
-		//	buttons[i].iString = -1;
-		//}
-		//SendMessage(hToolbar, TB_ADDBUTTONS, count, (LPARAM)buttons);
-		//delete[] buttons;
-		//ShowWindow(hToolbar, SW_SHOW);
-		//SendMessage(hToolbar, TB_AUTOSIZE, 0, 0);
-		//ShowWindow(hToolbar, SW_HIDE);
 		toolbarStrip->show();
 	}
 }
@@ -678,7 +590,7 @@ int LDViewWindow::intRound(TCFloat value)
 	}
 }
 
-void LDViewWindow::showStatusLatLon(bool redraw /*= true*/)
+void LDViewWindow::showStatusLatLon(void)
 {
 	if (hStatusBar)
 	{
@@ -696,49 +608,30 @@ void LDViewWindow::showStatusLatLon(bool redraw /*= true*/)
 				lon = 180;
 			}
 			sucprintf(buf, COUNT_OF(buf), ls(_UC("LatLonFormat")), lat, lon);
-			setStatusText(hStatusBar, 2, buf, redraw);
+			setStatusText(hStatusBar, 2, buf);
 		}
 		else
 		{
-			setStatusText(hStatusBar, 2, "", redraw);
+			setStatusText(hStatusBar, 2, _UC(""));
 		}
 	}
 }
 
-#ifndef TC_NO_UNICODE
 void LDViewWindow::setStatusText(
 	HWND hStatus,
-	int part,
-	const char *text,
-	bool redraw /*= true*/)
-{
-	std::wstring temp;
-
-	if (text)
-	{
-		mbstowstring(temp, text);
-	}
-	setStatusText(hStatus, part, temp.c_str(), redraw);
-}
-#endif // TC_NO_UNICODE
-
-void LDViewWindow::setStatusText(
-	HWND hStatus,
-	int part,
+	TCByte part,
 	CUCSTR text,
-	bool redraw /*= true*/)
+	bool redraw /*= false*/)
 {
-	UCCHAR oldText[1024];
-
-	sendMessageUC(hStatus, SB_GETTEXT, part, (LPARAM)oldText);
-	if (ucstrcmp(text, oldText) != 0)
+	ucstring oldText;
+	statusBarGetText(hStatus, part, oldText);
+	if (oldText != text)
 	{
-		sendMessageUC(hStatus, SB_SETTEXT, part, (LPARAM)text);
+		statusBarSetText(hStatus, part, text);
 		if (redraw)
 		{
 			redrawStatusBar();
 		}
-		debugPrintf(2, "0x%08X: %s\n", hStatus, text);
 	}
 }
 
@@ -759,14 +652,14 @@ void LDViewWindow::updateStatusParts(void)
 			parts[2] = 100;
 			rightMargin += latLonWidth;
 		}
-		setStatusBarParts(hStatusBar, numParts, parts);
+		statusBarSetParts(hStatusBar, numParts, parts);
 		SendMessage(hStatusBar, SB_GETRECT, numParts - 1, (LPARAM)&rect);
 		parts[1] += rect.right - rect.left - rightMargin;
 		if (latLon)
 		{
 			parts[2] = parts[1] + latLonWidth;
 		}
-		setStatusBarParts(hStatusBar, numParts, parts, false);
+		statusBarSetParts(hStatusBar, numParts, parts, false);
 		showStatusIcon(getViewMode(), false);
 		showStatusLatLon();
 	}
@@ -781,13 +674,13 @@ void LDViewWindow::createStatusBar(void)
 
 		ModelWindow::initCommonControls(ICC_TREEVIEW_CLASSES | ICC_BAR_CLASSES);
 		hStatusBar = CreateStatusWindow(WS_CHILD | WS_VISIBLE | 
-			SBARS_SIZEGRIP | SBT_TOOLTIPS, "", hWindow, ID_STATUS_BAR);
+			SBARS_SIZEGRIP | SBT_TOOLTIPS, _UC(""), hWindow, ID_STATUS_BAR);
 		SetWindowLongW(hStatusBar, GWL_EXSTYLE, WS_EX_TRANSPARENT);
 		updateStatusParts();
-		SendMessage(hStatusBar, SB_SETTEXT, 0 | SBT_NOBORDERS, (LPARAM)"");
+		statusBarSetText(hStatusBar, 0, _UC(""), SBT_NOBORDERS);
 		SendMessage(hStatusBar, SB_GETRECT, 0, (LPARAM)&rect);
 		InflateRect(&rect, scalePoints(-4), scalePoints(-3));
-		hProgressBar = CreateWindowEx(0, PROGRESS_CLASS, "",
+		hProgressBar = CreateWindowEx(0, PROGRESS_CLASS, _UC(""),
 			WS_CHILD | WS_VISIBLE | PBS_SMOOTH, rect.left,
 			rect.top, rect.right - rect.left, rect.bottom - rect.top,
 			hStatusBar, NULL, hInstance, NULL);
@@ -1021,28 +914,28 @@ void LDViewWindow::readVersionInfo(void)
 	{
 		return;
 	}
-	if (getModuleFileNameUC(NULL, moduleFilename, sizeof(moduleFilename)) > 0)
+	if (GetModuleFileName(NULL, moduleFilename, COUNT_OF(moduleFilename)) > 0)
 	{
 		DWORD zero;
-		DWORD versionInfoSize = getFileVersionInfoSizeUC(moduleFilename, &zero);
+		DWORD versionInfoSize = GetFileVersionInfoSize(moduleFilename, &zero);
 
 		if (versionInfoSize > 0)
 		{
 			BYTE *versionInfo = new BYTE[versionInfoSize];
 
-			if (getFileVersionInfoUC(moduleFilename, NULL, versionInfoSize,
+			if (GetFileVersionInfo(moduleFilename, NULL, versionInfoSize,
 				versionInfo))
 			{
 				UCCHAR *value;
 				UINT versionLength;
 
-				if (verQueryValueUC(versionInfo,
+				if (VerQueryValue(versionInfo,
 					_UC("\\StringFileInfo\\040904B0\\ProductVersion"),
 					(void**)&value, &versionLength))
 				{
 					productVersion = copyString(value);
 				}
-				if (verQueryValueUC(versionInfo,
+				if (VerQueryValue(versionInfo,
 					_UC("\\StringFileInfo\\040904B0\\LegalCopyright"),
 					(void**)&value, &versionLength))
 				{
@@ -1058,12 +951,14 @@ void LDViewWindow::readVersionInfo(void)
 
 void LDViewWindow::createAboutBox(void)
 {
-	UCCHAR fullVersionFormat[1024];
+	ucstring fullVersionFormat;
 	UCCHAR fullVersionString[1024];
 	UCCHAR versionString[128];
 	UCCHAR copyrightString[128];
 	UCCHAR buildDateString[128];
 	char *tmpString = stringByReplacingSubstring(__DATE__, "  ", " ");
+	// Note: __DATE__ is ALWAYS in English, and thus will never contain
+	// non-ASCII characters.
 	UCCHAR *tmpUCString = mbstoucstring(tmpString);
 	int dateCount;
 	UCCHAR **dateComponents = componentsSeparatedByString(tmpUCString, _UC(" "),
@@ -1074,7 +969,7 @@ void LDViewWindow::createAboutBox(void)
 	ucstrcpy(buildDateString, _UC("!UnknownDate!"));
 	if (dateCount == 3)
 	{
-		const UCCHAR *buildMonth = TCLocalStrings::get(dateComponents[0]);
+		const UCCHAR *buildMonth = ls(dateComponents[0]);
 
 		if (buildMonth)
 		{
@@ -1084,11 +979,10 @@ void LDViewWindow::createAboutBox(void)
 		}
 	}
 	deleteStringArray(dateComponents, dateCount);
-	ucstrcpy(versionString, TCLocalStrings::get(_UC("!UnknownVersion!")));
-	ucstrcpy(copyrightString, TCLocalStrings::get(_UC("Copyright")));
+	ucstrcpy(versionString, ls(_UC("!UnknownVersion!")));
+	ucstrcpy(copyrightString, ls(_UC("Copyright")));
 	hAboutWindow = createDialog(IDD_ABOUT_BOX);
-	sendDlgItemMessageUC(hAboutWindow, IDC_VERSION_LABEL, WM_GETTEXT,
-		COUNT_OF(fullVersionFormat), (LPARAM)fullVersionFormat);
+	CUIDialog::windowGetText(hAboutWindow, IDC_VERSION_LABEL, fullVersionFormat);
 	readVersionInfo();
 	if (productVersion != NULL)
 	{
@@ -1103,22 +997,19 @@ void LDViewWindow::createAboutBox(void)
 #else // _WIN64
 	const UCCHAR *platform = _UC("x86");
 #endif // _WIN64
-	sucprintf(fullVersionString, COUNT_OF(fullVersionString), fullVersionFormat,
-		versionString, platform, buildDateString, copyrightString);
-	sendDlgItemMessageUC(hAboutWindow, IDC_VERSION_LABEL, WM_SETTEXT,
-		0, (LPARAM)fullVersionString);
+	sucprintf(fullVersionString, COUNT_OF(fullVersionString),
+		fullVersionFormat.c_str(), versionString, platform, buildDateString,
+		copyrightString);
+	CUIDialog::windowSetText(hAboutWindow, IDC_VERSION_LABEL, fullVersionString);
 }
 
 BOOL LDViewWindow::doLDrawDirOK(HWND hDlg)
 {
-	int length = (int)SendDlgItemMessage(hDlg, IDC_LDRAWDIR, WM_GETTEXTLENGTH, 0, 0);
+	ucstring ldrawDir;
+	CUIDialog::windowGetText(hDlg, IDC_LDRAWDIR, ldrawDir);
 
-	if (length)
+	if (!ldrawDir.empty())
 	{
-		delete userLDrawDir;
-		userLDrawDir = new char[length + 1];
-		SendDlgItemMessage(hDlg, IDC_LDRAWDIR, WM_GETTEXT, (WPARAM)(length + 1),
-			(LPARAM)userLDrawDir);
 		doDialogClose(hDlg);
 	}
 	else
@@ -1210,7 +1101,7 @@ UINT CALLBACK lDrawDirBrowseHook(HWND /*hDlg*/, UINT message, WPARAM /*wParam*/,
 	return 0;
 }
 
-std::string LDViewWindow::getDisplayName(void)
+ucstring LDViewWindow::getDisplayName(void)
 {
 #ifndef TC_NO_UNICODE
 	MONITORINFOEX mi;
@@ -1226,12 +1117,12 @@ std::string LDViewWindow::getDisplayName(void)
 		}
 	}
 #endif // TC_NO_UNICODE
-	return "";
+	return ucstring();
 }
 
 LONG LDViewWindow::changeDisplaySettings(DEVMODE *deviceMode, DWORD flags)
 {
-	std::string deviceName = getDisplayName();
+	ucstring deviceName = getDisplayName();
 
 	//debugPrintf("displayName: %s\n", deviceName.c_str());
 	if (flags == CDS_FULLSCREEN)
@@ -1485,21 +1376,21 @@ LRESULT LDViewWindow::doActivateApp(BOOL activateFlag, DWORD /*threadId*/)
 
 BOOL LDViewWindow::doRemoveExtraDir(void)
 {
-	int index = (int)SendMessage(hExtraDirsList, LB_GETCURSEL, 0, 0);
+	int index = listBoxGetCurSel(hExtraDirsList);
 
 	if (index != LB_ERR)
 	{
 		extraSearchDirs->removeStringAtIndex(index);
-		SendMessage(hExtraDirsList, LB_DELETESTRING, index, 0);
+		listBoxDeleteString(hExtraDirsList, index);
 		if (index >= extraSearchDirs->getCount())
 		{
 			index--;
 		}
 		if (index >= 0)
 		{
-			// ToDo: Unicode?  It's a filename, and I'm avoiding that.
-			SendMessage(hExtraDirsList, LB_SELECTSTRING, index,
-				(LPARAM)extraSearchDirs->stringAtIndex(index));
+			ucstring ucDir;
+			utf8toucstring(ucDir, extraSearchDirs->stringAtIndex(index));
+			listBoxSelectString(hExtraDirsList, ucDir);
 		}
 	}
 	updateExtraDirsEnabled();
@@ -1509,10 +1400,10 @@ BOOL LDViewWindow::doRemoveExtraDir(void)
 BOOL LDViewWindow::doAddExtraDir(void)
 {
 	BROWSEINFO browseInfo;
-	char displayName[MAX_PATH];
+	UCCHAR displayName[MAX_PATH];
 	LPITEMIDLIST itemIdList;
 	char *currentSelection = NULL;
-	int index = (int)SendMessage(hExtraDirsList, LB_GETCURSEL, 0, 0);
+	int index = listBoxGetCurSel(hExtraDirsList);
 
 	if (index != LB_ERR)
 	{
@@ -1521,25 +1412,25 @@ BOOL LDViewWindow::doAddExtraDir(void)
 	browseInfo.hwndOwner = NULL; //hWindow;
 	browseInfo.pidlRoot = NULL;
 	browseInfo.pszDisplayName = displayName;
-	browseInfo.lpszTitle = TCLocalStrings::get("AddExtraDirPrompt");
-	browseInfo.ulFlags = BIF_RETURNONLYFSDIRS;
+	browseInfo.lpszTitle = ls(_UC("AddExtraDirPrompt"));
+	browseInfo.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
 	browseInfo.lpfn = pathBrowserCallback;
 	browseInfo.lParam = (LPARAM)currentSelection;
 	browseInfo.iImage = 0;
 	if ((itemIdList = SHBrowseForFolder(&browseInfo)) != NULL)
 	{
-		char path[MAX_PATH+10];
+		UCCHAR path[MAX_PATH+10];
 	    LPMALLOC pMalloc = NULL;
 		HRESULT hr;
 
 		if (SHGetPathFromIDList(itemIdList, path))
 		{
 			stripTrailingPathSeparators(path);
-			extraSearchDirs->addString(path);
-			SendDlgItemMessage(hExtraDirsWindow, IDC_ESD_LIST, LB_ADDSTRING, 0,
-				(LPARAM)path);
-			SendDlgItemMessage(hExtraDirsWindow, IDC_ESD_LIST, LB_SETCURSEL,
-				extraSearchDirs->getCount() - 1, (LPARAM)path);
+			std::string utf8Path;
+			ucstringtoutf8(utf8Path, path);
+			extraSearchDirs->addString(utf8Path.c_str());
+			listBoxAddString(hExtraDirsList, path);
+			listBoxSetCurSel(hExtraDirsList, extraSearchDirs->getCount() - 1);
 			updateExtraDirsEnabled();
 		}
 	    hr = SHGetMalloc(&pMalloc);
@@ -1554,7 +1445,7 @@ BOOL LDViewWindow::doAddExtraDir(void)
 
 BOOL LDViewWindow::doMoveExtraDirUp(void)
 {
-	int index = (int)SendMessage(hExtraDirsList, LB_GETCURSEL, 0, 0);
+	int index = listBoxGetCurSel(hExtraDirsList);
 	char *extraDir;
 
 	if (index == LB_ERR || index == 0)
@@ -1564,11 +1455,12 @@ BOOL LDViewWindow::doMoveExtraDirUp(void)
 	}
 	extraDir = copyString((*extraSearchDirs)[index]);
 	extraSearchDirs->removeStringAtIndex(index);
-	SendMessage(hExtraDirsList, LB_DELETESTRING, index, 0);
+	listBoxDeleteString(hExtraDirsList, index);
 	extraSearchDirs->insertString(extraDir, index - 1);
-	// ToDo: Unicode ?Maybe: filename
-	SendMessage(hExtraDirsList, LB_INSERTSTRING, index - 1, (LPARAM)extraDir);
-	SendMessage(hExtraDirsList, LB_SETCURSEL, index - 1, (LPARAM)extraDir);
+	ucstring ucExtraDir;
+	utf8toucstring(ucExtraDir, extraDir);
+	listBoxInsertString(hExtraDirsList, index - 1, ucExtraDir);
+	listBoxSetCurSel(hExtraDirsList, index - 1);
 	updateExtraDirsEnabled();
 	delete extraDir;
 	return TRUE;
@@ -1591,7 +1483,7 @@ LRESULT LDViewWindow::doMove(int newX, int newY)
 
 BOOL LDViewWindow::doMoveExtraDirDown(void)
 {
-	int index = (int)SendMessage(hExtraDirsList, LB_GETCURSEL, 0, 0);
+	int index = listBoxGetCurSel(hExtraDirsList);
 	char *extraDir;
 
 	if (index == LB_ERR || index >= extraSearchDirs->getCount() - 1)
@@ -1601,12 +1493,12 @@ BOOL LDViewWindow::doMoveExtraDirDown(void)
 	}
 	extraDir = copyString((*extraSearchDirs)[index]);
 	extraSearchDirs->removeStringAtIndex(index);
-	SendMessage(hExtraDirsList, LB_DELETESTRING, index, 0);
+	listBoxDeleteString(hExtraDirsList, index);
 	extraSearchDirs->insertString(extraDir, index + 1);
-	// ToDo: Unicode ?Maybe: filename
-	SendMessage(hExtraDirsList, LB_INSERTSTRING, index + 1, (LPARAM)extraDir);
-	// ToDo: Unicode ?Maybe: filename
-	SendMessage(hExtraDirsList, LB_SETCURSEL, index + 1, (LPARAM)extraDir);
+	ucstring ucExtraDir;
+	utf8toucstring(ucExtraDir, extraDir);
+	listBoxInsertString(hExtraDirsList, index + 1, ucExtraDir);
+	listBoxSetCurSel(hExtraDirsList, index + 1);
 	updateExtraDirsEnabled();
 	delete extraDir;
 	return TRUE;
@@ -1878,8 +1770,8 @@ void LDViewWindow::switchModes(void)
 		else
 		{
 			stopAnimation();
-			MessageBox(hWindow, TCLocalStrings::get("SwitchBackError"),
-				TCLocalStrings::get("Error"), MB_OK);
+			MessageBox(hWindow, ls(_UC("SwitchBackError")),
+				ls(_UC("Error")), MB_OK);
 			shutdown();
 		}
 	}
@@ -1903,7 +1795,7 @@ void LDViewWindow::shutdown(void)
 	DestroyWindow(hWindow);
 }
 
-LRESULT LDViewWindow::doChar(TCHAR characterCode, LPARAM /*keyData*/)
+LRESULT LDViewWindow::doChar(UCCHAR characterCode, LPARAM /*keyData*/)
 {
 	switch (characterCode)
 	{
@@ -1991,7 +1883,7 @@ void LDViewWindow::initPollingMenu(void)
 	int i;
 	int count = GetMenuItemCount(pollingMenu);
 	MENUITEMINFO itemInfo;
-	char title[256];
+	UCCHAR title[256];
 
 	memset(&itemInfo, 0, sizeof(MENUITEMINFO));
 	itemInfo.cbSize = sizeof(MENUITEMINFO);
@@ -2007,7 +1899,7 @@ void LDViewWindow::initPollingMenu(void)
 	itemInfo.dwTypeData = title;
 	for (i = 0; i < count; i++)
 	{
-		itemInfo.cch = 256;
+		itemInfo.cch = COUNT_OF(title);
 		GetMenuItemInfo(pollingMenu, i, TRUE, &itemInfo);
 		itemInfo.fType = MFT_STRING | MFT_RADIOCHECK;
 		if (i == pollSetting)
@@ -2125,56 +2017,59 @@ HMENU LDViewWindow::getPollingMenu(void)
 
 void LDViewWindow::showHelp(void)
 {
-	char *helpPath = LDViewPreferences::getLDViewPath(
-		TCLocalStrings::get("HelpHtml"), true);
+	UCSTR helpPath = LDViewPreferences::getLDViewPath(
+		ls(_UC("HelpHtml")), true);
 
 	shellExecute(helpPath);
 	delete helpPath;
 }
 
-void LDViewWindow::shellExecute(const char *filename)
+void LDViewWindow::shellExecute(CUCSTR filename)
 {
 	HINSTANCE executeHandle;
 
 	setWaitCursor();
-	executeHandle = ShellExecute(hWindow, NULL, filename, NULL, ".",
+	executeHandle = ShellExecute(hWindow, NULL, filename, NULL, _UC("."),
 		SW_SHOWNORMAL);
 	setArrowCursor();
 	if ((INT_PTR)executeHandle <= 32)
 	{
-		char errorString[1024] = "";
+		UCCHAR errorString[1024] = _UC("");
 
 		switch ((INT_PTR)executeHandle)
 		{
 			case 0:
 			case SE_ERR_OOM:
-				strcpy(errorString, TCLocalStrings::get("HelpHtmlOom"));
+				ucstrcpy(errorString, ls(_UC("HelpHtmlOom")));
 				break;
 			case ERROR_FILE_NOT_FOUND:
-				sprintf(errorString,
-					TCLocalStrings::get("HelpHtmlFileNotFound"),
+				sucprintf(errorString, COUNT_OF(errorString),
+					ls(_UC("HelpHtmlFileNotFound")),
 					filename);
 				break;
 			case ERROR_PATH_NOT_FOUND:
-				sprintf(errorString,
-					TCLocalStrings::get("HelpHtmlPathNotFound"),
+				sucprintf(errorString, COUNT_OF(errorString),
+					ls(_UC("HelpHtmlPathNotFound")),
 					filename);
 				break;
 			case SE_ERR_ACCESSDENIED:
-				sprintf(errorString, TCLocalStrings::get("HelpHtmlAccess"),
+				sucprintf(errorString, COUNT_OF(errorString),
+					ls(_UC("HelpHtmlAccess")),
 					filename);
 				break;
 			case SE_ERR_SHARE:
-				sprintf(errorString, TCLocalStrings::get("HelpHtmlShare"),
+				sucprintf(errorString, COUNT_OF(errorString),
+					ls(_UC("HelpHtmlShare")),
 					filename);
 				break;
 			default:
-				sprintf(errorString, TCLocalStrings::get("HelpHtmlError"),
+				sucprintf(errorString, COUNT_OF(errorString),
+					ls(_UC("HelpHtmlError")),
 					filename);
 				break;
 		}
 		stopAnimation();
-		MessageBox(hWindow, errorString, TCLocalStrings::get("Error"),
+		MessageBox(hWindow, errorString, ls(_UC("Error")),
 			MB_OK | MB_ICONEXCLAMATION);
 	}
 }
@@ -2185,7 +2080,9 @@ void LDViewWindow::openRecentFile(int index)
 
 	if (filename)
 	{
-		openModel(filename);
+		ucstring ucFilename;
+		utf8toucstring(ucFilename, filename);
+		openModel(ucFilename.c_str());
 	}
 }
 
@@ -2194,52 +2091,9 @@ void LDViewWindow::setMenuEnabled(HMENU hParentMenu, int itemID, bool enabled,
 {
 	CUIWindow::setMenuEnabled(hParentMenu, itemID, enabled, byPosition);
 
-	//MENUITEMINFO itemInfo;
-	////BYTE tbState = 0;
-
-	//itemInfo.cbSize = sizeof(itemInfo);
-	//itemInfo.fMask = MIIM_STATE;
-	//if (GetMenuItemInfo(hParentMenu, itemID, byPosition, &itemInfo))
-	//{
-	//	if (enabled)
-	//	{
-	//		itemInfo.fState &= ~MFS_DISABLED;
-	//	}
-	//	else
-	//	{
-	//		itemInfo.fState |= MFS_DISABLED;
-	//	}
-	//	itemInfo.fMask = MIIM_STATE;
-	//	SetMenuItemInfo(hParentMenu, itemID, byPosition, &itemInfo);
-	//}
-	//if (enabled)
-	//{
-	//	tbState |= TBSTATE_ENABLED;
-	//}
 	if (toolbarStrip)
 	{
 		toolbarStrip->enableMainToolbarButton(itemID, enabled);
-		//SendMessage(hToolbar, TB_SETSTATE, (WPARAM)itemID,
-		//	MAKELONG(tbState, 0));
-	}
-	else
-	{
-		//int i;
-		//int count;
-
-		//populateTbButtonInfos();
-		//count = (int)tbButtonInfos.size();
-		//for (i = 0; i < count; i++)
-		//{
-		//	TbButtonInfo &buttonInfo = tbButtonInfos[i];
-
-		//	if (buttonInfo.getCommandId() == itemID)
-		//	{
-		//		buttonInfo.setState((BYTE)(tbState |
-		//			(buttonInfo.getState() & ~TBSTATE_ENABLED)));
-		//		break;
-		//	}
-		//}
 	}
 }
 
@@ -2400,7 +2254,7 @@ void LDViewWindow::showPovCamera(void)
 			if (userMessage && povCamera)
 			{
 				if (messageBoxUC(hWindow, userMessage,
-					TCLocalStrings::get(_UC("PovCameraTitle")), MB_OKCANCEL) ==
+					ls(_UC("PovCameraTitle")), MB_OKCANCEL) ==
 					IDOK)
 				{
 					copyToClipboard(povCamera);
@@ -2408,8 +2262,8 @@ void LDViewWindow::showPovCamera(void)
 			}
 			else
 			{
-				messageBoxUC(hWindow, TCLocalStrings::get(_UC("NoModelLoaded")),
-					TCLocalStrings::get(_UC("Error")), MB_OK);
+				messageBoxUC(hWindow, ls(_UC("NoModelLoaded")),
+					ls(_UC("Error")), MB_OK);
 			}
 			delete userMessage;
 			delete povCamera;
@@ -2432,7 +2286,7 @@ void LDViewWindow::showViewInfo(void)
 			{
 				stopAnimation();
 				if (messageBoxUC(hWindow, message.c_str(),
-					TCLocalStrings::get(_UC("ViewInfoTitle")), MB_OKCANCEL) == IDOK)
+					ls(_UC("ViewInfoTitle")), MB_OKCANCEL) == IDOK)
 				{
 					copyToClipboard(commandLine.c_str());
 				}
@@ -2480,8 +2334,10 @@ void LDViewWindow::showLDrawCommandLine(void)
 			char buf[1024];
 
 			stopAnimation();
-			modelViewer->getLDGLiteCommandLine(buf, sizeof(buf));
-			MessageBox(hWindow, buf, TCLocalStrings::get("LDrawCommandLine"),
+			modelViewer->getLDGLiteCommandLine(buf, COUNT_OF(buf));
+			ucstring message;
+			utf8toucstring(message, buf);
+			MessageBox(hWindow, message.c_str(), ls(_UC("LDrawCommandLine")),
 				MB_OK);
 			copyToClipboard(buf);
 		}
@@ -2500,6 +2356,26 @@ BOOL LDViewWindow::doDialogSize(HWND hDlg, WPARAM sizeType, int newWidth,
 		openGLInfoWindoResizer->resize(newWidth, newHeight);
 	}
 	return FALSE;
+}
+
+void LDViewWindow::registerOpenGLInfoWindowClass(void)
+{
+	WNDCLASSEX windowClass;
+	UCCHAR otherClassName[1024];
+
+	if (!hLibraryUpdateWindow)
+	{
+		createLibraryUpdateWindow();
+	}
+	GetClassName(hLibraryUpdateWindow, otherClassName, COUNT_OF(otherClassName));
+	memset(&windowClass, 0, sizeof(windowClass));
+	windowClass.cbSize = sizeof(windowClass);
+	GetClassInfoEx(getLanguageModule(), otherClassName, &windowClass);
+	windowClass.hIcon = LoadIcon(getLanguageModule(),
+		MAKEINTRESOURCE(IDI_APP_ICON));
+	windowClass.lpszMenuName = NULL;
+	windowClass.lpszClassName = _UC("LDViewOpenGLInfoWindow");
+	RegisterClassEx(&windowClass);
 }
 
 LRESULT LDViewWindow::showOpenGLDriverInfo(void)
@@ -2526,45 +2402,46 @@ LRESULT LDViewWindow::showOpenGLDriverInfo(void)
 
 			stripCRLF(temp);
 			count = countStringLines(temp);
+			// These are always pure ASCII.
 			wglExtensionsList = mbstoucstring(temp);
 			delete temp;
 		}
 		else
 		{
 			wglExtensionsList =
-				copyString(TCLocalStrings::get(_UC("*None*")));
+				copyString(ls(_UC("*None*")));
 		}
 		len = ucstrlen(openGlMessage) + ucstrlen(wglExtensionsList) + 128;
 		message = new UCCHAR[len];
-		sucprintf(message, len, TCLocalStrings::get(_UC("OpenGl+WglInfo")),
+		sucprintf(message, len, ls(_UC("OpenGl+WglInfo")),
 			openGlMessage, wglExtensionsList);
+		registerOpenGLInfoWindowClass();
 		hOpenGLInfoWindow = createDialog(IDD_OPENGL_INFO);
-		sendDlgItemMessageUC(hOpenGLInfoWindow, IDC_OPENGL_INFO, WM_SETTEXT, 0,
-			(LPARAM)message);
+		CUIDialog::windowSetText(hOpenGLInfoWindow, IDC_OPENGL_INFO, message);
 		hOpenGLStatusBar = CreateStatusWindow(WS_CHILD | WS_VISIBLE |
-			SBARS_SIZEGRIP, "", hOpenGLInfoWindow, ID_TOOLBAR);
-		setStatusBarParts(hOpenGLStatusBar, 2, parts);
+			SBARS_SIZEGRIP, _UC(""), hOpenGLInfoWindow, ID_TOOLBAR);
+		statusBarSetParts(hOpenGLStatusBar, 2, parts);
 		if (numOpenGlExtensions == 1)
 		{
-			ucstrcpy(buf, TCLocalStrings::get(_UC("OpenGl1Extension")));
+			ucstrcpy(buf, ls(_UC("OpenGl1Extension")));
 		}
 		else
 		{
 			sucprintf(buf, COUNT_OF(buf),
-				TCLocalStrings::get(_UC("OpenGlnExtensions")),
+				ls(_UC("OpenGlnExtensions")),
 				numOpenGlExtensions);
 		}
-		sendMessageUC(hOpenGLStatusBar, SB_SETTEXT, 0, (LPARAM)buf);
+		statusBarSetText(hOpenGLStatusBar, 0, buf);
 		if (count == 1)
 		{
-			ucstrcpy(buf, TCLocalStrings::get(_UC("OpenGl1WglExtension")));
+			ucstrcpy(buf, ls(_UC("OpenGl1WglExtension")));
 		}
 		else
 		{
 			sucprintf(buf, COUNT_OF(buf),
-				TCLocalStrings::get(_UC("OpenGlnWglExtensions")), count);
+				ls(_UC("OpenGlnWglExtensions")), count);
 		}
-		sendMessageUC(hOpenGLStatusBar, SB_SETTEXT, 1, (LPARAM)buf);
+		statusBarSetText(hOpenGLStatusBar, 1, buf);
 		calcSystemSizes();
 		if (openGLInfoWindoResizer)
 		{
@@ -2749,22 +2626,22 @@ void LDViewWindow::populateExtraDirsListBox(void)
 	int i;
 	int count = extraSearchDirs->getCount();
 
-	SendDlgItemMessage(hExtraDirsWindow, IDC_ESD_LIST, LB_RESETCONTENT, 0, 0);
+	listBoxResetContent(hExtraDirsList);
 	for (i = 0; i < count; i++)
 	{
-		SendDlgItemMessage(hExtraDirsWindow, IDC_ESD_LIST, LB_ADDSTRING, 0,
-			(LPARAM)(*extraSearchDirs)[i]);
+		ucstring ucDir;
+		utf8toucstring(ucDir, (*extraSearchDirs)[i]);
+		listBoxAddString(hExtraDirsList, ucDir);
 	}
 	if (count)
 	{
-		SendDlgItemMessage(hExtraDirsWindow, IDC_ESD_LIST, LB_SELECTSTRING,
-			0, (LPARAM)(*extraSearchDirs)[0]);
+		listBoxSetCurSel(hExtraDirsList, 0);
 	}
 }
 
 void LDViewWindow::updateExtraDirsEnabled(void)
 {
-	int index = (int)SendMessage(hExtraDirsList, LB_GETCURSEL, 0, 0);
+	int index = listBoxGetCurSel(hExtraDirsList);
 
 	if (index == LB_ERR)
 	{
@@ -2809,12 +2686,11 @@ void LDViewWindow::chooseExtraDirs(void)
 	if (!hExtraDirsWindow)
 	{
 		TBBUTTON buttons[4];
-		char buttonTitle[128];
+		UCCHAR buttonTitle[128];
 		int i;
 		RECT tbRect;
 
-		memset(buttonTitle, 0, sizeof(buttonTitle));
-		strcpy(buttonTitle, "");
+		memset(buttonTitle, 0, COUNT_OF(buttonTitle));
 		ModelWindow::initCommonControls(ICC_WIN95_CLASSES);
 		hExtraDirsWindow = createDialog(IDD_EXTRA_DIRS);
 		hExtraDirsToolbar = GetDlgItem(hExtraDirsWindow, IDC_ESD_TOOLBAR);
@@ -2862,17 +2738,16 @@ void LDViewWindow::chooseExtraDirs(void)
 
 void LDViewWindow::chooseNewLDrawDir(void)
 {
-	char *oldDir = getLDrawDir();
+	std::string oldDir = getLDrawDir();
 
 	if (!verifyLDrawDir(true))
 	{
-		if (oldDir)
+		if (!oldDir.empty())
 		{
-			TCUserDefaults::setPathForKey(oldDir, LDRAWDIR_KEY, false);
-			LDLModel::setLDrawDir(oldDir);
+			TCUserDefaults::setPathForKey(oldDir.c_str(), LDRAWDIR_KEY, false);
+			LDLModel::setLDrawDir(oldDir.c_str());
 		}
 	}
-	delete oldDir;
 }
 
 void LDViewWindow::reshapeModelWindow(void)
@@ -3102,7 +2977,7 @@ void LDViewWindow::doLibraryUpdateFinished(int finishType)
 		if (libraryUpdater->getError() && ucstrlen(libraryUpdater->getError()))
 		{
 			sucprintf(statusText, COUNT_OF(statusText), _UC("%s:\n%s"),
-				TCLocalStrings::get(_UC("LibraryUpdateError")),
+				ls(_UC("LibraryUpdateError")),
 				libraryUpdater->getError());
 		}
 		switch (finishType)
@@ -3110,22 +2985,22 @@ void LDViewWindow::doLibraryUpdateFinished(int finishType)
 		case LIBRARY_UPDATE_FINISHED:
 			libraryUpdateFinished = true;
 			ucstrcpy(statusText,
-				TCLocalStrings::get(_UC("LibraryUpdateComplete")));
+				ls(_UC("LibraryUpdateComplete")));
 			break;
 		case LIBRARY_UPDATE_CANCELED:
 			ucstrcpy(statusText,
-				TCLocalStrings::get(_UC("LibraryUpdateCanceled")));
+				ls(_UC("LibraryUpdateCanceled")));
 			break;
 		case LIBRARY_UPDATE_NONE:
 			ucstrcpy(statusText,
-				TCLocalStrings::get(_UC("LibraryUpdateUnnecessary")));
+				ls(_UC("LibraryUpdateUnnecessary")));
 			break;
 		}
 		libraryUpdater->release();
 		libraryUpdater = NULL;
 		if (ucstrlen(statusText))
 		{
-			sendMessageUC(hUpdateStatus, WM_SETTEXT, 0, (LPARAM)statusText);
+			windowSetText(hUpdateStatus, statusText);
 		}
 	}
 }
@@ -3140,9 +3015,8 @@ void LDViewWindow::createLibraryUpdateWindow(void)
 	hUpdateStatus = GetDlgItem(hLibraryUpdateWindow, IDC_UPDATE_STATUS_FIELD);
 	hUpdateCancelButton = GetDlgItem(hLibraryUpdateWindow, IDCANCEL);
 	hUpdateOkButton = GetDlgItem(hLibraryUpdateWindow, IDOK);
-	sendMessageUC(hUpdateStatus, WM_SETTEXT, 0,
-		(LPARAM)TCLocalStrings::get(_UC("CheckingForLibraryUpdates")));
-	SendMessage(hUpdateProgressBar, PBM_SETPOS, 0, 0);
+	windowSetText(hUpdateStatus, ls(_UC("CheckingForLibraryUpdates")));
+	progressBarSetPos(hUpdateProgressBar, 0);
 	RECT luRect;
 	RECT rect;
 	int spacing = GetSystemMetrics(SM_CYCAPTION) +
@@ -3180,25 +3054,27 @@ bool LDViewWindow::installLDraw(void)
 	}
 	else
 	{
-		char *ldrawParentDir = getLDrawDir();
-		char *ldrawDir = copyString(ldrawParentDir, 10);
-		char originalDir[MAX_PATH];
+		std::string ldrawParentDir = getLDrawDir();
+		std::string ldrawDir = ldrawParentDir;
+		UCCHAR originalDir[MAX_PATH];
 
 		libraryUpdateFinished = false;
-		strcat(ldrawDir, "\\LDRAW");
-		GetCurrentDirectory(sizeof(originalDir), originalDir);
-		if (SetCurrentDirectory(ldrawDir))
+		ldrawDir += "\\LDRAW";
+		GetCurrentDirectory(COUNT_OF(originalDir), originalDir);
+		ucstring ucLDrawDir;
+		utf8toucstring(ucLDrawDir, ldrawDir);
+		if (SetCurrentDirectory(ucLDrawDir.c_str()))
 		{
 			SetCurrentDirectory(originalDir);
 		}
 		else
 		{
-			CreateDirectory(ldrawDir, NULL);
+			CreateDirectory(ucLDrawDir.c_str(), NULL);
 		}
 		libraryUpdater = new LDLibraryUpdater;
 		libraryUpdateCanceled = false;
 		libraryUpdater->setLibraryUpdateKey(LAST_LIBRARY_UPDATE_KEY);
-		libraryUpdater->setLdrawDir(ldrawDir);
+		libraryUpdater->setLdrawDir(ldrawDir.c_str());
 		libraryUpdater->installLDraw();
 		showLibraryUpdateWindow(true);
 		while (libraryUpdater)
@@ -3212,9 +3088,8 @@ bool LDViewWindow::installLDraw(void)
 		}
 		if (libraryUpdateFinished)
 		{
-			LDLModel::setLDrawDir(ldrawDir);
+			LDLModel::setLDrawDir(ldrawDir.c_str());
 		}
-		delete ldrawDir;
 		return libraryUpdateFinished;
 	}
 }
@@ -3225,19 +3100,18 @@ void LDViewWindow::checkForLibraryUpdates(void)
 	if (libraryUpdater)
 	{
 		showLibraryUpdateWindow(false);
-//		MessageBox(hWindow, TCLocalStrings::get("LibraryUpdateAlready"),
-//			TCLocalStrings::get("Error"), MB_OK);
+//		MessageBox(hWindow, ls("LibraryUpdateAlready"),
+//			ls("Error"), MB_OK);
 	}
 	else
 	{
 		libraryUpdater = new LDLibraryUpdater;
-		char *ldrawDir = getLDrawDir();
+		std::string ldrawDir = getLDrawDir();
 		UCSTR updateCheckError = NULL;
 
 		libraryUpdateCanceled = false;
 		libraryUpdater->setLibraryUpdateKey(LAST_LIBRARY_UPDATE_KEY);
-		libraryUpdater->setLdrawDir(ldrawDir);
-		delete ldrawDir;
+		libraryUpdater->setLdrawDir(ldrawDir.c_str());
 		if (libraryUpdater->canCheckForUpdates(updateCheckError))
 		{
 			showLibraryUpdateWindow(false);
@@ -3261,10 +3135,9 @@ void LDViewWindow::progressAlertCallback(TCProgressAlert *alert)
 	{
 		debugPrintf("Updater progress (%s): %f\n", alert->getMessage(),
 			alert->getProgress());
-		sendMessageUC(hUpdateStatus, WM_SETTEXT, 0,
-			(LPARAM)alert->getMessageUC());
-		SendMessage(hUpdateProgressBar, PBM_SETPOS,
-			(int)(alert->getProgress() * 100), 0);
+		windowSetText(hUpdateStatus, alert->getMessageUC());
+		progressBarSetPos(hUpdateProgressBar,
+			(int)(alert->getProgress() * 100));
 		if (alert->getProgress() == 1.0f)
 		{
 			if (alert->getExtraInfo())
@@ -3300,11 +3173,9 @@ void LDViewWindow::progressAlertCallback(TCProgressAlert *alert)
 #endif // !_NO_BOOST
 	if (alert && strcmp(alert->getSource(), "TCImage") != 0)
 	{
-		//if (alert->getProgress() == 2.0 && hDeactivatedTooltip != NULL)
 		if (alert->getProgress() == 2.0 && toolbarStrip)
 		{
 			toolbarStrip->activateDeactivatedTooltip();
-			//SendMessage(hDeactivatedTooltip, TTM_ACTIVATE, 1, 0);
 		}
 	}
 }
@@ -3717,24 +3588,11 @@ LRESULT LDViewWindow::doSize(WPARAM sizeType, int newWidth, int newHeight)
 		{
 			toolbarStrip->autoSize();
 		}
-		//if (showToolbar && hToolbar)
-		//{
-		//	SendMessage(hToolbar, TB_AUTOSIZE, 0, 0);
-		//}
 	}
 	LRESULT result = CUIWindow::doSize(sizeType, newWidth, newHeight);
 	updateWindowMonitor();
 	return result;
 }
-
-/*
-int LDViewWindow::getDecorationHeight(void)
-{
-	int menuHeight = GetSystemMetrics(SM_CYMENU);
-
-	return CUIWindow::getDecorationHeight() + menuHeight;
-}
-*/
 
 LRESULT LDViewWindow::doClose(void)
 {
@@ -3745,7 +3603,6 @@ LRESULT LDViewWindow::doClose(void)
 	if (modelWindow)
 	{
 		modelWindow->closeWindow();
-//		modelWindowShown = false;
 	}
 	return CUIWindow::doClose();
 }
@@ -3970,35 +3827,38 @@ void LDViewWindow::populateRecentFileMenuItems(void)
 		for (i = 0; i < maxRecentFiles; i++)
 		{
 			char *filename = recentFiles->stringAtIndex(i);
+			ucstring ucFilename;
+			utf8toucstring(ucFilename, filename);
 
-			if (filename)
+			if (!ucFilename.empty())
 			{
-				char title[2048];
-				char *partialFilename = copyString(filename, 3);
+				UCCHAR title[2048];
+				ucFilename.resize(MAX_PATH);
 
 				// Note: the following function sometimes increases the length
 				// of the string.  I know that seems weird, but "..." takes up
 				// less pixels that something like "WW", for example, so "WW"
 				// could be replaced with "...".  I actually had this happen
 				// with "C:\LDRAW\Texmapped\970c00px50.dat" getting changed to
-				// "C:\LDRAW\Texmapp...\970c00px50.dat".  That's why the
-				// copyString() call above asks for 3 characters of padding.
-				PathCompactPath(hdc, partialFilename, 250);
+				// "C:\LDRAW\Texmapp...\970c00px50.dat".  The documentation for
+				// PathCompactPath states that the path should be a buffer of
+				// length MAX_PATH, so that's what we use.
+				PathCompactPath(hdc, &ucFilename[0], scalePoints(250));
 				if (i < 10)
 				{
-					sprintf(title, "%s&%d %s", i == 9 ? "1" : "", (i + 1) % 10,
-						partialFilename);
+					sucprintf(title, COUNT_OF(title), _UC("%s&%d %s"),
+						i == 9 ? _UC("1") : _UC(""), (i + 1) % 10,
+						ucFilename.c_str());
 				}
 				else
 				{
-					strcpy(title, partialFilename);
+					ucstrcpy(title, ucFilename.c_str());
 				}
 				itemInfo.fMask = MIIM_TYPE | MIIM_ID;
 				itemInfo.fType = MFT_STRING;
 				itemInfo.dwTypeData = title;
 				itemInfo.wID = 31000 + i;
 				InsertMenuItem(hFileMenu, index + i + 1, TRUE, &itemInfo);
-				delete partialFilename;
 			}
 			else
 			{
@@ -4026,7 +3886,7 @@ void LDViewWindow::populateDisplayModeMenuItems(void)
 		{
 			memset(&itemInfo, 0, sizeof(itemInfo));
 			sucprintf(title, COUNT_OF(title),
-				TCLocalStrings::get(_UC("NBitModes")), videoMode.depth);
+				ls(_UC("NBitModes")), videoMode.depth);
 			bitDepthMenu = CreatePopupMenu();
 			itemInfo.cbSize = sizeof(itemInfo);
 			itemInfo.fMask = MIIM_TYPE | MIIM_SUBMENU | MIIM_DATA;
@@ -4102,6 +3962,7 @@ void LDViewWindow::getAllDisplayModes(void)
 	DEVMODE deviceMode;
 
 	memset(&deviceMode, 0, sizeof DEVMODE);
+	deviceMode.dmSize = sizeof DEVMODE;
 	deviceMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL;
 	numVideoModes = 0;
 	videoModes = NULL;
@@ -4275,7 +4136,7 @@ void LDViewWindow::saveSnapshot(void)
 	}
 }
 
-bool LDViewWindow::saveSnapshot(char *saveFilename)
+bool LDViewWindow::saveSnapshot(UCSTR saveFilename)
 {
 	if (modelIsLoaded())
 	{
@@ -4289,14 +4150,14 @@ bool LDViewWindow::saveSnapshot(char *saveFilename)
 // taken, and this lets it avoid the repeat work.  Inside this function, we'll
 // use the same variable to signify that either the user canceled the open file
 // dialog, or the load failed.
-void LDViewWindow::openModel(const char* filename, bool skipLoad)
+void LDViewWindow::openModel(CUCSTR filename, bool skipLoad)
 {
-	char fullPathName[1024] = "";
+	UCCHAR fullPathName[1024] = _UC("");
 
 	stopAnimation();
-	if (filename && strlen(filename) > 0)
+	if (filename != NULL && filename[0] != 0)
 	{
-		char* newFilename = NULL;
+		UCSTR newFilename = NULL;
 
 		if (!verifyLDrawDir())
 		{
@@ -4305,7 +4166,7 @@ void LDViewWindow::openModel(const char* filename, bool skipLoad)
 		if (filename[0] == '"')
 		{
 			newFilename = copyString(filename + 1);
-			size_t length = strlen(newFilename);
+			size_t length = ucstrlen(newFilename);
 
 			if (length > 0 && newFilename[length - 1] == '"')
 			{
@@ -4327,17 +4188,10 @@ void LDViewWindow::openModel(const char* filename, bool skipLoad)
 		OPENFILENAMEUC openStruct;
 		UCCHAR fileTypes[1024];
 		//char openFilename[1024] = "";
-		UCSTR initialDir = lastOpenPathUC();
-		UCCHAR fullPathNameUC[1024] = _UC("");
+		ucstring initialDir = lastOpenPathUC();
 
-		if (initialDir)
+		if (!initialDir.empty())
 		{
-			// ToDo: Unicode: Actual filename isn't Unicode.
-			UCSTR tmpUC = mbstoucstring(fullPathName);
-			char *tmpA;
-
-			ucstrcpy(fullPathNameUC, tmpUC);
-			delete tmpUC;
 			memset(fileTypes, 0, 2 * sizeof(UCCHAR));
 			addFileType(fileTypes, ls(_UC("LDrawFileTypes")),
 				_UC("*.ldr;*.dat;*.mpd"));
@@ -4350,10 +4204,10 @@ void LDViewWindow::openModel(const char* filename, bool skipLoad)
 			openStruct.hwndOwner = hWindow;
 			openStruct.lpstrFilter = fileTypes;
 			openStruct.nFilterIndex = 1;
-			openStruct.lpstrFile = fullPathNameUC;
-			openStruct.nMaxFile = 1024;
-			openStruct.lpstrInitialDir = initialDir;
-			openStruct.lpstrTitle = TCLocalStrings::get(_UC("SelectModelFile"));
+			openStruct.lpstrFile = fullPathName;
+			openStruct.nMaxFile = COUNT_OF(fullPathName);
+			openStruct.lpstrInitialDir = initialDir.c_str();
+			openStruct.lpstrTitle = ls(_UC("SelectModelFile"));
 			openStruct.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST |
 				OFN_HIDEREADONLY;
 			openStruct.lpstrDefExt = _UC("ldr");
@@ -4361,21 +4215,21 @@ void LDViewWindow::openModel(const char* filename, bool skipLoad)
 			{
 				skipLoad = true;
 			}
-			tmpA = ucstringtombs(fullPathNameUC);
-			strcpy(fullPathName, tmpA);
-			delete tmpA;
-			delete initialDir;
 		}
 	}
 	if (skipLoad)
 	{
-		modelWindow->setFilename(fullPathName);
+		std::string utf8Filename;
+		ucstringtoutf8(utf8Filename, fullPathName);
+		modelWindow->setFilename(utf8Filename.c_str());
 	}
 	else
 	{
-		char dir[1024];
-		GetCurrentDirectory(sizeof(dir), dir);
-		modelWindow->setFilename(fullPathName);
+		UCCHAR dir[1024];
+		GetCurrentDirectory(COUNT_OF(dir), dir);
+		std::string utf8Filename;
+		ucstringtoutf8(utf8Filename, fullPathName);
+		modelWindow->setFilename(utf8Filename.c_str());
 		// We need to create the error window before we start loading the
 		// file. Otherwise, the progress tracking that happens when it
 		// loads its images will confuse us and send the app into an
@@ -4384,18 +4238,16 @@ void LDViewWindow::openModel(const char* filename, bool skipLoad)
 		if (modelWindow->loadModel())
 		{
 			updateModelMenuItems();
-			setLastOpenFile(fullPathName);
+			setLastOpenFile(utf8Filename.c_str());
 		}
 		else
 		{
 			if (!modelWindow->getLoadCanceled())
 			{
 				UCCHAR message[2048];
-				UCSTR fullPathNameUC = mbstoucstring(fullPathName);
 
 				sucprintf(message, COUNT_OF(message),
-					TCLocalStrings::get(_UC("ErrorLoadingModel")), fullPathNameUC);
-				delete fullPathNameUC;
+					ls(_UC("ErrorLoadingModel")), fullPathName);
 				messageBoxUC(hWindow, message, _UC("LDView"), MB_OK | MB_ICONWARNING);
 			}
 			modelWindow->setFilename(NULL);
@@ -4422,27 +4274,42 @@ void LDViewWindow::openModel(const char* filename, bool skipLoad)
 	}
 }
 
-char* LDViewWindow::getLDrawDir(void)
+ucstring LDViewWindow::getLDrawDirUC(void)
 {
-	char* lDrawDir = TCUserDefaults::pathForKey(LDRAWDIR_KEY, NULL, false);
+	std::string lDrawDir = getLDrawDir();
+	ucstring ucLDrawDir;
+	utf8toucstring(ucLDrawDir, lDrawDir);
+	return ucLDrawDir;
+}
 
-	if (!lDrawDir)
+std::string LDViewWindow::getLDrawDir(void)
+{
+	char* temp = TCUserDefaults::pathForKey(LDRAWDIR_KEY, NULL, false);
+	std::string lDrawDir;
+
+	if (temp != NULL)
 	{
-		char buf[1024];
+		lDrawDir = temp;
+		delete[] temp;
+	}
+	else
+	{
+		UCCHAR buf[1024];
 
-		if (GetPrivateProfileString("LDraw", "BaseDirectory", NULL, buf, 1024,
-			"ldraw.ini"))
+		if (GetPrivateProfileString(_UC("LDraw"), _UC("BaseDirectory"), NULL,
+			buf, COUNT_OF(buf), _UC("ldraw.ini")))
 		{
-			buf[1023] = 0;
-			lDrawDir = copyString(buf);
+			buf[COUNT_OF(buf) - 1] = 0;
+			ucstringtoutf8(lDrawDir, buf);
 		}
 		else
 		{
-			lDrawDir = copyString(LDLModel::lDrawDir());
+			lDrawDir = LDLModel::lDrawDir();
 		}
 	}
-	stripTrailingPathSeparators(lDrawDir);
-	LDLModel::setLDrawDir(lDrawDir);
+	stripTrailingPathSeparators(&lDrawDir[0]);
+	lDrawDir.resize(strlen(lDrawDir.c_str()));
+	LDLModel::setLDrawDir(lDrawDir.c_str());
 	return lDrawDir;
 }
 
@@ -4456,7 +4323,7 @@ int CALLBACK LDViewWindow::pathBrowserCallback(HWND hwnd, UINT uMsg,
 {
 	if (uMsg == BFFM_SELCHANGED)
 	{
-		char path[MAX_PATH+10];
+		UCCHAR path[MAX_PATH+10];
 		ITEMIDLIST* itemIdList = (ITEMIDLIST*)lParam;
 
 		// For some reason, computers on the network are considered directories,
@@ -4469,65 +4336,66 @@ int CALLBACK LDViewWindow::pathBrowserCallback(HWND hwnd, UINT uMsg,
 	}
 	else if (lpData && uMsg == BFFM_INITIALIZED)
 	{
-		if (strcmp((const char *)lpData, "C:") == 0)
+		CUCSTR initialDir = (CUCSTR)lpData;
+		if (ucstrcmp(initialDir, _UC("C:")) == 0)
 		{
 			// LDLModel strips off the backslash.  We need to add it back.
-			lpData = (LPARAM)"C:\\";
+			initialDir = _UC("C:\\");
 		}
-		// ToDo: Unicode ?path
-		SendMessage(hwnd, BFFM_SETSELECTION, TRUE, lpData);
+		SendMessage(hwnd, BFFM_SETSELECTION, TRUE, (LPARAM)initialDir);
 	}
 	return 0;
 }
 
 // Note: static method
-std::string LDViewWindow::browseForDir(
-	const char *prompt,
-	const char *initialDir)
+ucstring LDViewWindow::browseForDir(CUCSTR prompt, CUCSTR initialDir)
 {
 	BROWSEINFO browseInfo;
-	char displayName[MAX_PATH];
+	UCCHAR displayName[MAX_PATH];
 	LPITEMIDLIST itemIdList;
 
 	browseInfo.hwndOwner = NULL; //hWindow;
 	browseInfo.pidlRoot = NULL;
 	browseInfo.pszDisplayName = displayName;
 	browseInfo.lpszTitle = prompt;
-	browseInfo.ulFlags = BIF_RETURNONLYFSDIRS;
+	browseInfo.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
 	browseInfo.lpfn = pathBrowserCallback;
 	browseInfo.lParam = (LPARAM)initialDir;
 	browseInfo.iImage = 0;
 	if ((itemIdList = SHBrowseForFolder(&browseInfo)) != NULL)
 	{
-		char path[MAX_PATH+10];
+		UCCHAR path[MAX_PATH+10];
 
 		if (SHGetPathFromIDList(itemIdList, path))
 		{
 			stripTrailingPathSeparators(path);
 			return path;
 		}
-		MessageBox(NULL/*hWindow*/, TCLocalStrings::get("InvalidDirSelected"),
-			TCLocalStrings::get("Error"), MB_OK);
+		MessageBox(NULL/*hWindow*/, ls(_UC("InvalidDirSelected")),
+			ls(_UC("Error")), MB_OK);
 	}
-	return "";
+	return ucstring();
 }
 
 // Note: static method
-BOOL LDViewWindow::promptForLDrawDir(const char *prompt)
+BOOL LDViewWindow::promptForLDrawDir(CUCSTR prompt)
 {
-	char *oldLDrawDir = getLDrawDir();
-	std::string dir;
+	std::string oldLDrawDir = getLDrawDir();
+	ucstring ucOldLDrawDir;
+	utf8toucstring(ucOldLDrawDir, oldLDrawDir);
+	ucstring dir;
 
 	if (!prompt)
 	{
-		prompt = TCLocalStrings::get("LDrawDirPrompt");
+		prompt = ls(_UC("LDrawDirPrompt"));
 	}
-	dir = browseForDir(prompt, oldLDrawDir);
-	delete oldLDrawDir;
-	if (dir.size() > 0)
+	dir = browseForDir(prompt, ucOldLDrawDir.c_str());
+	if (!dir.empty())
 	{
-		TCUserDefaults::setPathForKey(dir.c_str(), LDRAWDIR_KEY, false);
-		LDLModel::setLDrawDir(dir.c_str());
+		std::string utf8Dir;
+		ucstringtoutf8(utf8Dir, dir);
+		TCUserDefaults::setPathForKey(utf8Dir.c_str(), LDRAWDIR_KEY, false);
+		LDLModel::setLDrawDir(utf8Dir.c_str());
 		return TRUE;
 	}
 	return FALSE;
@@ -4545,19 +4413,21 @@ void LDViewWindow::stripTrailingSlash(char* value)
 }
 */
 
-BOOL LDViewWindow::verifyLDrawDir(char* value)
+BOOL LDViewWindow::verifyLDrawDir(const char* value)
 {
 //	int length = strlen(value);
-	char currentDir[1024];
-	char newDir[1024];
+	UCCHAR currentDir[1024];
+	UCCHAR newDir[1024];
+	ucstring ucValue;
+	utf8toucstring(ucValue, value);
 	BOOL found = FALSE;
 
 //	stripTrailingPathSeparators(value);
-	sprintf(newDir, "%s\\parts", value);
-	GetCurrentDirectory(1024, currentDir);
+	sucprintf(newDir, COUNT_OF(newDir), _UC("%s\\parts"), ucValue.c_str());
+	GetCurrentDirectory(COUNT_OF(currentDir), currentDir);
 	if (SetCurrentDirectory(newDir))
 	{
-		sprintf(newDir, "%s\\p", value);
+		sucprintf(newDir, COUNT_OF(newDir), _UC("%s\\p"), ucValue.c_str());
 		if (SetCurrentDirectory(newDir))
 		{
 			found = TRUE;
@@ -4569,41 +4439,37 @@ BOOL LDViewWindow::verifyLDrawDir(char* value)
 
 BOOL LDViewWindow::verifyLDrawDir(bool forceChoose)
 {
-	char* lDrawDir = getLDrawDir();
+	std::string lDrawDir = getLDrawDir();
 	BOOL found = FALSE;
 
 	if (!forceChoose && 
 		(!TCUserDefaults::longForKey(VERIFY_LDRAW_DIR_KEY, 1, false) ||
-		verifyLDrawDir(lDrawDir)))
+		verifyLDrawDir(lDrawDir.c_str())))
 	{
-		delete lDrawDir;
 		found = TRUE;
 	}
 	else
 	{
-		delete lDrawDir;
-
 		stopAnimation();
 		if (forceChoose ||
-			MessageBox(NULL, TCLocalStrings::get("LDrawDirExistsPrompt"),
-			"LDView", MB_YESNO | MB_ICONQUESTION) == IDYES)
+			MessageBox(NULL, ls(_UC("LDrawDirExistsPrompt")),
+				_UC("LDView"), MB_YESNO | MB_ICONQUESTION) == IDYES)
 		{
 			while (!found)
 			{
 				if (promptForLDrawDir())
 				{
 					lDrawDir = getLDrawDir();
-					if (verifyLDrawDir(lDrawDir))
+					if (verifyLDrawDir(lDrawDir.c_str()))
 					{
 						found = TRUE;
 					}
 					else
 					{
-						MessageBox(NULL, TCLocalStrings::get("LDrawNotInDir"),
-							TCLocalStrings::get("InvalidDir"),
+						MessageBox(NULL, ls(_UC("LDrawNotInDir")),
+							ls(_UC("InvalidDir")),
 							MB_OK | MB_ICONWARNING | MB_TASKMODAL);
 					}
-					delete lDrawDir;
 				}
 				else
 				{
@@ -4614,12 +4480,12 @@ BOOL LDViewWindow::verifyLDrawDir(bool forceChoose)
 #if defined(USE_CPP11) || !defined(_NO_BOOST)
 		else
 		{
-			if (MessageBox(NULL, TCLocalStrings::get("WillDownloadLDraw"),
-				"LDView", MB_OKCANCEL | MB_ICONINFORMATION) == IDOK)
+			if (MessageBox(NULL, ls(_UC("WillDownloadLDraw")),
+				_UC("LDView"), MB_OKCANCEL | MB_ICONINFORMATION) == IDOK)
 			{
 				LDLModel::setLDrawDir("C:\\");
 				if (promptForLDrawDir(
-					TCLocalStrings::get("LDrawInstallDirPrompt")))
+					ls(_UC("LDrawInstallDirPrompt"))))
 				{
 					if (installLDraw())
 					{
@@ -4633,7 +4499,7 @@ BOOL LDViewWindow::verifyLDrawDir(bool forceChoose)
 	return found;
 }
 
-char* LDViewWindow::lastOpenPath(char* pathKey)
+std::string LDViewWindow::lastOpenPath(char* pathKey)
 {
 	if (!pathKey)
 	{
@@ -4643,41 +4509,29 @@ char* LDViewWindow::lastOpenPath(char* pathKey)
 	{
 		char* path = TCUserDefaults::pathForKey(pathKey, NULL, false);
 
-		if (!path)
+		if (path != NULL)
 		{
-			path = getLDrawDir();
+			std::string retValue = path;
+			delete[] path;
+			return retValue;
 		}
-		return path;
+		else
+		{
+			return getLDrawDir();
+		}
 	}
 	else
 	{
-		return NULL;
+		return std::string();
 	}
 }
 
-UCSTR LDViewWindow::lastOpenPathUC(char* pathKey)
+ucstring LDViewWindow::lastOpenPathUC(char* pathKey)
 {
-	if (!pathKey)
-	{
-		pathKey = LAST_OPEN_PATH_KEY;
-	}
-	if (verifyLDrawDir())
-	{
-		char* path = TCUserDefaults::pathForKey(pathKey, NULL, false);
-		UCCHAR* pathUC;
-
-		if (!path)
-		{
-			path = getLDrawDir();
-		}
-		pathUC = mbstoucstring(path);
-		delete path;
-		return pathUC;
-	}
-	else
-	{
-		return NULL;
-	}
+	std::string temp = lastOpenPath(pathKey);
+	ucstring retValue;
+	utf8toucstring(retValue, temp);
+	return retValue;
 }
 
 void LDViewWindow::setLastOpenFile(const char* filename, char* pathKey)
@@ -4911,8 +4765,8 @@ BOOL LDViewWindow::doDialogGetMinMaxInfo(HWND hDlg, LPMINMAXINFO minMaxInfo)
 		calcSystemSizes();
 		minMaxInfo->ptMaxSize.x = systemMaxWidth;
 		minMaxInfo->ptMaxSize.y = systemMaxHeight;
-		minMaxInfo->ptMinTrackSize.x = 250;
-		minMaxInfo->ptMinTrackSize.y = 200;
+		minMaxInfo->ptMinTrackSize.x = scalePoints(250);
+		minMaxInfo->ptMinTrackSize.y = scalePoints(200);
 		minMaxInfo->ptMaxTrackSize.x = systemMaxTrackWidth;
 		minMaxInfo->ptMaxTrackSize.y = systemMaxTrackHeight;
 		return TRUE;
@@ -5006,13 +4860,15 @@ void LDViewWindow::applyPrefs(void)
 void LDViewWindow::generatePartsList(
 	LDHtmlInventory *htmlInventory,
 	LDPartsList *partsList,
-	const char *filename)
+	CUCSTR filename)
 {
 	LDrawModelViewer *modelViewer = modelWindow->getModelViewer();
 
 	// Note: if we get here, modelViewer is guaranteed to be non-NULL, so
 	// there's no need to check it.
-	if (htmlInventory->generateHtml(filename, partsList,
+	std::string utf8Filename;
+	ucstringtoutf8(utf8Filename, filename);
+	if (htmlInventory->generateHtml(utf8Filename.c_str(), partsList,
 		modelViewer->getCurFilename().c_str()))
 	{
 		if (htmlInventory->isSnapshotNeeded())
@@ -5038,7 +4894,11 @@ void LDViewWindow::generatePartsList(
 			// the command line, but it produces the behavior we want.  By
 			// saying true to the notReallyCommandLine parameter, we avoid
 			// the behavior we don't want.
-			modelWindow->saveSnapshot(snapshotPath, true, true);
+			ucstring ucTemp;
+			utf8toucstring(ucTemp, snapshotPath);
+			UCCHAR ucSnapshotPath[1024];
+			ucstrcpy(ucSnapshotPath, ucTemp.c_str());
+			modelWindow->saveSnapshot(ucSnapshotPath, true, true);
 			delete snapshotPath;
 			htmlInventory->restoreAfterSnapshot(modelViewer);
 			modelWindow->setSaveZoomToFit(saveZoomToFit);
@@ -5056,8 +4916,8 @@ void LDViewWindow::generatePartsList(
 	}
 	else
 	{
-		MessageBox(hWindow, TCLocalStrings::get("PLGenerateError"),
-			TCLocalStrings::get("Error"), MB_OK | MB_ICONWARNING);
+		MessageBox(hWindow, ls(_UC("PLGenerateError")),
+			ls(_UC("Error")), MB_OK | MB_ICONWARNING);
 	}
 }
 
@@ -5135,7 +4995,7 @@ LRESULT LDViewWindow::generatePartsList(void)
 				if (dialog->runModal() == IDOK)
 				{
 					OPENFILENAME openStruct;
-					char fileTypes[1024];
+					UCCHAR fileTypes[1024];
 					std::string filename = modelViewer->getCurFilename();
 					std::string initialDir =
 						modelWindow->getSaveDir(LDPreferences::SOPartsList);
@@ -5152,19 +5012,24 @@ LRESULT LDViewWindow::generatePartsList(void)
 					}
 					filename += ".html";
 					filename.reserve(1024);
-					memset(fileTypes, 0, 2);
-					addFileType(fileTypes, TCLocalStrings::get("HtmlFileType"),
-						"*.html");
+					memset(fileTypes, 0, 2 * sizeof(fileTypes[0]));
+					addFileType(fileTypes, ls(_UC("HtmlFileType")),
+						_UC("*.html"));
 					memset(&openStruct, 0, sizeof(OPENFILENAME));
 					openStruct.lStructSize = getOpenFilenameSize(false);
 					openStruct.hwndOwner = hWindow;
 					openStruct.lpstrFilter = fileTypes;
 					openStruct.nFilterIndex = 0;
-					openStruct.lpstrFile = &filename[0];
-					openStruct.nMaxFile = (DWORD)filename.capacity();
-					openStruct.lpstrInitialDir = initialDir.c_str();
+					ucstring ucFilename;
+					utf8toucstring(ucFilename, filename.c_str());
+					ucFilename.resize(1024);
+					openStruct.lpstrFile = &ucFilename[0];
+					openStruct.nMaxFile = (DWORD)ucFilename.size();
+					ucstring ucInitialDir;
+					utf8toucstring(ucInitialDir, initialDir.c_str());
+					openStruct.lpstrInitialDir = ucInitialDir.c_str();
 					openStruct.lpstrTitle =
-						TCLocalStrings::get("GeneratePartsList");
+						ls(_UC("GeneratePartsList"));
 					openStruct.Flags = OFN_EXPLORER | OFN_HIDEREADONLY |
 						OFN_OVERWRITEPROMPT;
 					openStruct.lpstrDefExt = NULL;
@@ -5172,7 +5037,7 @@ LRESULT LDViewWindow::generatePartsList(void)
 					if (GetSaveFileName(&openStruct))
 					{
 						generatePartsList(htmlInventory, partsList,
-							filename.c_str());
+							openStruct.lpstrFile);
 					}
 				}
 				htmlInventory->release();

@@ -22,7 +22,7 @@ public:
 	CUIPropertySheet(CUCSTR windowTitle, HINSTANCE hInstance);
 	virtual INT_PTR run(void);
 	virtual INT_PTR show(void);
-	virtual void addPage(int resourceId, char* title = NULL);
+	virtual void addPage(int resourceId, CUCSTR title = NULL);
 	virtual void enableApply(HWND hPage);
 	virtual void disableApply(HWND hPage);
 	void setIsModeless(bool value) { isModeless = value; }
@@ -32,6 +32,7 @@ public:
 	virtual void closePropertySheet(bool immediate = false);
 	HWND getHPropSheet(void) { return hPropSheet; }
 	virtual bool getApplyEnabled(void);
+	void checkForDpiChange(void);
 
 #ifdef TC_NO_UNICODE
 	static INT_PTR propertySheetUC(LPCPROPSHEETHEADERA lppsh);
@@ -46,6 +47,7 @@ protected:
 	virtual ~CUIPropertySheet(void);
 	virtual void dealloc(void);
 	virtual INT_PTR createPropSheet(void);
+	virtual BOOL doDialogInit(HWND hDlg, HWND hFocusWindow, LPARAM lParam);
 	virtual BOOL doDialogNotify(HWND hDlg, int controlId,
 		LPNMHDR notification);
 	virtual bool doApply(void);
