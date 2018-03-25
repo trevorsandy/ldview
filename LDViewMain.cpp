@@ -576,7 +576,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/,
 	setupLocalStrings();
 	if (haveConsole() && TCUserDefaults::boolForKey("Info", false, false))
 	{
-	  std::string message = "Command Line:\n";
+	  ucstring message = _UC("Command Line:\n");
+
 	  message += lpCmdLine;
 	  printf("Arguments = %s", message.c_str());
 	}
@@ -594,7 +595,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/,
 		utf8toucstring(iniPath, TCUserDefaults::getIniPath());
 
 		sucprintf(message, COUNT_OF(message),
-			TCLocalStrings::get(_UC("IniFailure")), iniPath.c_str());
+		TCLocalStrings::get(_UC("IniFailure")), iniPath.c_str());
 		CUIWindow::messageBoxUC(NULL, message, _UC("LDView"), MB_OK);
 		TCUserDefaults::setLongForKey(1, "IniFailureShown", false);
 	}
