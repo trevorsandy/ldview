@@ -2422,12 +2422,20 @@ std::string ltostr(long value)
 bool getCurrentDirectory(std::string &dir)
 {
 #ifdef WIN32
+#ifdef TC_NO_UNICODE
 	dir.resize(2048);
 	DWORD len = GetCurrentDirectory((DWORD)dir.length(), &dir[0]);
 	dir.resize(len);
+#else // TC_NO_UNICODE
+	std::wstring wDir;
+	wDir.resize(2048);
+	DWORD len = GetCurrentDirectoryW((DWORD)wDir.length(), &wDir[0]);
+	wDir.resize(len);
+	ucstringtoutf8(dir, wDir);
+#endif // !TC_NO_UNICODE
 	return len > 0;
 #else // WIN32
-	char *temp = getcwd(NULL, dir.length());
+	char *temp = getcwd(NULL, 0);
 	if (temp == NULL)
 	{
 		dir.clear();
@@ -2445,10 +2453,19 @@ bool getCurrentDirectory(std::string &dir)
 bool setCurrentDirectory(const std::string &dir)
 {
 #ifdef WIN32
+#ifdef TC_NO_UNICODE
 	if (!SetCurrentDirectory(dir.c_str()))
 	{
 		return false;
 	}
+#else // TC_NO_UNICODE
+	std::wstring wDir;
+	utf8towstring(wDir, dir);
+	if (!SetCurrentDirectoryW(wDir.c_str()))
+	{
+		return false;
+	}
+#endif // !TC_NO_UNICODE
 #else // WIN32
 	if (chdir(dir.c_str()) == -1)
 	{
@@ -2461,10 +2478,19 @@ bool setCurrentDirectory(const std::string &dir)
 bool createDirectory(const std::string &dir)
 {
 #ifdef WIN32
+#ifdef TC_NO_UNICODE
 	if (!CreateDirectory(dir.c_str(), NULL))
 	{
 		return false;
 	}
+#else // TC_NO_UNICODE
+	std::wstring wDir;
+	utf8towstring(wDir, dir);
+	if (!CreateDirectoryW(wDir.c_str(), NULL))
+	{
+		return false;
+	}
+#endif // !TC_NO_UNICODE
 #else // WIN32
 	if (mkdir(dir.c_str(), 0777) == -1)
 	{
@@ -2636,4 +2662,22 @@ FILE *ucfopen(const char *filename, const char *mode)
 	}
 #endif // !_MSC_VER
 	return fopen(filename, mode);
+}
+
+bool skipUtf8BomIfPresent(std::istream &stream)
+{
+	std::streampos origPos = stream.tellg();
+	unsigned char bomBuf[3] = { 0, 0, 0 };
+	bool hasBom = false;
+	stream.read((char *)bomBuf, 3);
+	if (stream)
+	{
+		hasBom = bomBuf[0] == 0xEF && bomBuf[1] == 0xBB &&
+		bomBuf[2] == 0xBF;
+	}
+	if (!hasBom)
+	{
+		stream.seekg(origPos);
+	}
+	return hasBom;
 }

@@ -102,6 +102,9 @@ protected:
 	TCStringArray *getUnhandledCommandLineArgs(const char *listKey,
 		bool &foundList);
 	void updateModelFilename(const char *modelFilename);
+	bool doCommandLine(bool doSnapshots, bool doExports,
+		bool *tried, LDConsoleAlertHandler *consoleAlertHandler);
+	void commandLineChanged(void);
 
 	static void getViewportSize(int &width, int &height);
 	static bool staticImageProgressCallback(CUCSTR message, float progress,
@@ -127,6 +130,7 @@ protected:
 	TCFloat m_scaleFactor;
 	std::string m_modelFilename;
 	std::string m_currentImageFilename;
+	std::set<std::string> m_commandLinesLists;
 	static bool sm_consoleAlerts;
 };
 
