@@ -66,7 +66,6 @@ enum
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[statusBar release];
-	[window release];
 	[toolbarItems release];
 	[defaultIdentifiers release];
 	[otherIdentifiers release];
@@ -82,6 +81,7 @@ enum
 	[initialTitle release];
 	[stepToolbarControls release];
 	[self killPolling];
+	[self releaseTopLevelObjects:topLevelObjects orTopLevelObject:window];
 	[super dealloc];
 }
 
@@ -135,11 +135,21 @@ enum
 	return defaultIdentifiers;
 }
 
+- (void)alertDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
+{
+	[[alert window] orderOut:self];
+	LDrawModelViewer *modelViewer = [modelView modelViewer];
+	if (modelViewer == NULL || modelViewer->getMainTREModel() == NULL)
+	{
+		[self enableToolbarItems:NO];
+	}
+}
+
 - (void)runAlertSheetWithMessageText:(NSString *)messageTitle defaultButton:(NSString *)defaultButtonTitle alternateButton:(NSString *)alternateButtonTitle otherButton:(NSString *)otherButtonTitle informativeText:(NSString *)informativeText
 {
 	NSAlert *alert = [NSAlert alertWithMessageText:messageTitle defaultButton:defaultButtonTitle alternateButton:alternateButtonTitle otherButton:otherButtonTitle informativeTextWithFormat:informativeText];
 	
-	[alert beginSheetModalForWindow:window modalDelegate:self didEndSelector:NULL contextInfo:NULL];
+	[alert beginSheetModalForWindow:window modalDelegate:self didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) contextInfo:NULL];
 }
 
 - (NSToolbarItem *)addToolbarItemWithIdentifier:(NSString *)identifier label:(NSString *)label control:(NSControl **)pControl menuItem:(NSMenuItem *)menuItem highPriority:(BOOL)highPriority isDefault:(BOOL)isDefault
@@ -710,6 +720,7 @@ enum
 	[window setNextResponder:controller];
 	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(errorFilterChange:) name:LDErrorFilterChange object:nil];
 	imageFileTypes = [[NSArray alloc] initWithObjects:@"png", @"bmp", nil];
+	[self enableToolbarItems:NO];
 }
 
 - (void)stepChanged
@@ -837,7 +848,8 @@ enum
 	if ((self = [super init]) != nil)
 	{
 		controller = value;
-		[NSBundle loadNibNamed:@"ModelWindow.nib" owner:self];
+		[self ldvLoadNibNamed:@"ModelWindow" topLevelObjects:&topLevelObjects];
+		[topLevelObjects retain];
 		alertHandler = new AlertHandler(self);
 	}
 	return self;
@@ -1170,14 +1182,12 @@ enum
 {
 	NSFileManager *fileManager = [NSFileManager defaultManager];
 
-	if ([fileManager respondsToSelector:@selector(attributesOfItemAtPath:error:)])
+	NSDictionary *retValue = [fileManager attributesOfItemAtPath:filename error:NULL];
+	if ([[retValue objectForKey:NSFileType] isEqualToString:NSFileTypeSymbolicLink])
 	{
-		return [fileManager attributesOfItemAtPath:filename error:NULL];
+		return [self fileAttributes:[fileManager destinationOfSymbolicLinkAtPath:filename error:NULL]];
 	}
-	else
-	{
-		return [fileManager fileAttributesAtPath:filename traverseLink:YES];
-	}
+	return retValue;
 }
 
 - (NSDate *)lastModifiedTime:(NSString *)filename
@@ -1516,7 +1526,12 @@ enum
 	[controller openModel:sender];
 }
 
-- (void)exportSavePanelDidEnd:(NSSavePanel *)sheet returnCode:(int)returnCode contextInfo:(void *)contextInfo
+- (const char *)savePanelPath:(NSSavePanel *)savePanel
+{
+	return savePanel.URL.ldvFileSystemRepresentation;
+}
+
+- (void)exportSavePanelDidEnd:(NSSavePanel *)savePanel returnCode:(NSModalResponse)returnCode
 {
 	if (returnCode == NSModalResponseOK)
 	{
@@ -1534,19 +1549,19 @@ enum
 			[copyrightString replaceCharactersInRange:range withString:@"(C)"];
 		}
 		modelViewer->setExportType([saveExportViewOwner exportType]);
-		modelViewer->exportCurModel([[sheet URL] fileSystemRepresentation], [[infoDict objectForKey:@"CFBundleShortVersionString"] asciiCString], [copyrightString cStringUsingEncoding:NSUTF8StringEncoding]);
+		modelViewer->exportCurModel([self savePanelPath:savePanel], [[infoDict objectForKey:@"CFBundleShortVersionString"] asciiCString], [copyrightString cStringUsingEncoding:NSUTF8StringEncoding]);
 		[copyrightString release];
 	}
 	[saveExportViewOwner setSavePanel:nil];
 	sheetBusy = false;
 }
 
-- (void)htmlSavePanelDidEnd:(NSSavePanel *)sheet returnCode:(int)returnCode contextInfo:(void *)contextInfo
+- (void)htmlSavePanelDidEnd:(NSSavePanel *)savePanel returnCode:(NSModalResponse)returnCode
 {
 	if (returnCode == NSModalResponseOK)
 	{
 		LDrawModelViewer *modelViewer = [modelView modelViewer];
-		if (htmlInventory->generateHtml([[sheet URL] fileSystemRepresentation], partsList, modelViewer->getCurFilename().c_str()))
+		if (htmlInventory->generateHtml([self savePanelPath:savePanel], partsList, modelViewer->getCurFilename().c_str()))
 		{
 			if (htmlInventory->isSnapshotNeeded())
 			{
@@ -1569,7 +1584,7 @@ enum
 			}
 			if (htmlInventory->getShowFileFlag())
 			{
-				[[NSWorkspace sharedWorkspace] openFile:[sheet URL].path];
+				[[NSWorkspace sharedWorkspace] openFile:[savePanel URL].path];
 			}
 		}
 	}
@@ -1583,7 +1598,7 @@ enum
 	return [[[controller preferences] generalPage] defaultSaveDirForOp:op modelFilename:[self filename]];
 }
 
-- (void)snapshotSavePanelDidEnd:(NSSavePanel *)sheet returnCode:(int)returnCode  contextInfo:(void  *)contextInfo
+- (void)snapshotSavePanelDidEnd:(NSSavePanel *)savePanel returnCode:(NSModalResponse)returnCode
 {
 	if (returnCode == NSModalResponseOK)
 	{
@@ -1592,7 +1607,7 @@ enum
 		int height = (int)viewSize.height;		
 
 		[saveSnapshotViewOwner saveSettings];
-		[OCUserDefaults setString:[sheet URL].path forKey:[NSString stringWithASCIICString:LAST_SNAPSHOT_DIR_KEY] sessionSpecific:NO];
+		[OCUserDefaults setString:[savePanel URL].path forKey:[NSString stringWithASCIICString:LAST_SNAPSHOT_DIR_KEY] sessionSpecific:NO];
 		if (!snapshotTaker)
 		{
 			snapshotTaker = [[SnapshotTaker alloc] initWithModelViewer:[modelView modelViewer] sharedContext:[modelView openGLContext]];
@@ -1608,13 +1623,13 @@ enum
 		[snapshotTaker setImageType:[saveSnapshotViewOwner imageType]];
 		[snapshotTaker setTrySaveAlpha:[saveSnapshotViewOwner transparentBackground]];
 		[snapshotTaker setAutoCrop:[saveSnapshotViewOwner autocrop]];
-		[(NSSavePanel *)contextInfo orderOut:self];
+		[savePanel orderOut:self];
 		if ([self showStatusBar:YES])
 		{
 			[window display];
 		}
 		forceProgress = true;
-		[snapshotTaker saveFile:[sheet URL].path width:[saveSnapshotViewOwner width:width] height:[saveSnapshotViewOwner height:height] zoomToFit:[saveSnapshotViewOwner zoomToFit]];
+		[snapshotTaker saveFile:[savePanel URL].path width:[saveSnapshotViewOwner width:width] height:[saveSnapshotViewOwner height:height] zoomToFit:[saveSnapshotViewOwner zoomToFit]];
 		[saveSnapshotViewOwner saveSettings];
 		forceProgress = false;
 		if (![progress isHidden])
@@ -1649,9 +1664,17 @@ enum
 	}
 	[saveSnapshotViewOwner setNumSteps:[modelView modelViewer]->getNumSteps()];
 	[saveSnapshotViewOwner setSavePanel:savePanel];
-	[savePanel setCanSelectHiddenExtension:YES];
+	savePanel.canSelectHiddenExtension = YES;
+	NSString *dir = [self defaultSaveDirForOp:LDPreferences::SOSnapshot];
+	if (dir != nil && dir.length > 0)
+	{
+		savePanel.directoryURL = [NSURL fileURLWithPath:dir];
+	}
+	savePanel.nameFieldStringValue = defaultFilename;
 	sheetBusy = true;
-	[savePanel beginSheetForDirectory:[self defaultSaveDirForOp:LDPreferences::SOSnapshot] file:defaultFilename modalForWindow:window modalDelegate:self didEndSelector:@selector(snapshotSavePanelDidEnd:returnCode:contextInfo:) contextInfo:savePanel];
+	[savePanel beginSheetModalForWindow:window completionHandler:^(NSModalResponse response){
+		[self snapshotSavePanelDidEnd:savePanel returnCode:response];
+	}];
 }
 
 - (IBAction)reload:(id)sender
@@ -1676,9 +1699,17 @@ enum
 		[saveExportViewOwner setSavePanel:savePanel];
 		curFilename = modelViewer->getCurFilename();
 		defaultFilename = [[[[NSString stringWithASCIICString:curFilename.c_str()] lastPathComponent] stringByDeletingPathExtension] stringByAppendingPathExtension:[saveExportViewOwner requiredFileType]];
-		[savePanel setCanSelectHiddenExtension:YES];
+		savePanel.canSelectHiddenExtension = YES;
+		NSString *dir = [self defaultSaveDirForOp:LDPreferences::SOExport];
+		if (dir != nil && dir.length > 0)
+		{
+			savePanel.directoryURL = [NSURL fileURLWithPath:dir];
+		}
+		savePanel.nameFieldStringValue = defaultFilename;
 		sheetBusy = true;
-		[savePanel beginSheetForDirectory:[self defaultSaveDirForOp:LDPreferences::SOExport] file:defaultFilename modalForWindow:window modalDelegate:self didEndSelector:@selector(exportSavePanelDidEnd:returnCode:contextInfo:) contextInfo:NULL];
+		[savePanel beginSheetModalForWindow:window completionHandler:^(NSModalResponse response){
+			[self exportSavePanelDidEnd:savePanel returnCode:response];
+		}];
 	}
 }
 
@@ -2101,10 +2132,18 @@ enum
 				NSSavePanel *savePanel = [NSSavePanel savePanel];
 				NSString *defaultFilename = [[htmlFilename lastPathComponent] stringByDeletingPathExtension];
 
-				[savePanel setRequiredFileType:@"html"];
-				[savePanel setCanSelectHiddenExtension:YES];
+				savePanel.allowedFileTypes = [NSArray arrayWithObject:@"html"];
+				savePanel.canSelectHiddenExtension = YES;
+				NSString *dir = [self defaultSaveDirForOp:LDPreferences::SOPartsList];
+				if (dir != nil && dir.length > 0)
+				{
+					savePanel.directoryURL = [NSURL fileURLWithPath:dir];
+				}
+				savePanel.nameFieldStringValue = defaultFilename;
 				sheetBusy = true;
-				[savePanel beginSheetForDirectory:[self defaultSaveDirForOp:LDPreferences::SOPartsList] file:defaultFilename modalForWindow:window modalDelegate:self didEndSelector:@selector(htmlSavePanelDidEnd:returnCode:contextInfo:) contextInfo:NULL];
+				[savePanel beginSheetModalForWindow:window completionHandler:^(NSModalResponse response){
+					[self htmlSavePanelDidEnd:savePanel returnCode:response];
+				}];
 			}
 			[partsListSheet release];
 		}

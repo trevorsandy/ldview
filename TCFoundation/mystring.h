@@ -125,6 +125,7 @@ TCExport void combinePath(const std::string &left, const std::string &right,
 	std::string &combinedPath);
 TCExport void combinePath(const char *left, const char *right,
 	std::string &combinedPath);
+TCExport void removeExtenstion(std::string&);
 
 TCExport char* findExecutable(const char* executable);
 
@@ -223,5 +224,7 @@ TCExport bool isInBase64Charset(char character);
 TCExport std::string formatString(const char *format, ...);
 
 template<typename T, size_t size> size_t COUNT_OF(const T(&)[size]) { return size; }
+
+TCExport bool isLittleEndian();
 
 #endif

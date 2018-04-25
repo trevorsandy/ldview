@@ -17,11 +17,13 @@
 #include <stdio.h>
 #include <ctime>
 
+// LPub3D Mod - errno support
 #ifdef __USE_GNU
 #include <errno.h>
 #include <stdlib.h>
 #endif
 #include <cstdlib>
+// LPub3D Mod End
 
 //#include <TCFoundation/TCImage.h>
 //#include <TCFoundation/TCJpegOptions.h>
@@ -383,6 +385,7 @@ static void loadLanguageModule(void)
 	}
 }
 
+// LPub3D Mod - ini file
 std::string iniFileStatus(const char *iniPath )
 {
 #ifdef __USE_GNU
@@ -402,6 +405,7 @@ std::string iniFileStatus(const char *iniPath )
   // we should never get here, but if we do ...
   return NULL;
 }
+// LPub3D Mod end
 
 static bool setupUserDefaults(
 	LPCSTR lpCmdLine,
@@ -426,6 +430,7 @@ static bool setupUserDefaults(
 	// different one.
 	if (removableDrive && !TCUserDefaults::isIniFileSet())
 	{
+		// LPub3D Mod - ini file
 		// Check if IniFile specified on command line ...
 		std::string iniFile = TCUserDefaults::commandLineStringForKey("IniFile");
 		if (iniFile.size() > 0 )
@@ -435,6 +440,8 @@ static bool setupUserDefaults(
 		           " - %s\n - ldview: Checking for user INI files...\n", fileMsg.c_str());
 		}
 		// Try to force default ini or return false
+		// LPub3D Mod - end
+
 		if (!TCUserDefaults::setIniFile("LDView.ini"))
 		{
 			retValue = false;
@@ -501,7 +508,7 @@ static bool isRemovableDrive(HINSTANCE hInstance)
 //	{
 //		typedef HRESULT (__stdcall *PSetCurrentProcessExplicitAppUserModelID)(PCWSTR AppID);
 //		PSetCurrentProcessExplicitAppUserModelID
-//			pSetCurrentProcessExplicitAppUserModelID =
+//			pSetCurrentProcessExplicitAppUserModelID = 
 //			(PSetCurrentProcessExplicitAppUserModelID)GetProcAddress(hShell32,
 //			"SetCurrentProcessExplicitAppUserModelID");
 //
@@ -574,6 +581,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/,
 	}
 #endif // _DEBUG
 	setupLocalStrings();
+	// LPub3D Mod - print arguments
 	if (haveConsole() && TCUserDefaults::boolForKey("Info", false, false))
 	{
 	  ucstring message = _UC("Command Line:\n");
@@ -581,6 +589,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/,
 	  message += lpCmdLine;
 	  printf("Arguments = %s", message.c_str());
 	}
+	// LPub3D Mod end
 	if (TCUserDefaults::boolForKey(DEBUG_COMMAND_LINE_KEY, false, false))
 	{
 		ucstring message = _UC("Command Line:\n");
