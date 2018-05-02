@@ -134,6 +134,7 @@ unix {
     }
     LIB_JPEG       = jpeg
     LIB_GLU        = GLU
+    LIB_GL         = GL
     LIB_GL2PS      = gl2ps
     LIB_Z          = z
     LIB_TINYXML    = tinyxml
@@ -170,6 +171,7 @@ unix {
     LIB_JPEG      = jpeg
     LIB_OSMESA    = OSMesa32
     LIB_GLU       = GLU
+    LIB_GL        = GL
     LIB_GL2PS     = gl2ps
     LIB_Z         = z
     LIB_TINYXML   = tinyxml
@@ -330,7 +332,8 @@ unix {
                 OSMESA_INC          = $${SYS_LIBINC_}
                 OSMESA_LIBDIR       = -L$${SYS_LIBDIR_}
                 OSMESA_LDLIBS       = $${SYS_LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_D} \
-                                      $${SYS_LIBDIR_}/lib$${LIB_GLU}.$${EXT_D}
+                                      $${SYS_LIBDIR_}/lib$${LIB_GLU}.$${EXT_D} \
+                                      $${SYS_LIBDIR_}/lib$${LIB_GL}.$${EXT_D}
             }
         }
 
@@ -440,13 +443,15 @@ unix {
                 OSMESA_INC      = $${OSMESA_LOCAL_PREFIX_}/include
                 OSMESA_LIBDIR   = -L$${OSMESA_LOCAL_PREFIX_}/lib$${LIB_ARCH}
                 OSMESA_LDLIBS   = $${OSMESA_LOCAL_PREFIX_}/lib$${LIB_ARCH}/lib$${LIB_OSMESA}.$${EXT_D} \
-                                  $${OSMESA_LOCAL_PREFIX_}/lib$${LIB_ARCH}/lib$${LIB_GLU}.$${EXT_D}
+                                  $${OSMESA_LOCAL_PREFIX_}/lib$${LIB_ARCH}/lib$${LIB_GLU}.$${EXT_D} \
+                                  $${OSMESA_LOCAL_PREFIX_}/lib$${LIB_ARCH}/lib$${LIB_GL}.$${EXT_D}
                 LIBS_INC       += $${OSMESA_INC}
             } else {
                 OSMESA_INC      = $${SYS_LIBINC_}
                 OSMESA_LIBDIR   = -L$${SYS_LIBDIR_}
                 OSMESA_LDLIBS   = $${SYS_LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_D} \
-                                  $${SYS_LIBDIR_}/lib$${LIB_GLU}.$${EXT_D}
+                                  $${SYS_LIBDIR_}/lib$${LIB_GLU}.$${EXT_D} \
+                                  $${SYS_LIBDIR_}/lib$${LIB_GL}.$${EXT_D}
             }
         }
 
