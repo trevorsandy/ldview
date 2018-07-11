@@ -429,7 +429,8 @@ static const char *GetDefaultLDrawSearch(void)
    "|<DEFPART><LDRAWDIR>\\PARTS"
    "|<LDRAWDIR>\\MODELS"
    "|<UNOFFIC><HIDE><DEFPRIM><LDRAWDIR>\\Unofficial\\P"
-   "|<UNOFFIC><DEFPART><LDRAWDIR>\\Unofficial\\PARTS";
+   "|<UNOFFIC><DEFPART><LDRAWDIR>\\Unofficial\\PARTS"
+   "|<UNOFFIC><HIDE><DEFPRIM><LDRAWDIR>\\Unofficial";
 }
 
 /* Returns 1 if OK, 0 on error */
