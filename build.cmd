@@ -8,8 +8,8 @@ rem LDView distributions and package the build contents (exe, doc and
 rem resources ) as LPub3D 3rd Party components.
 rem --
 rem  Trevor SANDY <trevor.sandy@gmail.com>
-rem  Last Update: November 23, 2017
-rem  Copyright (c) 2017 by Trevor SANDY
+rem  Last Update: July 12, 2018
+rem  Copyright (c) 2018 by Trevor SANDY
 rem --
 rem This script is distributed in the hope that it will be useful,
 rem but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -34,6 +34,7 @@ IF "%APPVEYOR%" EQU "True" (
   SET LDRAW_DIR=%USERPROFILE%\LDraw
   SET DIST_DIR=..\lpub3d_windows_3rdparty
 )
+SET LP3D_VCVARSALL=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build
 SET INI_POV_FILE=%PWD%\OSMesa\ldviewPOV.ini
 SET zipWin64=C:\program files\7-zip
 SET OfficialCONTENT=complete.zip
@@ -125,12 +126,6 @@ IF /I "%2"=="-chk" (
 )
 
 :BUILD
-rem Initialize the Visual Studio command line development environment
-rem Note you can change this line to your specific environment - I am using VS2017 here.
-ECHO.
-ECHO -Initialize Microsoft Build VS2017...
-CALL "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
-
 rem Display build settings
 IF "%APPVEYOR%" EQU "True" (
   ECHO   BUILD_HOST.............[APPVEYOR CONTINUOUS INTEGRATION SERVICE]
@@ -178,6 +173,9 @@ IF /I "%PLATFORM%"=="-all" (
   GOTO :BUILD_ALL
 )
 
+rem Initialize the Visual Studio command line development environment
+CALL :CONFIGURE_BUILD_ENV
+
 rem Display platform setting
 ECHO.
 ECHO -Building %PLATFORM% Platform...
@@ -202,15 +200,19 @@ GOTO :END
 :BUILD_ALL
 rem Launch msbuild across all platform builds
 ECHO.
-ECHO -Build x86 and x86_64 platform...
+ECHO -Build x86 and x86_64 platforms...
 FOR %%P IN ( Win32, x64 ) DO (
   ECHO.
-  ECHO -Building %%P Platforms...
+  ECHO -Building %%P Platform...
   ECHO.
-  rem Assemble command line
+  rem Initialize the Visual Studio command line development environment
+  SET PLATFORM=%%P
+  CALL :CONFIGURE_BUILD_ENV
+  rem Assemble command line parameters
   SET COMMAND_LINE=msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%%P LDView.vcxproj %LOGGING_FLAGS%
   SETLOCAL ENABLEDELAYEDEXPANSION
   ECHO -Build Command: !COMMAND_LINE!
+  rem Launch msbuild
   !COMMAND_LINE!
   ENDLOCAL
   rem Perform build check if specified
@@ -225,6 +227,26 @@ IF %THIRD_INSTALL%==1 (
 	  CALL :3RD_PARTY_INSTALL
 )
 GOTO :END
+
+:CONFIGURE_BUILD_ENV
+ECHO.
+ECHO -Configure %PACKAGE% %PLATFORM% build environment...
+IF "%PATH_PREPENDED%" NEQ "True" (
+  IF %PLATFORM% EQU Win32 (
+    ECHO.
+    CALL "%LP3D_VCVARSALL%\vcvars32.bat" -vcvars_ver=14.0
+  ) ELSE (
+    ECHO.
+    CALL "%LP3D_VCVARSALL%\vcvars64.bat" -vcvars_ver=14.0
+  )
+  rem Display MSVC Compiler settings
+  cl -Bv
+  ECHO.
+) ELSE (
+  ECHO.
+  ECHO -%PLATFORM% build environment already configured...
+)
+EXIT /b
 
 :UPDATE_INI_POV_FILE
 IF EXIST "%LDRAW_DIR%\lgeo" (
