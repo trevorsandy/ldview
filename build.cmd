@@ -8,12 +8,14 @@ rem LDView distributions and package the build contents (exe, doc and
 rem resources ) as LPub3D 3rd Party components.
 rem --
 rem  Trevor SANDY <trevor.sandy@gmail.com>
-rem  Last Update: July 12, 2018
+rem  Last Update: July 22, 2018
 rem  Copyright (c) 2018 by Trevor SANDY
 rem --
 rem This script is distributed in the hope that it will be useful,
 rem but WITHOUT ANY WARRANTY; without even the implied warranty of
 rem MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+SET start=%time%
 
 SET PWD=%CD%
 
@@ -314,47 +316,125 @@ EXIT /b
 :3RD_PARTY_INSTALL
 ECHO.
 ECHO -Installing distribution files...
+SET COPY_CMD=COPY /V /Y
+SET DIST_INSTALL_PATH=%DIST_DIR%\%PACKAGE%-%VERSION%\bin\i386
 IF %INSTALL_32BIT% == 1 (
 	ECHO.
-	ECHO -Installing %PACKAGE%32bit exe to [%DIST_DIR%\%PACKAGE%-%VERSION%\bin\i386]...
-	IF NOT EXIST "%DIST_DIR%\%PACKAGE%-%VERSION%\bin\i386\" (
-	  MKDIR "%DIST_DIR%\%PACKAGE%-%VERSION%\bin\i386\"
+	ECHO -Installing %PACKAGE% 32bit exe to [%DIST_INSTALL_PATH%]...
+	IF NOT EXIST "%DIST_INSTALL_PATH%\" (
+	  MKDIR "%DIST_INSTALL_PATH%\"
 	)
-	COPY /V /Y "Build\Release\%PACKAGE%.exe" "%DIST_DIR%\%PACKAGE%-%VERSION%\bin\i386\" /B
+	%COPY_CMD% "Build\Release\%PACKAGE%.exe*" "%DIST_INSTALL_PATH%\" /B
+  ECHO.
+  ECHO -Installing %PACKAGE% 32bit libraries to [%DIST_INSTALL_PATH%]...
+  %COPY_CMD% "LDLib\Build\Release\LDLib.lib*" "%DIST_INSTALL_PATH%\" /B
+  %COPY_CMD% "LDExporter\Build\Release\LDExporter.lib*" "%DIST_INSTALL_PATH%\" /B
+  %COPY_CMD% "LDLoader\Build\Release\LDLoader.lib*" "%DIST_INSTALL_PATH%\" /B
+  %COPY_CMD% "TRE\Build\Release\TRE.lib*" "%DIST_INSTALL_PATH%\" /B
+  %COPY_CMD% "TCFoundation\Build\Release\TCFoundation.lib*" "%DIST_INSTALL_PATH%\" /B
+  %COPY_CMD% "3rdParty\gl2ps\Build\Release\gl2ps.lib*" "%DIST_INSTALL_PATH%\" /B
+  %COPY_CMD% "3rdParty\tinyxml\Build\Release\tinyxml_STL.lib*" "%DIST_INSTALL_PATH%\" /B
+  %COPY_CMD% "lib\*-vs2015.lib" "%DIST_INSTALL_PATH%\" /B
+  IF EXIST "Build\Debug\LDView.exe" (
+    ECHO.
+    ECHO -Installing %PACKAGE% 32bit Debug libraries to [%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug]...
+    IF NOT EXIST "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" (
+      MKDIR "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\"
+    )
+    %COPY_CMD% "Build\Debug\*.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
+    %COPY_CMD% "Build\Debug\*.bsc" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
+    %COPY_CMD% "Build\Debug\*.pdb" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
+    %COPY_CMD% "lib\*-vs2015.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
+  )
 )
+SET DIST_INSTALL_PATH=%DIST_DIR%\%PACKAGE%-%VERSION%\bin\x86_64
 IF %INSTALL_64BIT% == 1 (
 	ECHO.
-	ECHO -Installing %PACKAGE%64bit exe to [%DIST_DIR%\%PACKAGE%-%VERSION%\bin\x86_64]...
-	IF NOT EXIST "%DIST_DIR%\%PACKAGE%-%VERSION%\bin\x86_64\" (
-	  MKDIR "%DIST_DIR%\%PACKAGE%-%VERSION%\bin\x86_64\"
+	ECHO -Installing %PACKAGE% 64bit exe to [%DIST_INSTALL_PATH%]...
+	IF NOT EXIST "%DIST_INSTALL_PATH%\" (
+	  MKDIR "%DIST_INSTALL_PATH%\"
 	)
-	COPY /V /Y "Build\Release64\%PACKAGE%64.exe" "%DIST_DIR%\%PACKAGE%-%VERSION%\bin\x86_64\" /B
+	%COPY_CMD% "Build\Release64\%PACKAGE%64.exe*" "%DIST_INSTALL_PATH%\" /B
+  ECHO.
+  ECHO -Installing %PACKAGE% 64bit libraries to [%DIST_INSTALL_PATH%]...
+  %COPY_CMD% "LDLib\Build\Release64\LDLib.lib*" "%DIST_INSTALL_PATH%\" /B
+  %COPY_CMD% "LDExporter\Build\Release64\LDExporter.lib*" "%DIST_INSTALL_PATH%\" /B
+  %COPY_CMD% "LDLoader\Build\Release64\LDLoader.lib*" "%DIST_INSTALL_PATH%\" /B
+  %COPY_CMD% "TRE\Build\Release64\TRE.lib*" "%DIST_INSTALL_PATH%\" /B
+  %COPY_CMD% "TCFoundation\Build\Release64\TCFoundation.lib*" "%DIST_INSTALL_PATH%\" /B
+  %COPY_CMD% "3rdParty\gl2ps\Build\Release64\gl2ps.lib*" "%DIST_INSTALL_PATH%\" /B
+  %COPY_CMD% "3rdParty\tinyxml\Build\Release64\tinyxml_STL.lib*" "%DIST_INSTALL_PATH%\" /B
+  %COPY_CMD% "lib\x64\*-vs2015.lib" "%DIST_INSTALL_PATH%\" /B
+  IF EXIST "Build\Debug64\LDView64.exe" (
+    ECHO.
+    ECHO -Installing %PACKAGE% 64bit Debug libraries to [%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64]...
+    IF NOT EXIST "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" (
+      MKDIR "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\"
+    )
+    %COPY_CMD% "Build\Debug64\*.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
+    %COPY_CMD% "Build\Debug64\*.bsc" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
+    %COPY_CMD% "Build\Debug64\*.pdb" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
+    %COPY_CMD% "lib\x64\*-vs2015.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
+  )
 )
+SET DIST_INSTALL_PATH=%DIST_DIR%\%PACKAGE%-%VERSION%\include
 ECHO.
-ECHO -Installing Documentaton to [%DIST_DIR%\%PACKAGE%-%VERSION%\docs]...
+ECHO -Installing %PACKAGE% Headers to [%DIST_INSTALL_PATH%]...
+IF NOT EXIST "%DIST_INSTALL_PATH%\LDExporter\" (
+  MKDIR "%DIST_INSTALL_PATH%\LDExporter\"
+)
+IF NOT EXIST "%DIST_INSTALL_PATH%\LDLib\" (
+  MKDIR "%DIST_INSTALL_PATH%\LDLib\"
+)
+IF NOT EXIST "%DIST_INSTALL_PATH%\LDLoader\" (
+  MKDIR "%DIST_INSTALL_PATH%\LDLoader\"
+)
+IF NOT EXIST "%DIST_INSTALL_PATH%\TRE\" (
+  MKDIR "%DIST_INSTALL_PATH%\TRE"
+)
+IF NOT EXIST "%DIST_INSTALL_PATH%\TCFoundation\" (
+  MKDIR "%DIST_INSTALL_PATH%\TCFoundation\"
+)
+IF NOT EXIST "%DIST_INSTALL_PATH%\3rdParty\" (
+  MKDIR "%DIST_INSTALL_PATH%\3rdParty\"
+)
+IF NOT EXIST "%DIST_INSTALL_PATH%\GL\" (
+  MKDIR "%DIST_INSTALL_PATH%\GL\"
+)
+%COPY_CMD% "LDLib\*.h" "%DIST_INSTALL_PATH%\LDLib\" /A
+%COPY_CMD% "LDExporter\*.h" "%DIST_INSTALL_PATH%\LDExporter\" /A
+%COPY_CMD% "LDLoader\*.h" "%DIST_INSTALL_PATH%\LDLoader\" /A
+%COPY_CMD% "TRE\*.h" "%DIST_INSTALL_PATH%\TRE\" /A
+%COPY_CMD% "TCFoundation\*.h" "%DIST_INSTALL_PATH%\TCFoundation\" /A
+%COPY_CMD% "include\*.h" "%DIST_INSTALL_PATH%\3rdParty\" /A
+%COPY_CMD% "include\GL\*.h" "%DIST_INSTALL_PATH%\GL\" /A
+ECHO.
+ECHO -Installing %PACKAGE% Documentaton to [%DIST_DIR%\%PACKAGE%-%VERSION%\docs]...
 IF NOT EXIST "%DIST_DIR%\%PACKAGE%-%VERSION%\docs\" (
   MKDIR "%DIST_DIR%\%PACKAGE%-%VERSION%\docs\"
 )
 SET DIST_INSTALL_PATH=%DIST_DIR%\%PACKAGE%-%VERSION%\docs\
-COPY /V /Y "Readme.txt" "%DIST_INSTALL_PATH%" /A
-COPY /V /Y "Help.html" "%DIST_INSTALL_PATH%" /A
-COPY /V /Y "license.txt" "%DIST_INSTALL_PATH%" /A
-COPY /V /Y "ChangeHistory.html" "%DIST_INSTALL_PATH%" /A
+%COPY_CMD% "Readme.txt*" "%DIST_INSTALL_PATH%" /A
+%COPY_CMD% "Help.html*" "%DIST_INSTALL_PATH%" /A
+%COPY_CMD% "license.txt*" "%DIST_INSTALL_PATH%" /A
+%COPY_CMD% "ChangeHistory.html*" "%DIST_INSTALL_PATH%" /A
 IF NOT EXIST "%DIST_DIR%\%PACKAGE%-%VERSION%\resources\config\" (
   MKDIR "%DIST_DIR%\%PACKAGE%-%VERSION%\resources\config\"
 )
 ECHO.
-ECHO -Installing Ini Files to [%DIST_DIR%\%PACKAGE%-%VERSION%\resources\config]...
+ECHO -Installing %PACKAGE% Ini Files to [%DIST_DIR%\%PACKAGE%-%VERSION%\resources\config]...
 SET DIST_INSTALL_PATH=%DIST_DIR%\%PACKAGE%-%VERSION%\resources\config\
-COPY /V /Y "OSMesa\LDViewCustomIni" "%DIST_INSTALL_PATH%" /A
-COPY /V /Y "OSMesa\ldview.ini" "%DIST_INSTALL_PATH%" /A
-COPY /V /Y "OSMesa\ldviewPOV.ini" "%DIST_INSTALL_PATH%" /A
+%COPY_CMD% "OSMesa\LDViewCustomIni*" "%DIST_INSTALL_PATH%" /A
+%COPY_CMD% "OSMesa\ldview.ini*" "%DIST_INSTALL_PATH%" /A
+%COPY_CMD% "OSMesa\ldviewPOV.ini*" "%DIST_INSTALL_PATH%" /A
 ECHO.
-ECHO -Installing Resource Files to [%DIST_DIR%\%PACKAGE%-%VERSION%\resources]...
+ECHO -Installing %PACKAGE% Resource Files to [%DIST_DIR%\%PACKAGE%-%VERSION%\resources]...
 SET DIST_INSTALL_PATH=%DIST_DIR%\%PACKAGE%-%VERSION%\resources\
-COPY /V /Y "m6459.ldr" "%DIST_INSTALL_PATH%" /A
-COPY /V /Y "8464.mpd" "%DIST_INSTALL_PATH%" /A
-COPY /V /Y "LDExporter\LGEO.xml" "%DIST_INSTALL_PATH%" /A
+%COPY_CMD% "m6459.ldr*" "%DIST_INSTALL_PATH%" /A
+%COPY_CMD% "8464.mpd*" "%DIST_INSTALL_PATH%" /A
+%COPY_CMD% "LDViewMessages.ini*" "%DIST_INSTALL_PATH%" /A
+%COPY_CMD% "LDExporter\LGEO.xml*" "%DIST_INSTALL_PATH%" /A
+%COPY_CMD% "LDExporter\LDExportMessages.ini*" "%DIST_INSTALL_PATH%" /A
 EXIT /b
 
 :BACKUP_INI_FILES
@@ -591,5 +671,20 @@ EXIT /b
 :END
 ECHO.
 ECHO -%~nx0 [%PACKAGE% v%VERSION%] finished.
+SET end=%time%
+SET options="tokens=1-4 delims=:.,"
+FOR /f %options% %%a IN ("%start%") DO SET start_h=%%a&SET /a start_m=100%%b %% 100&SET /a start_s=100%%c %% 100&SET /a start_ms=100%%d %% 100
+FOR /f %options% %%a IN ("%end%") DO SET end_h=%%a&SET /a end_m=100%%b %% 100&SET /a end_s=100%%c %% 100&SET /a end_ms=100%%d %% 100
+
+SET /a hours=%end_h%-%start_h%
+SET /a mins=%end_m%-%start_m%
+SET /a secs=%end_s%-%start_s%
+SET /a ms=%end_ms%-%start_ms%
+IF %ms% lss 0 SET /a secs = %secs% - 1 & SET /a ms = 100%ms%
+IF %secs% lss 0 SET /a mins = %mins% - 1 & SET /a secs = 60%secs%
+IF %mins% lss 0 SET /a hours = %hours% - 1 & SET /a mins = 60%mins%
+IF %hours% lss 0 SET /a hours = 24%hours%
+IF 1%ms% lss 100 SET ms=0%ms%
+ECHO -Elapsed build time %hours%:%mins%:%secs%.%ms%
 ENDLOCAL
 EXIT /b

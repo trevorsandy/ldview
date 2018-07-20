@@ -60,8 +60,27 @@ unix {
     isEmpty(3RD_BINDIR):3RD_BINDIR           = $$3RD_PREFIX/$$3RD_PACKAGE_VER/bin/$$QT_ARCH
     isEmpty(3RD_DOCDIR):3RD_DOCDIR           = $$3RD_PREFIX/$$3RD_PACKAGE_VER/docs
     isEmpty(3RD_RESOURCES):3RD_RESOURCES     = $$3RD_PREFIX/$$3RD_PACKAGE_VER/resources
+    isEmpty(3RD_HEADERS):3RD_HEADERS         = $$3RD_PREFIX/$$3RD_PACKAGE_VER/include
 
     message("~~~ CUI 3RD PARTY INSTALL PREFIX $${3RD_PREFIX} ~~~")
+
+    COPY_CMD = cp -f
+    MAKE_HDR_DIRS_CMD = if test -e $$3RD_HEADERS; then rm -rf $$3RD_HEADERS; fi; \
+                        mkdir -p $$3RD_HEADERS/LDExporter $$3RD_HEADERS/LDLib \
+                        $$3RD_HEADERS/LDLoader $$3RD_HEADERS/TRE $$3RD_HEADERS/TCFoundation \
+                        $$3RD_HEADERS/3rdParty $$3RD_HEADERS/GL
+
+    system( $$MAKE_HDR_DIRS_CMD )
+    system( $$COPY_CMD ../LDLib/*.h $${3RD_HEADERS}/LDLib/ )
+    system( $$COPY_CMD ../LDExporter/*.h $${3RD_HEADERS}/LDExporter/ )
+    system( $$COPY_CMD ../LDLoader/*.h $${3RD_HEADERS}/LDLoader/ )
+    system( $$COPY_CMD ../TRE/*.h $${3RD_HEADERS}/TRE/ )
+    system( $$COPY_CMD ../TCFoundation/*.h $${3RD_HEADERS}/TCFoundation/ )
+    system( $$COPY_CMD ../include/*.h $${3RD_HEADERS}/3rdParty/ )
+    system( $$COPY_CMD ../include/GL/*.h $${3RD_HEADERS}/GL/ )
+
+    exists($$3RD_HEADERS/TCFoundation/TCObject.h): \
+    message("~~~ $$upper( $$TARGET ) HEADERS COPIED TO $${3RD_HEADERS} ~~~")
 
     target.path                 = $${3RD_BINDIR}
     documentation.path          = $${3RD_DOCDIR}
@@ -69,10 +88,31 @@ unix {
                                   ../ChangeHistory.html ldview.1
     resources.path              = $${3RD_RESOURCES}
     resources.files             = ../m6459.ldr ../8464.mpd ldviewrc.sample \
+                                  ../LDViewMessages.ini ../LDExporter/LDExportMessages.ini \
                                   ../LDExporter/LGEO.xml
     resources_config.path       = $${3RD_RESOURCES}/config
     resources_config.files      = ldview.ini ldviewPOV.ini LDViewCustomIni
-    INSTALLS += target documentation resources resources_config
+
+    libraries.path              = $${3RD_BINDIR}
+    libraries.files             = ../TCFoundation/$$DESTDIR/libTCFoundation$${POSTFIX}.a \
+                                  ../LDLoader/$$DESTDIR/libLDLoader$${POSTFIX}.a \
+                                  ../TRE/$$DESTDIR/libTRE$${POSTFIX}.a \
+                                  ../LDLib/$$DESTDIR/libLDraw$${POSTFIX}.a \
+                                  ../LDExporter/$$DESTDIR/libLDExporter$${POSTFIX}.a
+    exists($$OUT_PWD/$${PNG_LDLIBS}): \
+    libraries.files            += $${PNG_LDLIBS}
+    exists($$OUT_PWD/$${JPEG_LDLIBS}): \
+    libraries.files            += $${JPEG_LDLIBS}
+    exists($$OUT_PWD/$${3DS_LDLIBS}): \
+    libraries.files            += $${3DS_LDLIBS}
+    exists($$OUT_PWD/$${GL2PS_LDLIBS}): \
+    libraries.files            += $${GL2PS_LDLIBS}
+    exists($$OUT_PWD/$${TINYXML_LDLIBS}): \
+    libraries.files            += $${TINYXML_LDLIBS}
+    exists($$OUT_PWD/$${ZLIB_LDLIBS}): \
+    libraries.files            += $${ZLIB_LDLIBS}
+
+    INSTALLS += target documentation resources resources_config libraries
 
 } else {
 
