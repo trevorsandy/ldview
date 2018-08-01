@@ -30,9 +30,11 @@
 #    include <OpenGL/OpenGL.h>
 #  endif // _OSMESA
 #else	// __APPLE__
-#  include <GL/gl.h>
-#  include <GL/glext.h>
-#  include <GL/glu.h>
+#  if !defined(_OPENSUSE_1320_ARM)
+#    include <GL/gl.h>
+#    include <GL/glext.h>
+#    include <GL/glu.h>
+#  endif // OPENSUSE_1320_ARM
 #endif	// __APPLE__
 
 #include <TCFoundation/TCDefines.h>
