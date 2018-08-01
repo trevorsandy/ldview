@@ -333,7 +333,7 @@ unix {
                 OSMESA_LIBDIR       = -L$${SYS_LIBDIR_}
                 OSMESA_LDLIBS       = $${SYS_LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_D} \
                                       $${SYS_LIBDIR_}/lib$${LIB_GLU}.$${EXT_D} \
-                                      $${SYS_LIBDIR_}/lib$${LIB_GL}.$${EXT_D}
+                                      -l$${LIB_GL}
             }
         }
 
@@ -444,14 +444,14 @@ unix {
                 OSMESA_LIBDIR   = -L$${OSMESA_LOCAL_PREFIX_}/lib$${LIB_ARCH}
                 OSMESA_LDLIBS   = $${OSMESA_LOCAL_PREFIX_}/lib$${LIB_ARCH}/lib$${LIB_OSMESA}.$${EXT_D} \
                                   $${OSMESA_LOCAL_PREFIX_}/lib$${LIB_ARCH}/lib$${LIB_GLU}.$${EXT_D} \
-                                  $${OSMESA_LOCAL_PREFIX_}/lib$${LIB_ARCH}/lib$${LIB_GL}.$${EXT_D}
+                                  -l$${LIB_GL}
                 LIBS_INC       += $${OSMESA_INC}
             } else {
                 OSMESA_INC      = $${SYS_LIBINC_}
                 OSMESA_LIBDIR   = -L$${SYS_LIBDIR_}
                 OSMESA_LDLIBS   = $${SYS_LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_D} \
                                   $${SYS_LIBDIR_}/lib$${LIB_GLU}.$${EXT_D} \
-                                  $${SYS_LIBDIR_}/lib$${LIB_GL}.$${EXT_D}
+                                  -l$${LIB_GL}
             }
         }
 
