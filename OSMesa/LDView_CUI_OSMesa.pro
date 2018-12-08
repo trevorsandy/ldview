@@ -4,13 +4,13 @@
 
 TEMPLATE     = app
 TARGET       =
-QT  		+= core
-QT  		-= opengl
-QT  		-= gui
-CONFIG		-= qt
-CONFIG		-= opengl
-CONFIG		+= thread
-CONFIG		+= warn_on
+QT          += core
+QT          -= opengl
+QT          -= gui
+CONFIG      -= qt
+CONFIG      -= opengl
+CONFIG      += thread
+CONFIG      += warn_on
 win32: CONFIG   += console
 macx:  CONFIG   -= app_bundle   # on OSX don't bundle - for now...
 
@@ -31,11 +31,11 @@ DEFINES += ARCH=\\\"$$join(ARCH,,,bit)\\\"
 
 message("~~~ LDVIEW ($$join(ARCH,,,bit)) VERSION $$VERSION CUI EXECUTABLE $${BUILD} ~~~")
 
-DEFINES		+= QT_THREAD_SUPPORT
+DEFINES     += QT_THREAD_SUPPORT
 
-QMAKE_CXXFLAGS	+= $(Q_CXXFLAGS)
-QMAKE_CFLAGS   	+= $(Q_CFLAGS)
-QMAKE_LFLAGS   	+= $(Q_LDFLAGS)
+QMAKE_CXXFLAGS  += $(Q_CXXFLAGS)
+QMAKE_CFLAGS    += $(Q_CFLAGS)
+QMAKE_LFLAGS    += $(Q_LDFLAGS)
 
 unix:!macx: TARGET = ldview
 else:       TARGET = LDView
@@ -43,13 +43,15 @@ else:       TARGET = LDView
 unix {
     exists($${OSMESA_INC}/GL/osmesa.h):!USE_SYSTEM_LIBS {
         message("~~~ NOTICE: Using LDView Pre-defined OSMESA library ~~~")
-    } else:USE_SYSTEM_LIBS {
+    } else:USE_SYSTEM_LIBS:!USE_OSMESA_STATIC {
         exists($${OSMESA_LOCAL_PREFIX_}/include/GL/osmesa.h): message("~~~ NOTICE: Using LOCAL OSMESA library ~~~")
         else:exists($${SYSTEM_PREFIX_}/include/GL/osmesa.h): message("~~~ NOTICE: Using SYSTEM OSMESA library ~~~")
         else:exists($${SYSTEM_PREFIX_}/X11/include/GL/osmesa.h): message("~~~ NOTICE: Using X11 SYSTEM OSMESA library ~~~")
     } else:USE_3RD_PARTY_LIBS:contains(USE_SYSTEM_OSMESA_LIB, YES) {
         exists($${SYSTEM_PREFIX_}/X11/include/GL/osmesa.h): message("~~~ NOTICE: Using X11 SYSTEM OSMESA library ~~~")
         else:exists($${SYSTEM_PREFIX_}/include/GL/osmesa.h): message("~~~ NOTICE: Using SYSTEM OSMESA library ~~~")
+    } else:USE_OSMESA_STATIC {
+        message("~~~ NOTICE: Using OSMESA BUILT FROM SOURCE library ~~~")
     } else {
         message("CRITICAL: OSMESA LIBRARIES NOT FOUND!")
     }
@@ -180,22 +182,22 @@ INCLUDEPATH += .. $${LIBS_INC}
 # Platform-specific
 unix {
     freebsd {
-        LIBDIRS 	 += -L/usr/local/lib
+        LIBDIRS      += -L/usr/local/lib
     }
 
     # slurm is media.peeron.com
     OSTYPE = $$system(hostname)
     contains(OSTYPE, slurm) {
         LIBDIRS  -= $${OSMESA_LIBDIR}
-        LIBDIRS	 += -L../../Mesa-7.0.2/lib
-        CONFIG 	 -= static	# reverse static directive - not sure about this ?
+        LIBDIRS  += -L../../Mesa-7.0.2/lib
+        CONFIG   -= static  # reverse static directive - not sure about this ?
     }
 
     OSTYPE = $$system(hostname | cut -d. -f2-)
     contains(OSTYPE, pair.com) {
         LIBDIRS  -= $${OSMESA_LIBDIR}
-        LIBDIRS	 += -L../../Mesa-7.11/lib -L/usr/local/lib/pth -L/usr/local/lib
-        LIBS_	 += -lpth
+        LIBDIRS  += -L../../Mesa-7.11/lib -L/usr/local/lib/pth -L/usr/local/lib
+        LIBS_    += -lpth
     }
 
     exists (/usr/include/qt3) {
@@ -278,7 +280,7 @@ BUILD_CHECK: unix {
 
             !macx: ldviewini.commands += ; sed -i      \'$${LN_57}s%.*%%\' $${DEV_DIR}/LDViewCustomIni
             else:  ldviewini.commands += ; sed -i \'\' \'$${LN_57}s%.*%%\' $${DEV_DIR}/LDViewCustomIni
-            ldviewiniMessage.commands += ; echo "Project MESSAGE: Removing LDViewCustomnIi entry XmlMapPath at line $${LN_57}"
+            ldviewiniMessage.commands += ; echo "Project MESSAGE: Removing LDViewCustomnIni entry XmlMapPath at line $${LN_57}"
         }
 
         exists($$(HOME)/.ldviewrc) {
@@ -310,3 +312,9 @@ QMAKE_CLEAN += LDViewMessages.ini LDViewMessages.h StudLogo.h
 HEADERS += GLInfo.h
 SOURCES += ldview.cpp \
            GLInfo.cpp
+OTHER_FILES += \
+           LDViewCustomIni \
+           ldview.1 \
+           ldview.ini \
+           ldviewPOV.ini \
+           ldviewrc.sample

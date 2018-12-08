@@ -30,7 +30,7 @@ isEmpty(HOST):HOST = UNKNOWN HOST
 !isEmpty(3RD_ARG): CONFIG -= $$3RD_ARG
 CONFIG += $$section(3RD_ARG, =, 0, 0)
 isEmpty(3RD_PREFIX): 3RD_PREFIX = $$_PRO_FILE_PWD_/$$section(3RD_ARG, =, 1, 1)
-!exists($${3RD_PREFIX}): message("~~~ ERROR 3rd party repository path not found ~~~")
+!exists($${3RD_PREFIX}): message("~~~ ERROR - 3rd party repository path not found ~~~")
 
 # same more funky stuff to get the local library prefix - all this just to build on OBS' RHEL
 OSMESA_ARG = $$find(CONFIG, USE_OSMESA_LOCAL.*)
@@ -41,6 +41,13 @@ OSMESA_ARG = $$find(CONFIG, USE_OSMESA_LOCAL.*)
     !exists($${OSMESA_LOCAL_PREFIX_}): message("~~~ ERROR - OSMesa path not found ~~~")
 }
 
+USE_OSMESA_STATIC {
+    TARGET_VENDOR_VAR = $$(TARGET_VENDOR)
+    contains(HOST, Arch):PLATFORM = arch
+    else: contains(HOST, Fedora):PLATFORM = fedora
+    else:!isEmpty(TARGET_VENDOR_VAR):PLATFORM = $$lower($$TARGET_VENDOR_VAR)
+    else: message("~~~ ERROR - PLATFORM not defined ~~~")
+}
 
 # Open Build Service overrides
 BUILD_TINYXML {
@@ -224,7 +231,7 @@ LIBS_PRI            = -l$${LIB_PNG} \
 
 unix: USE_OSMESA_STATIC: \
 USE_SYSTEM_LIBS {
-  OSMESA_LDFLAGS = $$system($${3RD_PREFIX}/mesa/osmesa-config --ldflags)
+  OSMESA_LDFLAGS = $$system($${3RD_PREFIX}/mesa/$${PLATFORM}/osmesa-config --ldflags)
   !isEmpty(OSMESA_LDFLAGS): LIBS_PRI += $${OSMESA_LDFLAGS}
   else: message("~~~ OSMESA - ERROR OSMesa ldflags not defined ~~~")
 }
@@ -434,9 +441,9 @@ unix {
                                   $${SYS_LIBDIR_X11_}/lib$${LIB_GLU}.$${EXT_D}
         } else {
             USE_OSMESA_STATIC {
-                OSMESA_INC      = $$system($${3RD_PREFIX}/mesa/osmesa-config --cflags)
+                OSMESA_INC      = $$system($${3RD_PREFIX}/mesa/$${PLATFORM}/osmesa-config --cflags)
                 isEmpty(OSMESA_INC): message("~~~ OSMESA - ERROR OSMesa include path not found ~~~")
-                OSMESA_LDLIBS   = $$system($${3RD_PREFIX}/mesa/osmesa-config --libs)
+                OSMESA_LDLIBS   = $$system($${3RD_PREFIX}/mesa/$${PLATFORM}/osmesa-config --libs)
                 isEmpty(OSMESA_LDLIBS): message("~~~ OSMESA - ERROR OSMesa library not defined ~~~")
                 LIBS_INC       += $${OSMESA_INC}
             } else: USE_OSMESA_LOCAL {
