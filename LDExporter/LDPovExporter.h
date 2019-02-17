@@ -7,6 +7,11 @@
 #include <TCFoundation/TCDefines.h>
 #include <TCFoundation/TCVector.h>
 
+#define POV_LIGHT_01              "1 45.0 0.0 1.0 200 4"     // 0
+#define POV_LIGHT_02              "2 30.0 120.0 0.0 0 0"     // 1
+#define POV_LIGHT_03              "3 60.0 -120.0 1.0 80 3"   // 2
+#define EXPORT_POV_LIGHTS_DEFAULT POV_LIGHT_01 ";" POV_LIGHT_02 ";" POV_LIGHT_03
+
 class LDLModel;
 class LDLFileLine;
 class LDLModelLine;
@@ -128,7 +133,8 @@ protected:
 	bool writeModel(LDLModel *pModel, const TCFloat *matrix, bool inPart);
 	bool writeCamera(void);
 	bool writeLights(void);
-	void writeLight(TCFloat lat, TCFloat lon, int num);
+	void writeLight(int num, TCFloat lat, TCFloat lon, 
+	    TCFloat intsy=0.0, int aSize=0, int aLights=0);
 	bool writeModelObject(LDLModel *pModel, bool mirrored,
 		const TCFloat *matrix, bool inPart);
 	void writeGeometry(IntShapeListMap &colorGeometryMap);
@@ -325,6 +331,7 @@ protected:
 	std::string m_xmlMapPath;
 	std::string m_topInclude;
 	std::string m_bottomInclude;
+	std::string m_povLights;
 	bool m_inlinePov;
 	bool m_hideStuds;
 	bool m_smoothCurves;
