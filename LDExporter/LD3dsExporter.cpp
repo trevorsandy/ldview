@@ -366,7 +366,7 @@ int LD3dsExporter::doExport(LDLModel *pTopModel)
 	//	pCameraNode = lib3ds_node_new_camera(pCamera);
 	//	lib3ds_file_append_node(m_file, (Lib3dsNode *)pCameraNode, NULL);
 	//}
-	if (!lib3ds_file_save(m_file, m_filename.c_str()))
+	if (lib3ds_file_save(m_file, m_filename.c_str()))
 	{
 		retVal = 0;
 	}
