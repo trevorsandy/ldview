@@ -7,10 +7,9 @@
 #include <TCFoundation/TCDefines.h>
 #include <TCFoundation/TCVector.h>
 
-#define POV_LIGHT_01              "1 45.0 0.0 1.0 200 4"     // 0
-#define POV_LIGHT_02              "2 30.0 120.0 0.0 0 0"     // 1
-#define POV_LIGHT_03              "3 60.0 -120.0 1.0 80 3"   // 2
-#define EXPORT_POV_LIGHTS_DEFAULT POV_LIGHT_01 ";" POV_LIGHT_02 ";" POV_LIGHT_03
+#define POV_LIGHT_01              "0 60.0 -80.0 0.7 200 5"    // 0
+#define POV_LIGHT_02              "0 80.0 60.0 0.3 200 3"     // 1
+#define EXPORT_POV_LIGHTS_DEFAULT POV_LIGHT_01 ";" POV_LIGHT_02
 
 class LDLModel;
 class LDLFileLine;
@@ -128,13 +127,16 @@ protected:
 	~LDPovExporter(void);
 	void dealloc(void);
 	bool writeHeader(void);
+	void writeLgQuality(void);
+	void writeGlobalSettings(void);
+	void writeLightSourceMacro(void);
 	void writeMainModel(void);
 	void writeFloor(void);
 	bool writeModel(LDLModel *pModel, const TCFloat *matrix, bool inPart);
 	bool writeCamera(void);
 	bool writeLights(void);
-	void writeLight(int num, TCFloat lat, TCFloat lon, 
-	    TCFloat intsy=0.0, int aSize=0, int aLights=0);
+	void writeLight(int num, TCFloat lat, TCFloat lon, int shadow,
+		TCFloat intsy = 0.0, int width = 0, int columns = 0);
 	bool writeModelObject(LDLModel *pModel, bool mirrored,
 		const TCFloat *matrix, bool inPart);
 	void writeGeometry(IntShapeListMap &colorGeometryMap);

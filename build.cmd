@@ -242,7 +242,8 @@ IF "%PATH_PREPENDED%" NEQ "True" (
     CALL "%LP3D_VCVARSALL%\vcvars64.bat" -vcvars_ver=14.0
   )
   rem Display MSVC Compiler settings
-  cl -Bv
+  echo _MSC_VER > %TEMP%\settings.c
+  cl -Bv -EP %TEMP%/settings.c > NUL
   ECHO.
 ) ELSE (
   ECHO.
