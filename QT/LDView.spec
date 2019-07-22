@@ -62,6 +62,9 @@ BuildRoot: %{_builddir}/%{name}
 Requires: unzip
 
 %if 0%{?fedora} || 0%{?rhel_version} || 0%{?centos_version} || 0%{?scientificlinux_version}
+%if 0%{?fedora}
+BuildRequires: hostname
+%endif
 %if ( 0%{?centos_version}>=600 || 0%{?rhel_version}>=600 || 0%{?scientificlinux_version}>=600 )
 %if 0%{?qt5}
 # Qt5 Not supported
@@ -130,7 +133,7 @@ BuildRequires: openssl-devel, storaged
 %endif
 
 %if 0%{?suse_version}
-%if 0%{?suse_version}!=1315
+%if 0%{?suse_version}!=1315 && 0%{?sle_version}<150000
 %kde4_runtime_requires
 BuildRequires: libkde4-devel
 %else
@@ -145,7 +148,7 @@ BuildRequires: libqt5-qtbase-devel, zlib-devel
 BuildRequires: libqt4-devel
 %endif
 Requires(pre): gconf2
-%if (0%{?suse_version} > 1210 && 0%{?suse_version}!=1315)
+%if 0%{?is_opensuse}
 BuildRequires: gl2ps-devel
 %else
 %define gl2ps_static   1
@@ -157,6 +160,7 @@ BuildRequires: glu-devel
 BuildRequires: Mesa-devel
 %endif
 %define tinyxml_static 1
+BuildRequires: tinyxml-devel
 %if 0%{?opensuse_bs}
 BuildRequires:	-post-build-checks
 %endif
@@ -192,6 +196,9 @@ BuildRequires: libqt5base5-devel, libmesaglu1-devel, libjpeg-devel
 %if 0%{?opensuse_bs}
 %ifarch x86_64
 BuildRequires: lib64sane1, lib64proxy-webkit
+%if 0%{?mageia} == 7
+BuildRequires: lib64openssl-devel
+%endif
 %else
 BuildRequires: libsane1, libproxy-webkit
 %endif
@@ -207,6 +214,9 @@ BuildRequires: libosmesa-devel, libqt4-devel
 BuildRequires: phonon-vlc, gnome-shell, wget
 %ifarch x86_64
 BuildRequires: lib64sane1, lib64apr1_0, lib64apr-util1_0, lib64proxy-webkit
+%if 0%{?mageia} == 7
+BuildRequires: lib64openssl-devel
+%endif
 %else
 BuildRequires: libsane1, libproxy-webkit
 %endif

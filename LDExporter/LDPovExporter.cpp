@@ -298,6 +298,7 @@ void LDPovExporter::loadSettings(void)
 	m_smoothCurves = boolForKey("SmoothCurves", true);
 	m_hideStuds = boolForKey("HideStuds", false);
 	m_unmirrorStuds = boolForKey("UnmirrorStuds", true);
+	m_background = boolForKey("Background", true);
 	m_floor = boolForKey("Floor", true);
 	m_floorAxis = longForKey("FloorAxis", 1);
 	m_selectedAspectRatio = longForKey("SelectedAspectRatio", -1);
@@ -318,7 +319,7 @@ void LDPovExporter::loadSettings(void)
 	m_chromeBril = floatForKey("ChromeBril", 5.0f);
 	m_chromeSpec = floatForKey("ChromeSpecular", 0.8f);
 	m_chromeRough = floatForKey("ChromeRoughness", 0.01f);
-	m_fileVersion = floatForKey("FileVersion", 3.6f);
+	m_fileVersion = floatForKey("FileVersion2", 3.7f);
 	temp = stringForKey("TopInclude");
 	if (temp != NULL)
 	{
@@ -339,6 +340,7 @@ void LDPovExporter::loadSettings(void)
 	{
 		m_bottomInclude = "";
 	}
+    // LPub3D Mod - lights
 	temp = stringForKey("PovLights", EXPORT_POV_LIGHTS_DEFAULT);
 	if (temp != NULL)
 	{
@@ -349,6 +351,7 @@ void LDPovExporter::loadSettings(void)
 	{
 		m_povLights = "";
 	}
+    // LPub3D Mod End
 }
 
 LDExporterSetting *LDPovExporter::addEdgesSettings(
@@ -395,7 +398,7 @@ void LDPovExporter::initSettings(void) const
 		return;
 	}
 	addSetting(pGroup, LDExporterSetting(ls(_UC("PovFileVersion")),
-		m_fileVersion, udKey("FileVersion").c_str()));
+		m_fileVersion, udKey("FileVersion2").c_str()));
 	if (addSetting(pGroup, LDExporterSetting(ls(_UC("PovQuality")),
 		udKey("Quality").c_str())))
 	{
@@ -440,6 +443,8 @@ void LDPovExporter::initSettings(void) const
 	addSetting(pGroup, LDExporterSetting(ls(_UC("PovCustomAspectRatio")),
 		m_customAspectRatio, udKey("CustomAspectRatio").c_str()));
 	m_settings.back().setTooltip("PovCustomAspectRatioTT");
+	addSetting(pGroup, LDExporterSetting(ls(_UC("PovBackground")), m_background,
+		udKey("Background").c_str()));
 	addSetting(pGroup, LDExporterSetting(ls(_UC("PovFloor")), m_floor,
 		udKey("Floor").c_str()));
 	m_settings.back().setGroupSize(1);
@@ -515,6 +520,7 @@ void LDPovExporter::initSettings(void) const
 	addSetting(pGroup, ls(_UC("PovDiffuse")), m_diffuse,
 		udKey("Diffuse").c_str(), 0.0f, 1.0f);
 
+    // LPub3D Mod - lights
 	pGroup = addSettingGroup(ls(_UC("PovLights")));
 	if (pGroup == NULL)
 	{
@@ -522,6 +528,7 @@ void LDPovExporter::initSettings(void) const
 	}
 	addSetting(pGroup, LDExporterSetting(ls(_UC("PovLights")),
 		m_povLights.c_str(), udKey("PovLights").c_str()));
+    // LPub3D Mod End
 
 	pGroup = addSettingGroup(ls(_UC("PovMaterialProps")));
 	if (pGroup == NULL)
@@ -842,23 +849,37 @@ int LDPovExporter::doExport(LDLModel *pTopModel)
 		{
 			return 1;
 		}
-		writeLgQuality();
-		writeGlobalSettings();
+        // LPub3D Mod - global settings
+        writeGlobalSettings();
+        // LPub3D Mod End
 		if (m_topInclude.size() > 0)
 		{
 			fprintf(m_pPovFile, "#include \"%s\"\n\n", m_topInclude.c_str());
 		}
+        // LPub3D Mod - lgQuality
+		writeLgQuality();
+        // LPub3D Mod End
 		if (!writeCamera())
 		{
 			return 1;
 		}
+        // LPub3D Mod - light source macro
 		writeLightSourceMacro();
+        // LPub3D Mod End
 		if (!writeLights())
 		{
 			return 1;
 		}
 		writeSeamMacro();
-		fprintf(m_pPovFile, "\nbackground { color rgb <LDXBgR,LDXBgG,LDXBgB> }\n\n");
+		fprintf(m_pPovFile,
+			"\n"
+			"#if (LDXBackground != 0)\n"
+			"#if (version >= 3.7)\n"
+			"background { color srgb <LDXBgR,LDXBgG,LDXBgB> }\n"
+			"#else\n"
+			"background { color rgb <LDXBgR,LDXBgG,LDXBgB> }\n"
+			"#end\n"
+			"#end\n\n");
 		if (m_edges)
 		{
 			TCFloat matrix[16];
@@ -928,8 +949,13 @@ void LDPovExporter::writeFloor(void)
 	fprintf(m_pPovFile, "object {\n");
 	fprintf(m_pPovFile, "\tplane { LDXFloorAxis, LDXFloorLoc hollow }\n");
 	fprintf(m_pPovFile, "\ttexture {\n");
+	fprintf(m_pPovFile, "#if (version >= 3.7)\n");
+	fprintf(m_pPovFile,
+		"\t\tpigment { color srgb <LDXFloorR,LDXFloorG,LDXFloorB> }\n");
+	fprintf(m_pPovFile, "#else\n");
 	fprintf(m_pPovFile,
 		"\t\tpigment { color rgb <LDXFloorR,LDXFloorG,LDXFloorB> }\n");
+	fprintf(m_pPovFile, "#end\n");
 	fprintf(m_pPovFile,
 		"\t\tfinish { ambient LDXFloorAmb diffuse LDXFloorDif }\n");
 	fprintf(m_pPovFile, "\t}\n");
@@ -989,12 +1015,13 @@ void LDPovExporter::writeDeclare(
 {
 	if (commentName != NULL)
 	{
-		fprintf(m_pPovFile, "#declare %s = %s;\t// %s\n", name, value.c_str(),
-			(const char *)ls(commentName));
+		fprintf(m_pPovFile, "#ifndef (%s) #declare %s = %s; #end\t// %s\n",
+			name, name, value.c_str(), (const char *)ls(commentName));
 	}
 	else
 	{
-		fprintf(m_pPovFile, "#declare %s = %s;\n",  name, value.c_str());
+		fprintf(m_pPovFile, "#ifndef (%s) #declare %s = %s; #end\n",  name,
+			name, value.c_str());
 	}
 }
 
@@ -1074,6 +1101,7 @@ bool LDPovExporter::writeHeader(void)
 	writeDeclare("LDXStuds", !m_hideStuds, "PovStudsDesc");
 	writeDeclare("LDXRefls", m_refls, "PovReflsDesc");
 	writeDeclare("LDXShads", m_shads, "PovShadsDesc");
+	writeDeclare("LDXBackground", m_background, "PovBackgroundDesc");
 	writeDeclare("LDXFloor", m_floor, "PovFloorDesc");
 	if (m_edges)
 	{
@@ -1100,6 +1128,9 @@ bool LDPovExporter::writeHeader(void)
 	writeDeclare("LDXCameraLoc", cameraLocString, "PovCameraLocDesc");
 	writeDeclare("LDXCameraLookAt", cameraLookAtString, "PovCameraLookAtDesc");
 	writeDeclare("LDXCameraSky", cameraSkyString, "PovCameraSkyDesc");
+	writeDeclare("LDXCameraAngle", ftostr(getHFov()).c_str());
+	writeDeclare("LDXCameraAspect", getAspectRatio().c_str());
+	writeDeclare("LDXCameraTransform", "transform {}");
 	fprintf(m_pPovFile, "\n");
 
 	switch (m_floorAxis)
@@ -1139,6 +1170,8 @@ bool LDPovExporter::writeHeader(void)
 	writeDeclare("LDXChromeBril", m_chromeBril);
 	writeDeclare("LDXChromeSpec", m_chromeSpec);
 	writeDeclare("LDXChromeRough", m_chromeRough);
+	writeDeclare("LDXOpaqueNormal", "normal { bumps 0.001 scale 0.5 }");
+	writeDeclare("LDXTransNormal", "normal { bumps 0.001 scale 0.5 }");
 	writeDeclare("LDXIPov", m_inlinePov, "PovInlinePovDesc");
 	if (m_edges)
 	{
@@ -1158,10 +1191,12 @@ bool LDPovExporter::writeHeader(void)
 	return true;
 }
 
+// LPub3D Mod - lights
 void LDPovExporter::writeLgQuality(void) 
 {
 	writeDeclare("lg_quality", "3");
 }
+// LPub3D Mod End
 
 std::string LDPovExporter::getModelFilename(const LDLModel *pModel)
 {
@@ -1644,23 +1679,25 @@ void LDPovExporter::getCameraStrings(
 	lookAtString = tmpString;
 }
 
+// LPub3D Mod - global settings
 void LDPovExporter::writeGlobalSettings(void)
 {
 	fprintf(m_pPovFile, "\n");
 
 	fprintf(m_pPovFile,
 		"#ifndef (LDXSkipGlobalSettings)\n"
-		"global_settings {\n"
-		"    assumed_gamma 1.4\n"
-		"    adc_bailout 0.01/2\n"
-		"    radiosity {\n"
-		"        brightness 0.5\n"
+		"  #if (version >= 3.7)\n"
+		"    global_settings {\n"
+		"      assumed_gamma 1.4\n"
+		"      adc_bailout 0.01/2\n"
+		"      max_trace_level 5\n"
 		"    }\n"
-		"    max_trace_level 5\n"
-		"}\n"
+		"  #end\n"
 		"#end\n\n");
 }
+// LPub3D Mod End
 
+// LPub3D Mod - light source macro
 void LDPovExporter::writeLightSourceMacro(void)
 {
 	writeDeclare("CameraTheta", "0.5235979");
@@ -1697,7 +1734,9 @@ void LDPovExporter::writeLightSourceMacro(void)
 		"}\n"
 		"#end\n\n");
 }
+// LPub3D Mod End
 
+// LPub3D Mod - lights
 void LDPovExporter::writeLight(int num, TCFloat lat, TCFloat lon,
 	int shadow, TCFloat intsy, int width, int columns)
 {
@@ -1708,7 +1747,9 @@ void LDPovExporter::writeLight(int num, TCFloat lat, TCFloat lon,
 		ftostr(intsy).c_str(), shadow, width, columns,
 		(const char *)ls("PovLatLon"), ftostr(lat).c_str(), ftostr(lon).c_str());
 }
+// LPub3D Mod End
 
+// LPub3D Mod - lights
 bool LDPovExporter::writeLights(void)
 {
 	fprintf(m_pPovFile, "// Lights\n");
@@ -1753,6 +1794,7 @@ bool LDPovExporter::writeLights(void)
 	}
     return false;
 }
+// LPub3D Mod End
 
 bool LDPovExporter::writeCamera(void)
 {
@@ -1761,15 +1803,14 @@ bool LDPovExporter::writeCamera(void)
 	fprintf(m_pPovFile,
 		"#ifndef (LDXSkipCamera)\n"
 		"camera {\n"
-		"\t#declare LDXCamAspect = %s;\n"
 		"\tlocation LDXCameraLoc\n"
 		"\tsky LDXCameraSky\n"
-		"\tright LDXCamAspect * < -1,0,0 >\n"
+		"\tright LDXCameraAspect * < -1,0,0 >\n"
 		"\tlook_at LDXCameraLookAt\n"
-		"\tangle %s\n"
+		"\tangle LDXCameraAngle\n"
+		"\ttransform {LDXCameraTransform}\n"
 		"}\n"
-		"#end\n\n",
-		getAspectRatio().c_str(), ftostr(getHFov()).c_str());
+		"#end\n\n");
 	return true;
 }
 
@@ -3279,11 +3320,16 @@ void LDPovExporter::writeLDXOpaqueColor(void)
 		fprintf(m_pPovFile, "#macro LDXOpaqueColor(r, g, b)\n");
 		fprintf(m_pPovFile, "#if (version >= 3.1) material { #end\n");
 		fprintf(m_pPovFile, "	texture {\n");
+		fprintf(m_pPovFile, "#if (version >= 3.7)\n");
+		fprintf(m_pPovFile, "		pigment { srgbf <r,g,b,0> }\n");
+		fprintf(m_pPovFile, "#else\n");
 		fprintf(m_pPovFile, "		pigment { rgbf <r,g,b,0> }\n");
+		fprintf(m_pPovFile, "#end\n");
 		fprintf(m_pPovFile, "#if (LDXQual > 1)\n");
 		fprintf(m_pPovFile, "		finish { ambient LDXAmb diffuse LDXDif }\n");
 		fprintf(m_pPovFile, "		finish { phong LDXPhong phong_size LDXPhongS "
 			"reflection LDXRefl }\n");
+		fprintf(m_pPovFile, "		normal { LDXOpaqueNormal }\n");
 		fprintf(m_pPovFile, "#end\n");
 		fprintf(m_pPovFile, "	}\n");
 		fprintf(m_pPovFile, "#if (version >= 3.1) } #end\n");
@@ -3301,12 +3347,18 @@ void LDPovExporter::writeLDXTransColor(void)
 		fprintf(m_pPovFile, "#macro LDXTransColor(r, g, b)\n");
 		fprintf(m_pPovFile, "#if (version >= 3.1) material { #end\n");
 		fprintf(m_pPovFile, "	texture {\n");
+		fprintf(m_pPovFile, "#if (version >= 3.7)\n");
+		fprintf(m_pPovFile, "		pigment { #if (LDXQual > 1) srgbf <r,g,b,LDXTFilt>"
+				" #else srgbf <0.6,0.6,0.6,0> #end }\n");
+		fprintf(m_pPovFile, "#else\n");
 		fprintf(m_pPovFile, "		pigment { #if (LDXQual > 1) rgbf <r,g,b,LDXTFilt>"
-			" #else rgbf <0.6,0.6,0.6,0> #end }\n");
+				" #else rgbf <0.6,0.6,0.6,0> #end }\n");
+		fprintf(m_pPovFile, "#end\n");
 		fprintf(m_pPovFile, "#if (LDXQual > 1)\n");
 		fprintf(m_pPovFile, "		finish { ambient LDXAmb diffuse LDXDif }\n");
 		fprintf(m_pPovFile, "		finish { phong LDXPhong phong_size LDXPhongS "
 			"reflection LDXTRefl }\n");
+		fprintf(m_pPovFile, "		normal { LDXTransNormal }\n");
 		fprintf(m_pPovFile, "		#if (version >= 3.1) #else finish { "
 			"refraction 1 ior LDXIoR } #end\n");
 		fprintf(m_pPovFile, "#end\n");
@@ -3329,7 +3381,11 @@ void LDPovExporter::writeLDXChromeColor(void)
 		fprintf(m_pPovFile, "#macro LDXChromeColor(r, g, b)\n");
 		fprintf(m_pPovFile, "#if (version >= 3.1) material { #end\n");
 		fprintf(m_pPovFile, "	texture {\n");
+		fprintf(m_pPovFile, "#if (version >= 3.7)\n");
+		fprintf(m_pPovFile, "		pigment { srgbf <r,g,b,0> }\n");
+		fprintf(m_pPovFile, "#else\n");
 		fprintf(m_pPovFile, "		pigment { rgbf <r,g,b,0> }\n");
+		fprintf(m_pPovFile, "#end\n");
 		fprintf(m_pPovFile, "#if (LDXQual > 1)\n");
 		fprintf(m_pPovFile, "		finish { ambient LDXAmb diffuse LDXDif }\n");
 		fprintf(m_pPovFile, "		finish { phong LDXPhong phong_size LDXPhongS "
@@ -3352,7 +3408,11 @@ void LDPovExporter::writeLDXRubberColor(void)
 		fprintf(m_pPovFile, "#macro LDXRubberColor(r, g, b)\n");
 		fprintf(m_pPovFile, "#if (version >= 3.1) material { #end\n");
 		fprintf(m_pPovFile, "	texture {\n");
+		fprintf(m_pPovFile, "#if (version >= 3.7)\n");
+		fprintf(m_pPovFile, "		pigment { srgbf <r,g,b,0> }\n");
+		fprintf(m_pPovFile, "#else\n");
 		fprintf(m_pPovFile, "		pigment { rgbf <r,g,b,0> }\n");
+		fprintf(m_pPovFile, "#end\n");
 		fprintf(m_pPovFile, "#if (LDXQual > 1)\n");
 		fprintf(m_pPovFile, "		finish { ambient LDXAmb diffuse LDXDif }\n");
 		fprintf(m_pPovFile, "		finish { phong LDXRubberPhong phong_size "
@@ -3464,8 +3524,13 @@ void LDPovExporter::writeRGBA(int r, int g, int b, int a)
 		dg = g / 255.0;
 		db = b / 255.0;
 	}
+	fprintf(m_pPovFile, "#if (version >= 3.7)\n");
+	fprintf(m_pPovFile, "srgbf <%s,%s,%s,%s>", ftostr(dr).c_str(),
+		ftostr(dg).c_str(), ftostr(db).c_str(), filter);
+	fprintf(m_pPovFile, "#else\n");
 	fprintf(m_pPovFile, "rgbf <%s,%s,%s,%s>", ftostr(dr).c_str(),
 		ftostr(dg).c_str(), ftostr(db).c_str(), filter);
+	fprintf(m_pPovFile, "#end\n");
 }
 
 void LDPovExporter::writeCommentLine(
@@ -3812,11 +3877,16 @@ void LDPovExporter::writeQuadLineVertices(LDLQuadLine *pQuadLine, int &total)
 
 void LDPovExporter::writeEdgeColor(void)
 {
+	fprintf(m_pPovFile, "#end\n");
 	fprintf(m_pPovFile,
 		"#ifndef (EdgeColor)\n"
 		"#declare EdgeColor = material {\n"
 		"	texture {\n"
+		"#if (version >= 3.7)\n"
+		"		pigment { srgbf <LDXEdgeR,LDXEdgeG,LDXEdgeB,0> }\n"
+		"#else\n"
 		"		pigment { rgbf <LDXEdgeR,LDXEdgeG,LDXEdgeB,0> }\n"
+		"#end\n"
 		"		finish { ambient 1 diffuse 0 }\n"
 		"	}\n"
 		"}\n"

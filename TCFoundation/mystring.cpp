@@ -879,6 +879,37 @@ void combinePath(
 	}
 }
 
+bool isFileUri(const std::string& fileUri)
+{
+	return stringHasCaseInsensitivePrefix(fileUri.c_str(), "file:///");
+}
+
+std::string pathFromFileUri(const std::string& fileUri)
+{
+	if (!isFileUri(fileUri))
+	{
+		return "";
+	}
+	std::string retValue = fileUri.substr(7);
+	size_t endSpot = retValue.find('?');
+	if (endSpot < retValue.size())
+	{
+		retValue.resize(endSpot);
+	}
+	size_t percentSpot = retValue.find('%');
+	while ((percentSpot = retValue.find('%')) < retValue.size())
+	{
+		std::string percent = retValue.substr(percentSpot, 3);
+		int characterCode;
+		if (sscanf(&percent[1], "%x", &characterCode) == 1 &&
+			characterCode >= 0x20 && characterCode <= 0x7f)
+		{
+			retValue.replace(percentSpot, 3, 1, (char)characterCode);
+		}
+	}
+	return retValue;
+}
+
 void removeExtenstion(std::string& path)
 {
 	size_t slashSpot = lastSlashIndex(path);
@@ -1415,6 +1446,7 @@ void consolePrintf(const wchar_t *format, ...)
 	va_end(argPtr);
 }
 
+// LPub3D Mod - format string
 #ifdef WIN32
 #pragma warning(disable : 4996) // suppress MS deprecated warning for vsnprintf
 #endif
@@ -1433,6 +1465,7 @@ std::string formatString(const char *format, ...)
 
     return &buf[0];
 }
+// LPub3D Mod End
 
 void debugVLog(const char *udKey, const char *format, va_list argPtr)
 {
@@ -2078,7 +2111,7 @@ bool utf8towstring(std::wstring& dst, const char *src, int length /*= -1*/)
 	else
 	{
 		srcBuffer.reserve(length + 1);
-		for (size_t i = 0; i < length; ++i)
+		for (int i = 0; i < length; ++i)
 		{
 			srcBuffer.push_back((UTF8)src[i]);
 		}

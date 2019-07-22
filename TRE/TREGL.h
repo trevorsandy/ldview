@@ -17,6 +17,7 @@
 #endif // WIN32
 
 #ifdef __APPLE__
+// LPub3D Mod - gl headers
 #  define GL_GLEXT_LEGACY
 #  include <GLUT/GLUT.h>
 #  define APIENTRY
@@ -35,12 +36,13 @@
 #    include <GL/glext.h>
 #    include <GL/glu.h>
 #  endif // OPENSUSE_1320_ARM
+// LPub3D Mod End
 #endif	// __APPLE__
 
 #include <TCFoundation/TCDefines.h>
 
 //Solaris
-#if (defined (__SVR4) && defined (__sun))
+#if (defined (__SVR4) && defined (__sun)) 
 #define APIENTRY
 #endif
 

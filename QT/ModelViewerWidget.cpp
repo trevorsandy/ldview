@@ -226,7 +226,8 @@ void ModelViewerWidget::setupUserAgent(void)
 	// successful.
 	assert(foundVersion);
 	userAgent.sprintf("LDView/%s (%s; ldview@gmail.com; "
-		"http://ldview.sf.net/)", ldviewVersion.toLatin1().constData(),
+		"https://github.com/tcobbs/ldview)",
+		ldviewVersion.toLatin1().constData(),
 		osName.toLatin1().constData());
 	TCWebClient::setUserAgent(userAgent.toLatin1().constData());
 }
@@ -284,8 +285,8 @@ void ModelViewerWidget::setApplication(QApplication *value)
 	{
 		shouldExit = true;
 	}
-    TCStringArray *commandLine = TCUserDefaults::getProcessedCommandLine();
-    char *commandLineFilename = NULL;
+    const TCStringArray *commandLine = TCUserDefaults::getProcessedCommandLine();
+    const char *commandLineFilename = NULL;
 
 	TCUserDefaults::removeValue(HFOV_KEY, false);
 	TCUserDefaults::removeValue(CAMERA_GLOBE_KEY, false);
@@ -295,7 +296,7 @@ void ModelViewerWidget::setApplication(QApplication *value)
         int count = commandLine->getCount();
         for (i = 0; i < count && !commandLineFilename; i++)
         {
-            char *arg = commandLine->stringAtIndex(i);
+            const char *arg = commandLine->stringAtIndex(i);
 
             if (arg[0] != '-')
                 commandLineFilename = arg;
@@ -1391,9 +1392,10 @@ void ModelViewerWidget::doHelpContents(void)
 	CFURLRef url = NULL;
 	CFStringRef urlString;
 	bool macSuccess = false;
-
-    urlString = CFStringCreateWithCString(NULL, qUrl.toUtf8().constData(), /* TDS fix error: no member named 'utf8' in QString' Old value: qUrl.utf8() */
+    // LPub3D Mod - fix error: no member named 'utf8' in QString' Old value: qUrl.utf8()
+    urlString = CFStringCreateWithCString(NULL, qUrl.toUtf8().constData(),
 		kCFStringEncodingUTF8);
+    // LPub3D Mod End
 	if (urlString && (url = CFURLCreateWithString(NULL, urlString, NULL)) !=
 		NULL)
 	{
@@ -1417,8 +1419,10 @@ void ModelViewerWidget::doHelpContents(void)
 	FSRef fsRef;
 	Boolean isDirectory;
 
-    if (FSPathMakeRef((const UInt8 *)helpFilename.toUtf8().constData(), &fsRef, /* TDS fix error: cannot cast from type 'QString' to pointer type 'const char*' Old value: (const char *)helpFilename */
+    // LPub3D Mod - fix error: cannot cast from type 'QString' to pointer type 'const char*' Old value: (const char *)helpFilename
+    if (FSPathMakeRef((const UInt8 *)helpFilename.toUtf8().constData(), &fsRef,
 		&isDirectory) == 0 && !isDirectory)
+    // LPub3D Mod End
 	{
 		if (LSOpenFSRef(&fsRef, NULL) == 0)
 		{

@@ -66,7 +66,8 @@ before_install:
   - if [[ "$QT_BASE" = "59" && "$TRAVIS_OS_NAME" = "linux" ]]; then sudo add-apt-repository ppa:beineri/opt-qt593-trusty -y; fi
   # Update repository index and download package dependencies/docker-engine if required
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then
-      sudo apt-get update -qq;
+      sudo apt-get update -qq; 
+      sudo apt-get install libglu1-mesa-dev libosmesa6-dev libgl2ps-dev libtinyxml-dev;
       export LDV_DIST_DIR=lpub3d_linux_3rdparty;
       export LDRAWDIR=${HOME}/ldraw;
     else

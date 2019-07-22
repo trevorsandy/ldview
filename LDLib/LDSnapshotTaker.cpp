@@ -374,15 +374,19 @@ bool LDSnapshotTaker::exportFiles(bool *tried /*= nullptr*/)
 		}
 		for (i = 0; i < count && (exportFiles || !retValue); ++i)
 		{
-			char *arg = unhandledArgs->stringAtIndex(i);
+			std::string arg = unhandledArgs->stringAtIndex(i);
 			
 			if (arg[0] != '-' && arg[0] != 0)
 			{
 				std::string exportFilename;
 				
+				if (isFileUri(arg))
+				{
+					arg = pathFromFileUri(arg);
+				}
 				if (exportFiles)
 				{
-					char *baseFilename = filenameFromPath(arg);
+					char *baseFilename = filenameFromPath(arg.c_str());
 					std::string mpdName;
 					size_t mpdSpot;
 
@@ -455,9 +459,9 @@ bool LDSnapshotTaker::exportFiles(bool *tried /*= nullptr*/)
 				}
 				if (exportFilename.size() > 0)
 				{
-					updateModelFilename(arg);
-					retValue = exportFile(exportFilename, arg, zoomToFit) ||
-						retValue;
+					updateModelFilename(arg.c_str());
+					retValue = exportFile(exportFilename, arg.c_str(),
+						zoomToFit) || retValue;
 					if (tried != NULL)
 					{
 						*tried = true;
@@ -570,6 +574,10 @@ TCStringArray *LDSnapshotTaker::getUnhandledCommandLineArgs(
 					if (unhandledArgs == NULL)
 					{
 						unhandledArgs = new TCStringArray;
+					}
+					if (isFileUri(line))
+					{
+						line = pathFromFileUri(line);
 					}
 					unhandledArgs->addString(line.c_str());
 					foundList = true;
@@ -707,15 +715,19 @@ bool LDSnapshotTaker::saveImage(bool *tried /*= nullptr*/)
 		}
 		for (i = 0; i < count && (saveSnapshots || !retValue); i++)
 		{
-			char *arg = unhandledArgs->stringAtIndex(i);
+			std::string arg = unhandledArgs->stringAtIndex(i);
 			
 			if (arg[0] != '-' && arg[0] != 0)
 			{
 				std::string imageFilename;
 
+				if (isFileUri(arg))
+				{
+					arg = pathFromFileUri(arg);
+				}
 				if (saveSnapshots)
 				{
-					char *baseFilename = filenameFromPath(arg);
+					char *baseFilename = filenameFromPath(arg.c_str());
 					std::string mpdName;
 					size_t mpdSpot;
 
@@ -788,7 +800,7 @@ bool LDSnapshotTaker::saveImage(bool *tried /*= nullptr*/)
 				}
 				if (imageFilename.size() > 0)
 				{
-					updateModelFilename(arg);
+					updateModelFilename(arg.c_str());
 					retValue = saveImage(imageFilename.c_str(), width, height,
 						zoomToFit) || retValue;
 					if (tried != NULL)
@@ -1358,12 +1370,14 @@ bool LDSnapshotTaker::writeImage(
 	m_croppedHeight = image->getHeight();
 	retValue = image->saveFile(filename, staticImageProgressCallback, this);
 
+    // LPub3D Mod - Information header
     if (TCUserDefaults::boolForKey("Info"))
     {
         printf("\nLDView Image Output\n");
         printf("==========================\n");
         printf("Write %s image %s\n\n", formatName, filename);
     }
+    // LPub3D Mod End
 
 	debugPrintf("Saved image: %s\n", filename);
 	image->release();

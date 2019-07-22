@@ -1,4 +1,4 @@
-FROM mageia:6
+FROM mageia:7
 MAINTAINER Peter Bartfai pbartfai@stardust.hu
 
 ADD install-devel-packages.sh /

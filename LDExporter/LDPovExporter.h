@@ -7,9 +7,11 @@
 #include <TCFoundation/TCDefines.h>
 #include <TCFoundation/TCVector.h>
 
+// LPub3D Mod - default lights
 #define POV_LIGHT_01              "0 60.0 -80.0 0.7 200 5"    // 0
 #define POV_LIGHT_02              "0 80.0 60.0 0.3 200 3"     // 1
 #define EXPORT_POV_LIGHTS_DEFAULT POV_LIGHT_01 ";" POV_LIGHT_02
+// LPub3D Mod End
 
 class LDLModel;
 class LDLFileLine;
@@ -127,16 +129,20 @@ protected:
 	~LDPovExporter(void);
 	void dealloc(void);
 	bool writeHeader(void);
+    // LPub3D Mod - additional POV-Ray export settings
 	void writeLgQuality(void);
 	void writeGlobalSettings(void);
 	void writeLightSourceMacro(void);
+    // LPub3D Mod End
 	void writeMainModel(void);
 	void writeFloor(void);
 	bool writeModel(LDLModel *pModel, const TCFloat *matrix, bool inPart);
 	bool writeCamera(void);
 	bool writeLights(void);
+    // LPub3D Mod - lights
 	void writeLight(int num, TCFloat lat, TCFloat lon, int shadow,
 		TCFloat intsy = 0.0, int width = 0, int columns = 0);
+    // LPub3D Mod End
 	bool writeModelObject(LDLModel *pModel, bool mirrored,
 		const TCFloat *matrix, bool inPart);
 	void writeGeometry(IntShapeListMap &colorGeometryMap);
@@ -333,12 +339,15 @@ protected:
 	std::string m_xmlMapPath;
 	std::string m_topInclude;
 	std::string m_bottomInclude;
+    // LPub3D Mod - lights
 	std::string m_povLights;
+    // LPub3D Mod End
 	bool m_inlinePov;
 	bool m_hideStuds;
 	bool m_smoothCurves;
 	bool m_unmirrorStuds;
 	long m_quality;
+	bool m_background;
 	bool m_floor;
 	long m_floorAxis;
 	bool m_refls;

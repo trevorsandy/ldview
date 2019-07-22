@@ -103,11 +103,16 @@ LDViewMainWindow::LDViewMainWindow(QApplication *a)
     }
     fileSeparatorIndex = i;
 #ifdef __APPLE__
-    fileMenu->removeAction(fileMenu->actions()[fileSeparatorIndex]); /* TDS Fix error: no member named 'removeItemAt' in 'QMenu' Old Value: fileMenu->removeItemAt(fileSeparatorIndex); */
+    // LPub3D Mod - Fix error: no member named 'removeItemAt' in 'QMenu' Old Value: fileMenu->removeItemAt(fileSeparatorIndex);
+    fileMenu->removeAction(fileMenu->actions()[fileSeparatorIndex]); 
+    // LPub3D Mod End
     fileSeparatorIndex = -1;
-    openRecentMenu = new QMenu("Open Recent", this);                 /* TDS Fix error: no matching constructor for initialization of 'QMenu' Old Value: QMenu(this, "openRecentMenu") */
-    fileMenu->addMenu(openRecentMenu);                               /* TDS Fix error: no member named 'insertItem' in 'QMenu' Old Value: fileMenu->insertItem("Open Recent", openRecentMenu, -1, 1); */
-
+    // LPub3D Mod - Fix error: no matching constructor for initialization of 'QMenu' Old Value: QMenu(this, "openRecentMenu")
+    openRecentMenu = new QMenu("Open Recent", this);    
+    // LPub3D Mod End             
+    // LPub3D Mod - Fix error: no member named 'insertItem' in 'QMenu' Old Value: fileMenu->insertItem("Open Recent", openRecentMenu, -1, 1);
+    fileMenu->addMenu(openRecentMenu);                               
+    // LPub3D Mod End
 #endif // __APPLE__
     if (!recentFiles)
     {
@@ -126,14 +131,21 @@ LDViewMainWindow::LDViewMainWindow(QApplication *a)
         // the edit menu.  This newly created menu item won't be visible to the
         // user, but it will make the other one continue to function after the
         // deletion of the edit menu.
-        fileMenu->addAction("Preferences", this, SLOT(editPreferences()), 0); /* TDS fix error: error: no member named 'insertItem' in 'QMenu'
-                                                                                     Old Value: fileMenu->insertItem("Preferences", this, SLOT(doPreferences()), 0, -1, 0); */
+
+        // LPub3D Mod - fix error: error: no member named 'insertItem' in 'QMenu'
+        // Old Value: fileMenu->insertItem("Preferences", this, SLOT(doPreferences()), 0, -1, 0);
+        fileMenu->addAction("Preferences", this, SLOT(editPreferences()), 0);
+        // LPub3D Mod End
+                                                                           
         // Remove the (empty without Preferences) edit menu.
-        menuBar()->removeAction(editMenu->menuAction());  /* TDS fix error: reference to non-static member function must be called; did you mean to call it with no arguments?
-                                                                 fix error: no member named 'removeItem' in 'QMenuBar'
-                                                                 fix error: no member named 'idAt' in 'QMenuBar'
-                                                                 Old Value: menuBar->removeItem(menuBar->idAt(1));
-                                                          */
+
+        // LPub3D Mod - fix error: reference to non-static member function must be 
+        // called; did you mean to call it with no arguments?
+        // fix error: no member named 'removeItem' in 'QMenuBar'
+        // fix error: no member named 'idAt' in 'QMenuBar'
+        // Old Value: menuBar->removeItem(menuBar->idAt(1));
+        menuBar()->removeAction(editMenu->menuAction());
+        // LPub3D Mod End
 #endif //__APPLE__
 	toolbarViewAngle = new QToolButton(toolbar);
 	toolbarViewAngle->setMenu(viewingAnglePopupMenu);

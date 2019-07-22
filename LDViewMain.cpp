@@ -158,9 +158,9 @@ int mainLoop()
 		{
 			topParent = newParent;
 		}
-		if (screenSaver || !TranslateAccelerator(
-		    topParent,     // handle to receiving window
-			hAccel,        // handle to active accelerator table
+		if (screenSaver || !TranslateAccelerator( 
+		    topParent,     // handle to receiving window 
+			hAccel,        // handle to active accelerator table 
 			&msg))
 		{
 			if (!parentWindow || !IsDialogMessage(parentWindow, &msg))
@@ -180,7 +180,7 @@ int mainLoop()
 
 BOOL flushPreviewEvents(HWND hWindow)
 {
-    // In preview mode, "pause" (enter a limited message loop) briefly
+    // In preview mode, "pause" (enter a limited message loop) briefly 
     // before proceeding, so the display control panel knows to update itself.
     BOOL waitForInputIdle = TRUE;
 
@@ -604,7 +604,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/,
 		utf8toucstring(iniPath, TCUserDefaults::getIniPath());
 
 		sucprintf(message, COUNT_OF(message),
-		TCLocalStrings::get(_UC("IniFailure")), iniPath.c_str());
+			TCLocalStrings::get(_UC("IniFailure")), iniPath.c_str());
 		CUIWindow::messageBoxUC(NULL, message, _UC("LDView"), MB_OK);
 		TCUserDefaults::setLongForKey(1, "IniFailureShown", false);
 	}

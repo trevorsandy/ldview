@@ -110,17 +110,25 @@ to check the Parts Tracker again when it next opens any of those files. Also,
 automatically do this when a new LDraw directory is chosen via the UI.</li>
 <li>Added ability to create Z map files (with ldvz extension) alongside
 snapshots.</li>
+<li>Added support for Mac "Dark Mode".</li>
+<li>Added setting to enable or disable the background in POV exports.</li>
 </ul>
 <b>Updates</b>
 <ul>
 <li>Mac version now requires macOS 10.8 Mountain Lion or later.</li>
+<li>Mac version no longer uses drawers (which are deprecated).</li>
 <li>Updated so that hitting space while the model is spinning will stop the
 rotation.</li>
 <li>Update default verbosity for command line snapshots and exports to show
 errors (but not warnings).</li>
+<li>Wrapped LDX... declarations in #ifndef statements to allow them to be
+declared in a wrapper file that includes LDView's generated POV file.</li>
+<li>Updated default POV file version to 3.7.</li>
+<li>Updated to use srgb colors in POV 3.7 (or later).</li>
 </ul>
 <b>Bug Fixes</b>
 <ul>
+<li>Fixed texture coordinate memory corruption problem.</li>
 <li>Fixed primitive substitution of ring primitives with 2-digit sizes.</li>
 <li>Fixed command line snapshot generation to work in macOS High Sierra.</li>
 <li>Fixed Mac Errors &amp; Warnings panel to not truncate rows.</li>
