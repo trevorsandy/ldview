@@ -123,14 +123,11 @@ BuildRequires: libjpeg-turbo-devel, tinyxml-devel, gl2ps-devel
 %endif
 
 %if 0%{?suse_version}
-%if 0%{?sle_version}<150000
 BuildRequires: extra-cmake-modules, kio-devel, kdelibs4support
-%else
 %if 0%{?qt5}
-BuildRequires: libpng16-compat-devel, libjpeg8-devel, libqt5-linguist
+#BuildRequires: libpng16-compat-devel, libjpeg8-devel, libqt5-linguist
 %endif
-%endif
-BuildRequires: cmake, update-desktop-files
+BuildRequires: cmake, update-desktop-files, glu-devel, Mesa-devel, tinyxml-devel
 %if 0%{?qt5}
 BuildRequires: libqt5-qtbase-devel, zlib-devel
 %else
@@ -141,7 +138,6 @@ BuildRequires: gl2ps-devel
 %else
 %define gl2ps_static   1
 %endif
-BuildRequires: glu-devel, Mesa-devel, tinyxml-devel
 %if 0%{?opensuse_bs}
 BuildRequires:	-post-build-checks
 %endif
@@ -149,10 +145,10 @@ BuildRequires:	-post-build-checks
 
 %if 0%{?sles_version}
 # SLE 11 SP3 has no libOSMesa.so
-%define osmesa_found %(test -f /usr/lib/libOSMesa.so -o -f /usr/lib64/libOSMesa.so && echo 1 || echo 0)
-%if "%{osmesa_found}" != "1"
-%define without_osmesa 1
-%endif
+#%define osmesa_found %(test -f /usr/lib/libOSMesa.so -o -f /usr/lib64/libOSMesa.so && echo 1 || echo 0)
+#%if "%{osmesa_found}" != "1"
+#%define without_osmesa 1
+#%endif
 %define tinyxml_static 1
 %if 0%{?opensuse_bs}
 BuildRequires:	-post-build-checks
