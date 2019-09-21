@@ -1659,7 +1659,7 @@ void LDrawModelViewer::setRawFont2xData(const TCByte *data, long length)
 		int rowSize;
 		const int fontWidth = 256;
 		const int fontHeight = 512;
-		
+
 		fontImage2x = new TCImage;
 		fontImage2x->setFlipped(true);
 		fontImage2x->setLineAlignment(4);
@@ -1671,7 +1671,7 @@ void LDrawModelViewer::setRawFont2xData(const TCByte *data, long length)
 		{
 			TCByte *imageData = fontImage2x->getImageData();
 			int i;
-			
+
 			for (i = 0; i < fontHeight; ++i)
 			{
 				memcpy(imageData + rowSize * (fontHeight - 1 - i),
@@ -2206,7 +2206,7 @@ void LDrawModelViewer::setMultiThreaded(bool value)
 		flags.multiThreaded = value;
 		flags.needsReparse = true;
 	}
-	
+
 }
 
 void LDrawModelViewer::setBlackHighlights(bool value)
@@ -2250,6 +2250,17 @@ void LDrawModelViewer::setCurveQuality(int value)
 		}
 	}
 }
+
+// LPub3D Mod - stud logo
+void LDrawModelViewer::setStudLogo(int value)
+{
+	if (value != studLogo)
+	{
+		studLogo = value;
+		flags.needsReparse = true;
+	}
+}
+// LPub3D Mod End
 
 void LDrawModelViewer::setRandomColors(bool value)
 {
@@ -3135,7 +3146,7 @@ bool LDrawModelViewer::getLDrawCommandLineMatrix(char *matrixString,
 		TCFloat matrix[16];
 		int i;
 		TCVector point;
-		
+
 		if (flags.autoCenter)
 		{
 			point = -center;
@@ -5072,7 +5083,7 @@ std::string LDrawModelViewer::getCurFilename(void) const
 {
 	const LDLModel *curModel = getCurModel();
 	const char *lfilename = getFilename();
-	
+
 	if (curModel == mainModel)
 	{
 		return lfilename;

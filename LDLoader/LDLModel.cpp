@@ -232,8 +232,11 @@ LDLModel *LDLModel::subModelNamed(const char *subModelName, bool lowRes,
 	{
 		ancestorCheck = true;
 	}
-	if (strcasecmp(subModelName, "stud.dat") == 0)
+	// LPub3D Mod - stud logo
+	if (strcasecmp(subModelName, "stud.dat") == 0 ||
+	    strcasecmp(subModelName, "stud2.dat") == 0)
 	{
+		// LPub3D Mod End
 		m_flags.hasStuds = true;
 	}
 	adjustedName = copyString(subModelName);
@@ -617,8 +620,37 @@ bool LDLModel::initializeNewSubModel(
 	{
 		subModel->m_flags.unofficial = true;
 	}
-	if (subModelStream.is_open() && !subModel->load(subModelStream))
+	// LPub3D Mod - stud logo
+	bool setStudLogo = false;
+	int studLogo = TCUserDefaults::longForKey("StudLogo", 0, 0);
+	if (studLogo && m_flags.loadingPrimitive && m_flags.hasStuds)
 	{
+		//char* file = filenameFromPath(subModel->getFilename());
+		bool openStud = !strcmp(dictName, "stud2.dat");
+		if ((setStudLogo = (openStud || !strcmp(dictName,"stud.dat"))))
+		{
+			// construct logo reference line
+			std::string logoNum     = studLogo > 1 ? std::to_string(studLogo) : "";
+			std::string logoRefLine = "1 16 0 0 0 1 0 0 0 1 0 0 0 1 ";
+			logoRefLine += openStud ? "stud2-logo" + logoNum + ".dat" :
+				                      "stud-logo" + logoNum + ".dat";
+
+			// construct primitive file
+			std::string in;
+			in.append(openStud ? "0 Stud Open\n" : "0 Stud\n");
+			in.append(openStud ? "0 Name: stud2.dat\n" : "0 Name: stud.dat\n");
+			in.append("0 Author: James Jessiman\n");
+			in.append("0 !LDRAW_ORG Primitive\n");
+			in.append("0 BFC CERTIFY CCW\n");
+			in.append(logoRefLine + "\n");
+
+			std::ifstream logoStream(tempStream(dictName,in), std::ios::binary);
+			setStudLogo = (logoStream.is_open() && subModel->load(logoStream));
+		}
+	}
+	if (!setStudLogo && subModelStream.is_open() && !subModel->load(subModelStream))
+	{
+  // LPub3D Mod End
 		subModelDict->removeObjectForKey(dictName);
 		return false;
 	}
@@ -718,7 +750,7 @@ void LDLModel::initCheckDirs()
 	}
 #ifdef WIN32
 	char buf[1024];
-	
+
 	if (GetPrivateProfileString("LDraw", "BaseDirectory", "", buf, 1024,
 		"ldraw.ini"))
 	{
@@ -737,7 +769,7 @@ void LDLModel::initCheckDirs()
 	if (homeDir != NULL)
 	{
 		char *homeLib = copyString(homeDir, strlen(libDir));
-		
+
 		stripTrailingPathSeparators(homeLib);
 		strcat(homeLib, libDir);
 		sm_checkDirs.push_back(homeLib);
@@ -2254,7 +2286,7 @@ void LDLModel::scanPoints(
 			if (step >= 0 && fileLine->getLineType() == LDLLineTypeComment)
 			{
 				LDLCommentLine *commentLine = (LDLCommentLine *)fileLine;
-				
+
 				if (commentLine->isStepMeta() && !emptyStep)
 				{
 					emptyStep = true;

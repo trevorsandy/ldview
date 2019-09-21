@@ -6,6 +6,9 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <stdarg.h>
+// LPub3D Mod - stud logo
+#include <fstream>
+// LPub3D Mod End
 
 #ifndef WIN32
 #include <sys/stat.h>
@@ -677,7 +680,7 @@ char* findExecutable(const char* executable)
 bool isDirectoryPath(const char* path)
 {
 	size_t len = strlen(path);
-	
+
 	if (len > 0)
 	{
 #ifdef WIN32
@@ -697,7 +700,7 @@ bool isDirectoryPath(const char* path)
 bool isDirectoryPath(const std::string &path)
 {
 	size_t len = path.length();
-	
+
 	if (len > 0)
 	{
 #ifdef WIN32
@@ -848,7 +851,7 @@ TCExport void combinePath(
 {
 	std::string leftStr;
 	std::string rightStr;
-	
+
 	if (left != NULL)
 	{
 		leftStr = left;
@@ -999,7 +1002,7 @@ static size_t lastSlashIndex(const ucstring &path)
 	size_t slashSpot = path.rfind('/');
 #ifdef WIN32
 	size_t backslashSpot = path.rfind('\\');
-	
+
 	if (slashSpot >= path.size() ||
 		(backslashSpot < path.size() && backslashSpot > slashSpot))
 	{
@@ -2589,7 +2592,7 @@ TCExport bool ensurePath(const std::string &path)
 	{
 		int i = 0;
 		retValue = true;
-		
+
 		if (!isRelativePath(path.c_str()))
 		{
 #ifdef WIN32
@@ -2754,3 +2757,24 @@ bool isLittleEndian()
 	char *numPtr = (char*)&number;
 	return (numPtr[0] == 1);
 }
+
+// LPub3D Mod - stud logo
+std::string tempStream(const std::string& file, const std::string& content)
+{
+	std::string filePath;
+#ifdef WIN32
+	TCHAR buf[MAX_PATH];
+	if (GetTempPath(MAX_PATH, buf) != 0)
+		filePath = buf;
+#else
+	filePath = "/tmp/";
+#endif
+	filePath.append("ldviewTmp_" + file);
+	std::ofstream ofs;
+	ofs.open(filePath.c_str(),
+		std::ios_base::trunc | std::ios_base::out);
+	ofs << content;
+	ofs.close();
+	return filePath;
+}
+// LPub3D Mod End

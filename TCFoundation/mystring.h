@@ -68,7 +68,7 @@ TCExport char *strcasestr(const char *s1, const char *s2) __THROW;
 #endif // !__APPLE__
 TCExport char *strnstr2(const char *s1, const char *s2, size_t n,
 						int skipZero);
-TCExport char *strncasestr(const char *s1, const char *s2, size_t n, int 
+TCExport char *strncasestr(const char *s1, const char *s2, size_t n, int
 skipZero = 0);
 
 //int stringHasPrefix(const char *s1, const char *s2);
@@ -225,6 +225,10 @@ TCExport bool isInBase64Charset(char character);
 
 // LPub3D Mod - format string
 TCExport std::string formatString(const char *format, ...);
+// LPub3D Mod End
+
+// LPub3D Mod - stud logo
+TCExport std::string tempStream(const std::string& file, const std::string& content);
 // LPub3D Mod End
 
 template<typename T, size_t size> size_t COUNT_OF(const T(&)[size]) { return size; }

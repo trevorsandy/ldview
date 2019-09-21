@@ -590,6 +590,10 @@ class LDrawModelViewer: public TCAlertSender
 			StandardSizeVector &sizes);
 		static void resetUnofficialDownloadTimes(void);
 //		static bool doCommandLineExport(void);
+		// LPub3D Mod - stud logo
+		void setStudLogo(int value);
+		int getStudLogo(void) const { return studLogo; }
+		// LPub3D Mod End
 	protected:
 		~LDrawModelViewer(void);
 		void dealloc(void);
@@ -783,6 +787,9 @@ class LDrawModelViewer: public TCAlertSender
 		int highlightR;
 		int highlightG;
 		int highlightB;
+		// LPub3D Mod - stud logo
+		int studLogo;
+		// LPub3D Mod End
 #ifdef USE_STD_CHRONO
 	std::chrono::time_point<std::chrono::steady_clock> frameTime;
 #else

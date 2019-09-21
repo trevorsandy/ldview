@@ -289,6 +289,9 @@ void LDPreferences::applyPrimitivesSettings(void)
 		m_modelViewer->setTexmaps(m_texmaps);
 		m_modelViewer->setTexturesAfterTransparent(m_texturesAfterTransparent);
 		m_modelViewer->setTextureOffsetFactor(m_textureOffsetFactor);
+        // LPub3D Mod - stud logo		
+		m_modelViewer->setStudLogo(m_studLogo);
+		// LPub3D Mod End
 	}
 }
 
@@ -485,6 +488,9 @@ void LDPreferences::loadDefaultPrimitivesSettings(bool initializing /*= true*/)
 	setTexturesAfterTransparent(false);
 	setTextureOffsetFactor(5.0);
 	m_initializing = false;
+	// LPub3D Mod - stud logo
+    setStudLogo(0);
+	// LPub3D Mod End
 }
 
 void LDPreferences::loadDefaultUpdatesSettings(bool initializing /*= true*/)
@@ -681,6 +687,9 @@ void LDPreferences::loadPrimitivesSettings(void)
 		m_texturesAfterTransparent);
 	m_textureOffsetFactor = getFloatSetting(TEXTURE_OFFSET_FACTOR_KEY,
 		m_textureOffsetFactor);
+	// LPub3D Mod - stud logo
+	m_studLogo = getIntSetting(STUD_LOGO_KEY, m_studLogo);
+	// LPub3D Mod End
 }
 
 void LDPreferences::loadUpdatesSettings(void)
@@ -858,6 +867,9 @@ void LDPreferences::commitPrimitivesSettings(bool flush /*= true*/)
 	setTexmaps(m_texmaps, true);
 	setTexturesAfterTransparent(m_texturesAfterTransparent, true);
 	setTextureOffsetFactor(m_textureOffsetFactor, true);
+	// LPub3D Mod - stud logo
+	setStudLogo(m_studLogo, true);
+	// LPub3D Mod End
 	if (flush)
 	{
 		TCUserDefaults::flush();
@@ -1403,7 +1415,7 @@ void LDPreferences::setLastSaveDir(
 //	bool commit /*= false*/)
 //{
 //	int intValue = m_snapshotsDirMode;
-//	
+//
 //	setSetting(intValue, value, SNAPSHOTS_DIR_MODE_KEY, commit);
 //	m_snapshotsDirMode = (DefaultDirMode)intValue;
 //}
@@ -1418,7 +1430,7 @@ void LDPreferences::setLastSaveDir(
 //	bool commit /*= false*/)
 //{
 //	int intValue = m_partsListsDirMode;
-//	
+//
 //	setSetting(intValue, value, PARTS_LISTS_DIR_MODE_KEY, commit);
 //	m_partsListsDirMode = (DefaultDirMode)intValue;
 //}
@@ -1855,6 +1867,13 @@ void LDPreferences::setCurveQuality(int value, bool commit)
 {
 	setSetting(m_curveQuality, value, CURVE_QUALITY_KEY, commit);
 }
+
+// LPub3D Mod - stud logo
+void LDPreferences::setStudLogo(int value, bool commit)
+{
+	setSetting(m_studLogo, value, STUD_LOGO_KEY, commit);
+}
+// LPub3D Mod End
 
 void LDPreferences::setQualityStuds(bool value, bool commit, bool apply)
 {

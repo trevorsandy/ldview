@@ -11,6 +11,9 @@
 #include <TCFoundation/TCMacros.h>
 #include <TCFoundation/TCVector.h>
 #include <TCFoundation/TCLocalStrings.h>
+// LPub3D Mod - stud logo
+#include <TCFoundation/TCUserDefaults.h>
+// LPub3D Mod End
 #include <ctype.h>
 
 #ifdef WIN32
@@ -519,7 +522,7 @@ int LDLPrimitiveCheck::getNumCircleSegments(TCFloat fraction, bool is48)
 	if (fraction != 0.0f)
 	{
 		int i;
-		
+
 		for (i = m_curveQuality; !fEq(fraction * retValue,
 			(TCFloat)getUsedCircleSegments(retValue, fraction)) && i < 12; i++)
 		{
@@ -581,7 +584,12 @@ bool LDLPrimitiveCheck::performPrimitiveSubstitution(
 		}
 		else if (strcasecmp(m_modelName, "stud.dat") == 0)
 		{
-			return substituteStud();
+			// LPub3D Mod - stud logo
+			if (TCUserDefaults::longForKey("StudLogo", 0, 0))
+				return false;
+			else
+				return substituteStud();
+			// LPub3D Mod End
 		}
 		else if (strcasecmp(m_modelName, "1-8sphe.dat") == 0)
 		{

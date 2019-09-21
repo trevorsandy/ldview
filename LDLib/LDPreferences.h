@@ -26,7 +26,7 @@ public:
 		LowerMiddle		= 8,
 		LowerRight		= 9,
 	};
-	
+
 	enum DefaultDirMode
 	{
 		DDMUnknown		= -1,
@@ -196,6 +196,9 @@ public:
 	bool getTexmaps(void) { return m_texmaps; }
 	bool getTexturesAfterTransparent(void) { return m_texturesAfterTransparent; }
 	TCFloat getTextureOffsetFactor(void) { return m_textureOffsetFactor; }
+	// LPub3D Mod - stud logo
+	int getStudLogo(void) { return m_studLogo; }
+	// LPub3D Mod End
 
 	// Update settings
 	int getProxyType(void) { return m_proxyType; }
@@ -256,7 +259,7 @@ public:
 	{
 		setSaveDir(SOPartsList, value, commit);
 	}
-	
+
 	// LDraw settings
 	void setLDrawDir(const char *value, bool commit = false);
 	void setExtraDirs(const StringVector &value, bool commit = false);
@@ -332,6 +335,9 @@ public:
 	void setTexmaps(bool value, bool commit = false, bool apply = false);
 	void setTexturesAfterTransparent(bool value, bool commit = false, bool apply = false);
 	void setTextureOffsetFactor(TCFloat value, bool commit = false, bool apply = false);
+	// LPub3D Mod - stud logo
+	void setStudLogo(int value, bool commit = false);
+	// LPub3D Mod End
 
 	// Update settings
 	void setProxyType(int value, bool commit = false);
@@ -493,6 +499,9 @@ protected:
 	bool m_texmaps;
 	bool m_texturesAfterTransparent;
 	TCFloat m_textureOffsetFactor;
+	// LPub3D Mod - stud logo
+	int m_studLogo;
+	// LPub3D Mod End
 
 	// Update settings
 	int m_proxyType;
