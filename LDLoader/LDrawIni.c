@@ -520,7 +520,7 @@ int LDrawIniReadPreferences(const char *ApplicationID,
    CFTypeID       PropType;
 
    AppID = CFStringCreateWithCString(kCFAllocatorDefault, ApplicationID,
-                                     kCFStringEncodingASCII);
+                                     kCFStringEncodingUTF8);
    if (!AppID)
       return 0;
    /* CFPreferencesCopyAppValue looks in ~/Library/Preferences/org.ldraw.plist
@@ -533,7 +533,7 @@ int LDrawIniReadPreferences(const char *ApplicationID,
       if (strcmp(PrefKey, "BaseDirectory") == 0)
          PrefKey = "LDRAWDIR";  /* For backward compatibility                */
       AppleKey = CFStringCreateWithCString(kCFAllocatorDefault, PrefKey,
-                                           kCFStringEncodingASCII);
+                                           kCFStringEncodingUTF8);
       AppleStr = (CFStringRef) CFPreferencesCopyAppValue(AppleKey, AppID);
       CFRelease(AppleKey);
       if (AppleStr)
@@ -547,7 +547,7 @@ int LDrawIniReadPreferences(const char *ApplicationID,
    {
       /* Section (other than "LDraw") specified, look for dictionary */
       AppleSection = CFStringCreateWithCString(kCFAllocatorDefault, Section,
-                                               kCFStringEncodingASCII);
+                                               kCFStringEncodingUTF8);
       PropList = CFPreferencesCopyAppValue(AppleSection, AppID);
       CFRelease(AppleSection);
       if (PropList)
@@ -556,7 +556,7 @@ int LDrawIniReadPreferences(const char *ApplicationID,
          if (PropType == CFDictionaryGetTypeID())
          {
             AppleKey = CFStringCreateWithCString(kCFAllocatorDefault, Key,
-                                                 kCFStringEncodingASCII);
+                                                 kCFStringEncodingUTF8);
             AppleStr = (CFStringRef) CFDictionaryGetValue((CFDictionaryRef) PropList,
                                                           AppleKey);
             CFRelease(AppleKey);
