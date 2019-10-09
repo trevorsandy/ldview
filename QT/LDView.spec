@@ -123,9 +123,8 @@ BuildRequires: libjpeg-turbo-devel, tinyxml-devel, gl2ps-devel
 %endif
 
 %if 0%{?suse_version}
-%if 0%{?suse_version}!=1315 && 0%{?sle_version}<150000
-%kde4_runtime_requires
-BuildRequires: libkde4-devel
+%if 0%{?sle_version}<150000
+BuildRequires: extra-cmake-modules, kio-devel, kdelibs4support
 %else
 %if 0%{?qt5}
 BuildRequires: libpng16-compat-devel, libjpeg8-devel, libqt5-linguist
@@ -142,14 +141,7 @@ BuildRequires: gl2ps-devel
 %else
 %define gl2ps_static   1
 %endif
-%if 0%{?suse_version} > 1220
-BuildRequires: glu-devel
-%endif
-%if 0%{?suse_version} > 1300
-BuildRequires: Mesa-devel
-%endif
-%define tinyxml_static 1
-BuildRequires: tinyxml-devel
+BuildRequires: glu-devel, Mesa-devel, tinyxml-devel
 %if 0%{?opensuse_bs}
 BuildRequires:	-post-build-checks
 %endif
