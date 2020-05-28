@@ -190,6 +190,10 @@ static NSOpenGLContext *sharedContext = nil;
 
 - (void)mouseDown:(NSEvent *)event
 {
+	if (threeFingerPan)
+	{
+		return;
+	}
 	NSPoint loc = [event locationInWindow];
 	
 	inputHandler->mouseDown([self convertKeyModifiers:[event modifierFlags]], LDInputHandler::MBLeft, (int)loc.x, (int)-loc.y);
@@ -197,6 +201,10 @@ static NSOpenGLContext *sharedContext = nil;
 
 - (void)rightMouseDown:(NSEvent *)event
 {
+	if (threeFingerPan)
+	{
+		return;
+	}
 	NSPoint loc = [event locationInWindow];
 	
 	inputHandler->mouseDown([self convertKeyModifiers:[event modifierFlags]], LDInputHandler::MBRight, (int)loc.x, (int)-loc.y);
@@ -204,6 +212,10 @@ static NSOpenGLContext *sharedContext = nil;
 
 - (void)otherMouseDown:(NSEvent *)event
 {
+	if (threeFingerPan)
+	{
+		return;
+	}
 	NSPoint loc = [event locationInWindow];
 	
 	inputHandler->mouseDown([self convertKeyModifiers:[event modifierFlags]], LDInputHandler::MBMiddle, (int)loc.x, (int)-loc.y);
@@ -211,6 +223,10 @@ static NSOpenGLContext *sharedContext = nil;
 
 - (void)mouseUp:(NSEvent *)event
 {
+	if (threeFingerPan)
+	{
+		return;
+	}
 	NSPoint loc = [event locationInWindow];
 	
 	inputHandler->mouseUp([self convertKeyModifiers:[event modifierFlags]], LDInputHandler::MBLeft, (int)loc.x, (int)-loc.y);
@@ -218,6 +234,10 @@ static NSOpenGLContext *sharedContext = nil;
 
 - (void)rightMouseUp:(NSEvent *)event
 {
+	if (threeFingerPan)
+	{
+		return;
+	}
 	NSPoint loc = [event locationInWindow];
 	
 	inputHandler->mouseUp([self convertKeyModifiers:[event modifierFlags]], LDInputHandler::MBRight, (int)loc.x, (int)-loc.y);
@@ -225,6 +245,10 @@ static NSOpenGLContext *sharedContext = nil;
 
 - (void)otherMouseUp:(NSEvent *)event
 {
+	if (threeFingerPan)
+	{
+		return;
+	}
 	NSPoint loc = [event locationInWindow];
 	
 	inputHandler->mouseUp([self convertKeyModifiers:[event modifierFlags]], LDInputHandler::MBMiddle, (int)loc.x, (int)-loc.y);
@@ -232,6 +256,10 @@ static NSOpenGLContext *sharedContext = nil;
 
 - (void)mouseDragged:(NSEvent *)event
 {
+	if (threeFingerPan)
+	{
+		return;
+	}
 	NSPoint loc = [event locationInWindow];
 	
 	inputHandler->mouseMove([self convertKeyModifiers:[event modifierFlags]], (int)loc.x, (int)-loc.y);
@@ -239,6 +267,10 @@ static NSOpenGLContext *sharedContext = nil;
 
 - (void)rightMouseDragged:(NSEvent *)event
 {
+	if (threeFingerPan)
+	{
+		return;
+	}
 	NSPoint loc = [event locationInWindow];
 	
 	inputHandler->mouseMove([self convertKeyModifiers:[event modifierFlags]], (int)loc.x, (int)-loc.y);
@@ -246,6 +278,10 @@ static NSOpenGLContext *sharedContext = nil;
 
 - (void)otherMouseDragged:(NSEvent *)event
 {
+	if (threeFingerPan)
+	{
+		return;
+	}
 	NSPoint loc = [event locationInWindow];
 	
 	inputHandler->mouseMove([self convertKeyModifiers:[event modifierFlags]], (int)loc.x, (int)-loc.y);
