@@ -194,7 +194,7 @@ public:
 	bool getQualityStuds(void) { return m_qualityStuds; }
 	bool getHiResPrimitives(void) { return m_hiResPrimitives; }
 	bool getTexmaps(void) { return m_texmaps; }
-	bool getTexturesAfterTransparent(void) { return m_texturesAfterTransparent; }
+	bool getTexturesAfterTransparent(void) { return true; }
 	TCFloat getTextureOffsetFactor(void) { return m_textureOffsetFactor; }
 	// LPub3D Mod - stud logo
 	int getStudLogo(void) { return m_studLogo; }
@@ -497,7 +497,6 @@ protected:
 	bool m_qualityStuds;
 	bool m_hiResPrimitives;
 	bool m_texmaps;
-	bool m_texturesAfterTransparent;
 	TCFloat m_textureOffsetFactor;
 	// LPub3D Mod - stud logo
 	int m_studLogo;
