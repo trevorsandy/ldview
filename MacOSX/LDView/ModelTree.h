@@ -13,7 +13,7 @@
 
 class LDModelTree;
 
-@interface ModelTree : SideDrawer
+@interface ModelTree : HelperPanel <NSWindowDelegate>
 {
 	IBOutlet NSOutlineView *outlineView;
 	IBOutlet NSTextField *optionsBoxLabel;

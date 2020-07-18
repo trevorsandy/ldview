@@ -497,4 +497,19 @@
 	}
 }
 
+- (void)open
+{
+    [super open];
+	[self updateHighlight];
+}
+
+- (void)windowWillClose:(NSNotification *)notification
+{
+	LDrawModelViewer *modelViewer = [[modelWindow modelView] modelViewer];
+	if (modelViewer != NULL)
+	{
+		modelViewer->setHighlightPaths("");
+	}
+}
+
 @end
