@@ -1,5 +1,5 @@
 # Build and check LDView x86 and x86_64 architectures unsing MSBuild
-version: LDView-AV-4.3.0.{build}
+version: LDView-AV-4.4.0.{build}
 
 clone_folder: c:\projects\ldview
 

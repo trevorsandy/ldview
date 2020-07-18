@@ -8,8 +8,8 @@ rem LDView distributions and package the build contents (exe, doc and
 rem resources ) as LPub3D 3rd Party components.
 rem --
 rem  Trevor SANDY <trevor.sandy@gmail.com>
-rem  Last Update: July 22, 2018
-rem  Copyright (c) 2018 by Trevor SANDY
+rem  Last Update: July 18, 2020
+rem  Copyright (c) 2020 by Trevor SANDY
 rem --
 rem This script is distributed in the hope that it will be useful,
 rem but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -42,7 +42,7 @@ SET zipWin64=C:\program files\7-zip
 SET OfficialCONTENT=complete.zip
 
 SET PACKAGE=LDView
-SET VERSION=4.3
+SET VERSION=4.4
 SET CONFIGURATION=Release
 
 SET MINIMUM_LOGGING=unknown
