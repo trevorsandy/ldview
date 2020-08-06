@@ -336,7 +336,7 @@ bool fileCaseCallback(char *filename)
 
 int main(int argc, char *argv[])
 {
-    printf("\nLDView CUI (Offscreen Renderer) %s\n", LDViewVersion);
+    printf("\nLDView - LPub3D Edition CUI (Offscreen Renderer) %s\n", LDViewVersion);
     printf("==========================\n");
 
     void *buffer;
@@ -348,7 +348,7 @@ int main(int argc, char *argv[])
     memcpy(stringTable, LDViewMessages_bytes, stringTableSize);
     stringTable[stringTableSize] = 0;
     TCLocalStrings::setStringTable(stringTable);
-	
+
     if (setupDefaults(argv) != 0)
     {
         if (TCUserDefaults::boolForKey("Info"))
@@ -360,7 +360,7 @@ int main(int argc, char *argv[])
             return 1;
         }
     }
-	
+
     if ((buffer = setupContext(ctx)) != NULL)
     {
         //ProgressHandler *progressHandler = new ProgressHandler;

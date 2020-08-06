@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
 	}
 	QString qloc = QString("Windows-")+QString::number(TCLocalStrings::getCodePage());
 	//QTextCodec::setCodecForLocale(QTextCodec::codecForName(qloc.toUtf8()));
-	TCUserDefaults::setAppName("LDView");
+	TCUserDefaults::setAppName("LDView - LPub3D Edition");
 	if (doCommandLine())
 	{
 		return 0;

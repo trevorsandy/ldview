@@ -132,12 +132,12 @@ IDR_LIGHT_ANGLE_MM      ICON                    "Icons\\LightAngleMM.ico"
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE 
+1 TEXTINCLUDE
 BEGIN
     "Resource.h\0"
 END
 
-2 TEXTINCLUDE 
+2 TEXTINCLUDE
 BEGIN
     "#include ""TCFoundation/TCDefines.h""\r\n"
     "#include ""winresrc.h""\r\n"
@@ -148,7 +148,7 @@ BEGIN
     "\0"
 END
 
-3 TEXTINCLUDE 
+3 TEXTINCLUDE
 BEGIN
     "\r\n"
     "\0"
@@ -162,23 +162,23 @@ END
 // Dialog
 //
 
-IDD_ABOUT_BOX DIALOGEX 0, 0, 245, 194
+IDD_ABOUT_BOX DIALOGEX 0, 0, 245, 210
 STYLE DS_SETFONT | DS_MODALFRAME | DS_SETFOREGROUND | DS_3DLOOK | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_CONTROLPARENT
 CAPTION "About LDView"
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,188,7,50,15,BS_NOTIFY
-    ICON            IDI_APP_ICON,IDC_STATIC,15,10,20,20
-    LTEXT           "LDView %s (%s) (%s)\n%s",IDC_VERSION_LABEL,50,10,135,28,SS_NOPREFIX
-    LTEXT           "Special thanks for contributions to LDView go to the following (mostly in alphabetic order):",IDC_STATIC,15,40,215,20
-    LTEXT           "LEGO® and the LEGO logo are registered trademarks of the LEGO Group, which does not sponsor, endorse, or authorize this program.",IDC_STATIC,13,168,219,17
-    GROUPBOX        "",IDC_STATIC,0,161,245,30
+    ICON            IDI_APP_ICON,IDC_STATIC,15,10,21,20
+    LTEXT           "LDView - LPub3D Edition\nVersion %s (%s) (%s)\n%s",IDC_VERSION_LABEL,50,10,135,33,SS_NOPREFIX
+    LTEXT           "Special thanks for contributions to LDView go to the following (mostly in alphabetic order):",IDC_STATIC,15,46,215,20
+    LTEXT           "LEGO® and the LEGO logo are registered trademarks of the LEGO Group, which does not sponsor, endorse, or authorize this program.",IDC_STATIC,13,184,219,17
+    GROUPBOX        "",IDC_STATIC,0,177,245,30
     LTEXT           "",IDC_STATIC,0,160,8,36,0,WS_EX_TRANSPARENT
     LTEXT           "",IDC_STATIC,237,160,8,36,0,WS_EX_TRANSPARENT
-    LTEXT           "",IDC_STATIC,0,186,245,8,0,WS_EX_TRANSPARENT
-    LTEXT           "Chris Conley\nJoshua Delahunty\nLars C. Hassing\nDon Heyse\nPhilippe Hurbain\nRusty Larner\nAlex Raftis\nCarsten Schmitz\nWilly Tschager\nMartijn Zwaal",IDC_STATIC,25,61,203,84
-    LTEXT           "Jean-loup Gailly, Mark Adler, and the rest of the zlib team\nGlenn Randers-Pehrson and the rest of the libpng team",IDC_STATIC,25,145,203,18
+    LTEXT           "",IDC_STATIC,0,201,245,8,0,WS_EX_TRANSPARENT
+    LTEXT           "Trevor Sandy (LPub3D-specific modifications)\nChris Conley\nJoshua Delahunty\nLars C. Hassing\nDon Heyse\nPhilippe Hurbain\nRusty Larner\nAlex Raftis\nCarsten Schmitz\nWilly Tschager\nMartijn Zwaal",IDC_STATIC,25,67,203,88
+    LTEXT           "Jean-loup Gailly, Mark Adler, and the rest of the zlib team\nGlenn Randers-Pehrson and the rest of the libpng team",IDC_STATIC,25,160,203,18
 END
 
 IDD_LDRAWDIR DIALOGEX 0, 0, 221, 63
@@ -776,7 +776,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 238
         TOPMARGIN, 7
-        BOTTOMMARGIN, 187
+        BOTTOMMARGIN, 203
     END
 
     IDD_LDRAWDIR, DIALOG
@@ -1232,12 +1232,12 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "Comments", "3D LEGO® Model Viewer for models in LDraw format."
-            VALUE "FileDescription", "LDView"
+            VALUE "FileDescription", "LDView - LPub3D Edition"
             VALUE "FileVersion", "4.4 Beta 1"
             VALUE "InternalName", "LDView"
             VALUE "LegalCopyright", "Copyright © 2020 Travis Cobbs & Peter Bartfai"
             VALUE "OriginalFilename", "LDView.exe"
-            VALUE "ProductName", "LDView"
+            VALUE "ProductName", "LDView - LPub3D Edition"
             VALUE "ProductVersion", "4.4 Beta 1"
         END
     END
@@ -1419,9 +1419,9 @@ IDR_EXTRA_DIRS_TOOLBAR   PNGDATA_1X                  "Icons\\extra_dirs_toolbar.
 
 
 /////////////////////////////////////////////////////////////////////////////
-//						 
+//
 // PNGDATA_2X
-//						 
+//
 
 IDC_ALL_CONDITIONAL     PNGDATA_2X                 "Icons\\toolbar_all_cond@2x.png"
 
