@@ -370,12 +370,14 @@
 #define IDC_PROCESS_LDCONFIG            1295
 #define IDC_SEAMS                       1296
 #define IDC_SPECULAR                    1297
-#define IDC_STUD_QUALITY                1298
-#define IDC_TEXTURE_ANISO               1299
-#define IDC_TEXTURE_STUDS               1300
-#define IDC_TEXTURE_OFFSET              1302
-#define IDC_TEXTURE_OFFSET_LABEL        1303
-#define IDC_RESET_TIMES                 1304
+#define IDC_STUD_LOGO                   1298
+#define IDC_STUD_LOGO_COMBO             1299
+#define IDC_STUD_QUALITY                1300
+#define IDC_TEXTURE_ANISO               1301
+#define IDC_TEXTURE_STUDS               1302
+#define IDC_TEXTURE_OFFSET              1303
+#define IDC_TEXTURE_OFFSET_LABEL        1304
+#define IDC_RESET_TIMES                 1305
 #define PRINTDLGORD                     1538
 #define PAGESETUPDLGORD                 1546
 #define IDD_PRIMITIVES_PREFS            1547
@@ -479,9 +481,9 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_3D_CONTROLS                     1
-#define _APS_NEXT_RESOURCE_VALUE        548
+#define _APS_NEXT_RESOURCE_VALUE        550
 #define _APS_NEXT_COMMAND_VALUE         40119
-#define _APS_NEXT_CONTROL_VALUE         1305
+#define _APS_NEXT_CONTROL_VALUE         1307
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

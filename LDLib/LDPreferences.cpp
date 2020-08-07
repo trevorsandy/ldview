@@ -488,7 +488,7 @@ void LDPreferences::loadDefaultPrimitivesSettings(bool initializing /*= true*/)
 	setTextureOffsetFactor(5.0);
 	m_initializing = false;
 	// LPub3D Mod - stud logo
-    setStudLogo(0);
+    setStudLogo(2/*3. Raised Flat*/);
 	// LPub3D Mod End
 }
 

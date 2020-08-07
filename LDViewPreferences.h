@@ -143,6 +143,9 @@ protected:
 	virtual void setupColorButton(HWND hPage, HWND &hColorButton,
 		int controlID, HBITMAP &hButtonBitmap, COLORREF color);
 	virtual void setupMemoryUsage(void);
+	// LPub3D Mod - stud logo
+	virtual void setupStudLogo(void);
+	// LPub3D Mod End
 	virtual void setupFov(bool warn = false);
 	virtual void setupBackgroundColorButton(void);
 	virtual void setupDefaultColorButton(void);
