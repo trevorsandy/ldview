@@ -98,7 +98,7 @@ LDPovExporter::LineKey::LineKey(void)
 //z2) are
 //        x = x1 + (x2 - x1)*t
 //        y = y1 + (y2 - y1)*t
-//        z = z1 + (z2 - z1)*t 
+//        z = z1 + (z2 - z1)*t
 LDPovExporter::LineKey::LineKey(const TCVector &point1, const TCVector &point2)
 {
 	if (point1 < point2)
@@ -527,7 +527,8 @@ void LDPovExporter::initSettings(void) const
 		return;
 	}
 	addSetting(pGroup, LDExporterSetting(ls(_UC("PovLights")),
-		m_povLights.c_str(), udKey("PovLights").c_str()));
+		m_povLights.c_str(), udKey("Lights").c_str()));
+	m_settings.back().setTooltip("PovLightsTT");
     // LPub3D Mod End
 
 	pGroup = addSettingGroup(ls(_UC("PovMaterialProps")));
@@ -1192,7 +1193,7 @@ bool LDPovExporter::writeHeader(void)
 }
 
 // LPub3D Mod - lights
-void LDPovExporter::writeLgQuality(void) 
+void LDPovExporter::writeLgQuality(void)
 {
 	writeDeclare("lg_quality", "3");
 }
@@ -1428,7 +1429,7 @@ bool LDPovExporter::shouldDrawConditional(
 	// If we do not turn the same direction \_/ for both test points
 	// then they're on opposite sides of segment p1-p2 and we should
 	// skip drawing this conditional line.
-	if (TREShapeGroup::turnVector(s2x-s1x, s2y-s1y, s3x-s2x, s3y-s2y) == 
+	if (TREShapeGroup::turnVector(s2x-s1x, s2y-s1y, s3x-s2x, s3y-s2y) ==
 		TREShapeGroup::turnVector(s2x-s1x, s2y-s1y, s4x-s2x, s4y-s2y))
 	{
 		return true;	// Draw it
@@ -1787,7 +1788,7 @@ bool LDPovExporter::writeLights(void)
 				&shadow, &lat, &lon, &intsy, &width, &colomns) == 6)
 			{
 				num++;
-				writeLight(num, lat, lon, shadow, intsy, width, colomns); 
+				writeLight(num, lat, lon, shadow, intsy, width, colomns);
 			}
 		}
 		return true;
@@ -2452,7 +2453,7 @@ void LDPovExporter::writeMesh2(int colorNumber, const ShapeList &list)
 //z2) are
 //        x = x1 + (x2 - x1)*t
 //        y = y1 + (y2 - y1)*t
-//        z = z1 + (z2 - z1)*t 
+//        z = z1 + (z2 - z1)*t
 void LDPovExporter::smoothGeometry(
 	int colorNumber,
 	const ShapeList &list,
