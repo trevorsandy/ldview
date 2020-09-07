@@ -378,6 +378,8 @@
 #define IDC_TEXTURE_OFFSET              1303
 #define IDC_TEXTURE_OFFSET_LABEL        1304
 #define IDC_RESET_TIMES                 1305
+#define IDC_IGNORE_FBO                  1305
+#define IDC_IGNORE_PIXEL_FORMAT         1306
 #define PRINTDLGORD                     1538
 #define PAGESETUPDLGORD                 1546
 #define IDD_PRIMITIVES_PREFS            1547
