@@ -28,6 +28,11 @@ environment:
   LP3D_DIST_DIR_PATH: $(APPVEYOR_BUILD_FOLDER)\$(LP3D_DIST_DIR)
 
 init:
+ - ps: |
+      If ($env:LP3D_SKIP_APPVEYOR_VAR -eq "true") {
+         write-host "Exit build detected."
+         Exit-AppveyorBuild
+      }
  - ps: write-host "Building LDView x86 and x86_64 architectures..."
  - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
  - ps: |

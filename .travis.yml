@@ -37,10 +37,13 @@ matrix:
 
 before_install:
   # Skip build if the commit message contains [skip travis] or [travis skip]
+  # or environment variable LP3D_SKIP_TRAVIS_VAR is true
   - >
-      echo "$TRAVIS_COMMIT_MESSAGE"
-      | grep -E  '\[(skip travis|travis skip)\]'
-      && echo "[skip travis] detected, exiting."
+      echo "$TRAVIS_COMMIT_MESSAGE" | awk '{print tolower($0)}' | \
+      grep -E '\[(skip travis|travis skip)\]' \
+      && echo "[skip travis] detected, exiting." \
+      && exit 0 || [ "$LP3D_SKIP_TRAVIS_VAR" = "true" ] \
+      && echo "'Skip Travis-CI' detected in environment variable." \
       && exit 0 || true
   # Build package if commit message contains [build pkg]
   - >
