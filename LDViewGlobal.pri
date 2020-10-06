@@ -20,7 +20,7 @@
 # LDView global directives
 
 # Get fine-grained host identification
-win32:HOST = $$system(systeminfo | findstr /B /C:"OS Name")
+win32:HOST = $$system(systeminfo | findstr /B /C:\"OS Name\")
 unix:!macx:HOST = $$system(. /etc/os-release 2>/dev/null; [ -n \"$PRETTY_NAME\" ] && echo \"$PRETTY_NAME\" || echo `uname`)
 macx:HOST = $$system(echo `sw_vers -productName` `sw_vers -productVersion`)
 isEmpty(HOST):HOST = UNKNOWN HOST
@@ -72,7 +72,7 @@ contains(DEFINES, _OSMESA): CONFIG += _OSM_CUI
 
 # platform switch
 BUILD_ARCH = $$(TARGET_CPU)
-if (contains(QT_ARCH, x86_64)|contains(QT_ARCH, arm64)|contains(BUILD_ARCH, aarch64)) {
+if (contains(QT_ARCH, x86_64)|contains(BUILD_ARCH, aarch64)) {
     ARCH     = 64
     LIB_ARCH = 64
 } else {
@@ -338,8 +338,8 @@ unix {
             } else {
                 OSMESA_INC          = $${SYS_LIBINC_}
                 OSMESA_LIBDIR       = -L$${SYS_LIBDIR_}
-                OSMESA_LDLIBS       = $${SYS_LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_D} \
-                                      $${SYS_LIBDIR_}/lib$${LIB_GLU}.$${EXT_D} \
+                OSMESA_LDLIBS       = -l$${LIB_OSMESA} \
+                                      -l$${LIB_GLU} \
                                       -l$${LIB_GL}
             }
         }
@@ -456,9 +456,10 @@ unix {
             } else {
                 OSMESA_INC      = $${SYS_LIBINC_}
                 OSMESA_LIBDIR   = -L$${SYS_LIBDIR_}
-                OSMESA_LDLIBS   = $${SYS_LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_D} \
-                                  $${SYS_LIBDIR_}/lib$${LIB_GLU}.$${EXT_D} \
+                OSMESA_LDLIBS   = -l$${LIB_OSMESA} \
+                                  -l$${LIB_GLU} \
                                   -l$${LIB_GL}
+                
             }
         }
 
