@@ -31,18 +31,18 @@
 #    include <OpenGL/OpenGL.h>
 #  endif // _OSMESA
 #else	// __APPLE__
-#  if !defined(_OPENSUSE_1320_ARM)
+#  if !defined(ARM_USE_OPENGL_HEADERS)
 #    include <GL/gl.h>
 #    include <GL/glext.h>
 #    include <GL/glu.h>
-#  endif // OPENSUSE_1320_ARM
+#  endif // ARM_USE_OPENGL_HEADERS
 // LPub3D Mod End
 #endif	// __APPLE__
 
 #include <TCFoundation/TCDefines.h>
 
 //Solaris
-#if (defined (__SVR4) && defined (__sun)) 
+#if (defined (__SVR4) && defined (__sun))
 #define APIENTRY
 #endif
 

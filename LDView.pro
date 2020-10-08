@@ -1,3 +1,6 @@
+TEMPLATE=subdirs
+CONFIG+=ordered # This tells Qt to compile the following SUBDIRS in order
+
 # LDView directory and project file structre
 # ------------
 # /LDView

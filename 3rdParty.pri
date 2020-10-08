@@ -10,7 +10,7 @@ CONFIG  += staticlib
 CONFIG 	+= warn_on
 
 # fine-grained host identification
-win32:HOST = $$system(systeminfo | findstr /B /C:"OS Name")
+win32:HOST = $$system(systeminfo | findstr /B /C:\"OS Name\")
 unix:!macx:HOST = $$system(. /etc/os-release 2>/dev/null; [ -n \"$PRETTY_NAME\" ] && echo \"$PRETTY_NAME\" || echo `uname`)
 macx:HOST = $$system(echo `sw_vers -productName` `sw_vers -productVersion`)
 isEmpty(HOST):HOST = UNKNOWN HOST
