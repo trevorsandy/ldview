@@ -70,9 +70,10 @@ USE_3RD_PARTY_3DS = YES
 contains(DEFINES, _QT):     CONFIG += _QT_GUI
 contains(DEFINES, _OSMESA): CONFIG += _OSM_CUI
 
-# platform switch
-BUILD_ARCH = $$(TARGET_CPU)
-if (contains(QT_ARCH, x86_64)|contains(BUILD_ARCH, aarch64)) {
+# for aarch64, QT_ARCH = arm64, for arm7l, QT_ARCH = arm
+!contains(QT_ARCH,unknown):  BUILD_ARCH = $$QT_ARCH
+else: isEmpty(BUILD_ARCH):   BUILD_ARCH = $$(TARGET_CPU)
+if (contains(BUILD_ARCH,x86_64)|contains(BUILD_ARCH,arm64)|contains(BUILD_ARCH,aarch64)) {
     ARCH     = 64
     LIB_ARCH = 64
 } else {
