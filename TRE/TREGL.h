@@ -31,7 +31,7 @@
 #    include <OpenGL/OpenGL.h>
 #  endif // _OSMESA
 #else	// __APPLE__
-#  if !defined(ARM_USE_OPENGL_HEADERS)
+#  if !defined(ARM_SKIP_GL_HEADERS)
 #    include <GL/gl.h>
 #    include <GL/glext.h>
 #    include <GL/glu.h>
