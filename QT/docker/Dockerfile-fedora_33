@@ -1,10 +1,12 @@
-FROM ubuntu:18.10
+FROM fedora:33
 MAINTAINER Peter Bartfai pbartfai@stardust.hu
 
 ADD install-devel-packages.sh /
 RUN ./install-devel-packages.sh
 
 VOLUME /mnt/lego
-CMD cd ldview/QT ; \
+CMD dnf update -x kernel* -y; \
+	cd ldview/QT ; \
 	git pull; \
-	./makedeb -qt5 ; \
+	mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS} ;\
+	./makerpm

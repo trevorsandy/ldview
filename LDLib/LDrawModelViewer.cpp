@@ -384,7 +384,14 @@ void LDrawModelViewer::setFieldOfView(double lfov, TCFloat nClip, TCFloat fClip)
 	applyTile();
 	aspectWidth = width * numXTiles / getStereoWidthModifier();
 	aspectHeight = height * numYTiles * pixelAspectRatio;
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
 	gluPerspective(lfov, aspectWidth / aspectHeight, nClip, fClip);
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 	glMatrixMode(GL_MODELVIEW);
 }
 
@@ -1659,7 +1666,7 @@ void LDrawModelViewer::setRawFont2xData(const TCByte *data, long length)
 		int rowSize;
 		const int fontWidth = 256;
 		const int fontHeight = 512;
-
+		
 		fontImage2x = new TCImage;
 		fontImage2x->setFlipped(true);
 		fontImage2x->setLineAlignment(4);
@@ -1671,7 +1678,7 @@ void LDrawModelViewer::setRawFont2xData(const TCByte *data, long length)
 		{
 			TCByte *imageData = fontImage2x->getImageData();
 			int i;
-
+			
 			for (i = 0; i < fontHeight; ++i)
 			{
 				memcpy(imageData + rowSize * (fontHeight - 1 - i),
@@ -1857,7 +1864,14 @@ void LDrawModelViewer::orthoView(void)
 	}
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
 	gluOrtho2D(0.0, actualWidth, 0.0, actualHeight);
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	if (strncmp(glVendor, "ATI Technologies Inc.", 3) != 0)
@@ -2206,7 +2220,7 @@ void LDrawModelViewer::setMultiThreaded(bool value)
 		flags.multiThreaded = value;
 		flags.needsReparse = true;
 	}
-
+	
 }
 
 void LDrawModelViewer::setBlackHighlights(bool value)
@@ -3146,7 +3160,7 @@ bool LDrawModelViewer::getLDrawCommandLineMatrix(char *matrixString,
 		TCFloat matrix[16];
 		int i;
 		TCVector point;
-
+		
 		if (flags.autoCenter)
 		{
 			point = -center;
@@ -5036,8 +5050,10 @@ int LDrawModelViewer::exportCurModel(
 				exporter->setFov(fov);
 				exporter->setXPan(xPan);
 				exporter->setYPan(yPan);
+				// LPub3D Mod - export settings
 				exporter->setAppUrl("https://trevorsandy.github.io/lpub3d/");
 				exporter->setAppName("LDView - LPub3D Edition");
+				// LPub3D Mod End
 				if (version != NULL)
 				{
 					exporter->setAppVersion(version);
@@ -5083,7 +5099,7 @@ std::string LDrawModelViewer::getCurFilename(void) const
 {
 	const LDLModel *curModel = getCurModel();
 	const char *lfilename = getFilename();
-
+	
 	if (curModel == mainModel)
 	{
 		return lfilename;

@@ -7,7 +7,7 @@
 //
 
 #import <Cocoa/Cocoa.h>
-#import "SideDrawer.h"
+#import "HelperPanel.h"
 
 @class ModelTreeItem;
 
@@ -23,17 +23,16 @@ class LDModelTree;
 	IBOutlet NSButton *highlightCheck;
 	IBOutlet NSTextField *statusTextField;
 	IBOutlet NSColorWell *highlightColorWell;
-	IBOutlet NSLayoutConstraint *showLinesBottomConstraint;
+//    IBOutlet NSLayoutConstraint *showLinesBottomConstraint;
 	LDModelTree *modelTree;
 	ModelTreeItem *rootModelTreeItem;
 	float showHideStartY;
 	NSLayoutConstraint *optionsBoxHiddenConstraint;
 	CGFloat optionsBoxHeight;
-	CGFloat showLinesBottomConstraintConstant;
+//    CGFloat showLinesBottomConstraintConstant;
 }
 
 - (void)modelChanged:(NSNotification *)notification;
-//- (void)hideOptionsInstantly:(BOOL)instantly;
 - (void)hideOptions;
 - (void)showOptions;
 - (NSOutlineView *)outlineView;

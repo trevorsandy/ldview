@@ -26,7 +26,7 @@ public:
 		LowerMiddle		= 8,
 		LowerRight		= 9,
 	};
-
+	
 	enum DefaultDirMode
 	{
 		DDMUnknown		= -1,
@@ -108,9 +108,9 @@ public:
 	int getMemoryUsage(void) { return m_memoryUsage; }
 	void getCustomColor(int index, int &r, int &g, int &b);
 	DefaultDirMode getSaveDirMode(SaveOp op) const;
-	std::string getSaveDir(SaveOp op) const;
-	std::string getLastSaveDir(SaveOp op) const;
-	std::string getDefaultSaveDir(SaveOp op, const std::string &modelFilename);
+	const std::string& getSaveDir(SaveOp op) const;
+	const std::string& getLastSaveDir(SaveOp op) const;
+	const std::string& getDefaultSaveDir(SaveOp op, const std::string &modelFilename);
 
 	DefaultDirMode getSnapshotsDirMode(void) const
 	{
@@ -216,9 +216,9 @@ public:
 	bool getInvShowFile(void) { return m_invShowFile; }
 	bool getInvShowTotal(void) { return m_invShowTotal; }
 	const LongVector &getInvColumnOrder(void) { return m_invColumnOrder; }
-	const char *getInvLastSavePath(void) const
+	const std::string& getInvLastSavePath(void) const
 	{
-		return getLastSaveDir(SOPartsList).c_str();
+		return getLastSaveDir(SOPartsList);
 	}
 
 	// General settings
@@ -259,7 +259,7 @@ public:
 	{
 		setSaveDir(SOPartsList, value, commit);
 	}
-
+	
 	// LDraw settings
 	void setLDrawDir(const char *value, bool commit = false);
 	void setExtraDirs(const StringVector &value, bool commit = false);
@@ -420,6 +420,8 @@ protected:
 	void setSaveDirDefault(SaveOp op, DefaultDirMode mode);
 	// *************************************************************************
 
+	static std::string m_emptyString;
+	static std::string m_modelDir;
 	LDrawModelViewer* m_modelViewer;
 
 	// General settings

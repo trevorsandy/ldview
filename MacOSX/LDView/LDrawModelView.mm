@@ -87,13 +87,15 @@ static NSOpenGLContext *sharedContext = nil;
 
 - (NSOpenGLPixelFormat *)customPixelFormat
 {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 	int attrs[] =
 	{
 		NSOpenGLPFAWindow,
 		NSOpenGLPFADoubleBuffer,
-		NSOpenGLPFAColorSize, 16,
-		NSOpenGLPFAAlphaSize, 4,
-		NSOpenGLPFADepthSize, 16,
+		NSOpenGLPFAColorSize, 24,
+		NSOpenGLPFAAlphaSize, 8,
+		NSOpenGLPFADepthSize, 32,
 		NSOpenGLPFAStencilSize, 8,
 		NSOpenGLPFAMaximumPolicy,
 		// The documentation claims that the following isn't useful, but is MUST
@@ -102,6 +104,7 @@ static NSOpenGLContext *sharedContext = nil;
 		NSOpenGLPFANoRecovery,
 		0
 	};
+#pragma clang diagnostic pop
 	return [[[NSOpenGLPixelFormat alloc] initWithAttributes:(NSOpenGLPixelFormatAttribute *)attrs] autorelease];
 }
 
@@ -157,6 +160,7 @@ static NSOpenGLContext *sharedContext = nil;
 	modelViewer->setScaleFactor(scaleFactor);
 	modelViewer->setWidth((int)bounds.size.width);
 	modelViewer->setHeight((int)bounds.size.height);
+    [super reshape];
 }
 
 - (LDrawModelViewer *)modelViewer
@@ -625,8 +629,9 @@ static NSOpenGLContext *sharedContext = nil;
 {
 	BOOL skip = NO;
 	ModelWindow *modelWindow = [self modelWindow];
+	NSGraphicsContext *cc = [NSGraphicsContext currentContext];
 
-	if (![NSGraphicsContext currentContextDrawingToScreen])
+	if (!cc.isDrawingToScreen && cc.attributes != nil)
 	{
 		[self printRect:rect];
 		return;

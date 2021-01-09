@@ -26,17 +26,19 @@ if (echo  $PATH | grep -q ccache ) ; then
 else
 	export PATH=/usr/lib/ccache:$PATH
 fi
-cd ..
+test -f LDView.pro && cd ..
 ln -sf QT/debian debian
 rm -f ../ldview*.dsc ../ldview*.deb QT/ldview*.deb
 dpkg-buildpackage
 lintian ../ldview*.deb ../ldview*.dsc
 rm -f debian
+ldvdir=`pwd`
 cd ..
 if [ -d LDView ] ; then ldvdir=LDView ; 
-elif [ -d ldview ] ; then ldvdir=ldview ; fi
-cp -f ldview_*.deb $ldvdir/QT/ldview-4.4b1-${DIST}`dpkg-architecture -qDEB_BUILD_ARCH`.deb
-cp -f ldview-osmesa_[1-9].[0-9]*.deb $ldvdir/QT/ldview-osmesa-4.4b1-${DIST}`dpkg-architecture -qDEB_BUILD_ARCH`.deb
+elif [ -d ldview ] ; then ldvdir=ldview ; 
+elif [ -f project/QT/LDView.pro ] ; then ldvdir=project ; fi
+cp -f ldview_*.deb $ldvdir/QT/ldview-4.4b3-${DIST}`dpkg-architecture -qDEB_BUILD_ARCH`.deb
+cp -f ldview-osmesa_[1-9].[0-9]*.deb $ldvdir/QT/ldview-osmesa-4.4b3-${DIST}`dpkg-architecture -qDEB_BUILD_ARCH`.deb
 QT_VER=`QT_SELECT=5 qmake -query | grep QT_VERSION | cut -d: -f2|cut -d. -f1`
 if [ "$QT_VER" = "5" -a "$1" = "-qt5" ] ; then
 	export QT_SELECT=5
@@ -54,7 +56,7 @@ if [ "$QT_VER" = "5" -a "$1" = "-qt5" ] ; then
 	dpkg-buildpackage
 	rm -rf debian
 	cd ..
-	cp -f ldview-qt5_*.deb $ldvdir/QT/ldview-qt5-4.4b1-${DIST}`dpkg-architecture -qDEB_BUILD_ARCH`.deb
+	cp -f ldview-qt5_*.deb $ldvdir/QT/ldview-qt5-4.4b3-${DIST}`dpkg-architecture -qDEB_BUILD_ARCH`.deb
 fi
 
 if [ -d /mnt/lego ] ; then

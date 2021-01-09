@@ -1,5 +1,5 @@
 #!/bin/sh
-
+export DEBIAN_FRONTEND=noninteractive
 GITROOT=https://github.com/tcobbs/ldview
 
 download (){
@@ -14,6 +14,10 @@ download (){
 	elif [ `pwd` = /home/travis/build/tcobbs/ldview ] ; then
 		LDVIEW=`pwd`
 	elif [ `pwd` = /home/appveyor/projects/ldview ] ; then
+		LDVIEW=`pwd`
+	elif [ `pwd` = /root/project ] ; then
+		LDVIEW=`pwd`
+	elif [ -f QT/LDView.pro ] ; then
 		LDVIEW=`pwd`
 	else
 		test -d ldview || git clone $GITROOT
@@ -59,4 +63,9 @@ elif grep -q -e openSUSE /etc/os-release ; then
 	download
 	zypper --non-interactive install `rpmbuild --nobuild $LDVIEW/QT/LDView.spec 2>&1  | grep 'needed by'| awk ' {print $1}'`
 	zypper --non-interactive install --force-resolution `rpmbuild --nobuild $LDVIEW/QT/LDView-qt5.spec 2>&1  | grep 'needed by'| awk ' {print $1}'`
+elif [ -f /etc/alpine-release ] ; then
+	apk add git g++ alpine-sdk sudo
+	download
+	apk add `grep depends $LDVIEW/QT/APKBUILD |cut -f2 -d=|tr -d \"\(\)`
 fi
+git config --global pull.rebase false

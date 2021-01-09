@@ -752,7 +752,7 @@ void LDLModel::initCheckDirs()
 	}
 #ifdef WIN32
 	char buf[1024];
-
+	
 	if (GetPrivateProfileString("LDraw", "BaseDirectory", "", buf, 1024,
 		"ldraw.ini"))
 	{
@@ -771,7 +771,7 @@ void LDLModel::initCheckDirs()
 	if (homeDir != NULL)
 	{
 		char *homeLib = copyString(homeDir, strlen(libDir));
-
+		
 		stripTrailingPathSeparators(homeLib);
 		strcat(homeLib, libDir);
 		sm_checkDirs.push_back(homeLib);
@@ -2272,7 +2272,7 @@ void LDLModel::scanPoints(
 			if (step >= 0 && fileLine->getLineType() == LDLLineTypeComment)
 			{
 				LDLCommentLine *commentLine = (LDLCommentLine *)fileLine;
-
+				
 				if (commentLine->isStepMeta() && !emptyStep)
 				{
 					emptyStep = true;

@@ -98,7 +98,7 @@ LDPovExporter::LineKey::LineKey(void)
 //z2) are
 //        x = x1 + (x2 - x1)*t
 //        y = y1 + (y2 - y1)*t
-//        z = z1 + (z2 - z1)*t
+//        z = z1 + (z2 - z1)*t 
 LDPovExporter::LineKey::LineKey(const TCVector &point1, const TCVector &point2)
 {
 	if (point1 < point2)
@@ -1097,6 +1097,7 @@ bool LDPovExporter::writeHeader(void)
 	}
 	fprintf(m_pPovFile, ls("PovNote"), m_appName.c_str());
 	fprintf(m_pPovFile, "#version %g;\n\n", m_fileVersion);
+	fprintf(m_pPovFile, "#if (version >= 3.7) global_settings {assumed_gamma 1} #end\n\n");
 	writeDeclare("LDXQual", m_quality, "PovQualDesc");
 	writeDeclare("LDXSW", m_seamWidth, "PovSeamWidthDesc");
 	writeDeclare("LDXStuds", !m_hideStuds, "PovStudsDesc");
@@ -1429,7 +1430,7 @@ bool LDPovExporter::shouldDrawConditional(
 	// If we do not turn the same direction \_/ for both test points
 	// then they're on opposite sides of segment p1-p2 and we should
 	// skip drawing this conditional line.
-	if (TREShapeGroup::turnVector(s2x-s1x, s2y-s1y, s3x-s2x, s3y-s2y) ==
+	if (TREShapeGroup::turnVector(s2x-s1x, s2y-s1y, s3x-s2x, s3y-s2y) == 
 		TREShapeGroup::turnVector(s2x-s1x, s2y-s1y, s4x-s2x, s4y-s2y))
 	{
 		return true;	// Draw it
@@ -2453,7 +2454,7 @@ void LDPovExporter::writeMesh2(int colorNumber, const ShapeList &list)
 //z2) are
 //        x = x1 + (x2 - x1)*t
 //        y = y1 + (y2 - y1)*t
-//        z = z1 + (z2 - z1)*t
+//        z = z1 + (z2 - z1)*t 
 void LDPovExporter::smoothGeometry(
 	int colorNumber,
 	const ShapeList &list,

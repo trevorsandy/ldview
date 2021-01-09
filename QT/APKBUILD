@@ -1,22 +1,18 @@
-# Maintainer: Peter Bartfai <pbartfai[at]stardust[dot]hu>
-pkgname=('ldview' 'ldview-osmesa')
+# Maintainer: Peter Bartfai <pbartfai@stardust.hu>
+pkgname=ldview
 pkgver=4.4b3
 pkgrel=1
 pkgdesc="A real-time 3D viewer for displaying LDraw models"
 url="http://github.com/tcobbs/ldview"
-arch=('x86_64' 'i686')
-license=('GPL')
+arch="all"
+license="GPL"
 #Qt5.x
-depends=('qt5-base' 'qt5-tools' 'libpng' 'libjpeg-turbo' 'mesa-libgl' 'gl2ps')
-makedepends=('kdelibs4support' 'glu' 'gcc' 'make' 'cmake' 'extra-cmake-modules')
-conflicts=()
-replaces=()
-backup=()
-source=("ldview-git.tar.gz")
-md5sums=(SKIP)
+depends="qt5-qtbase libpng libjpeg-turbo"
+makedepends="qt5-qtbase-dev qt5-qttools-dev glu-dev libjpeg-turbo-dev make cmake extra-cmake-modules"
+#source="ldview-git.tar.gz"
+subpackages="$pkgname-osmesa"
 
 build() {
-  test -d ${srcdir}/ldview-git/QT && cd ${srcdir}/ldview-git/QT || cd ..
   if test "$CARCH" == x86_64; then
     PLATFORM=linux-g++-64
   else
@@ -35,17 +31,17 @@ build() {
     make
   fi
   cd ../../../OSMesa
-  make all
+  make
 }
  
-package_ldview() {
+package() {
   test -d ${srcdir}/ldview-git/QT && cd ${srcdir}/ldview-git/QT || cd ..
   make INSTALL_ROOT="${pkgdir}" install
-  cd kde5/build
-  make DESTDIR="${pkgdir}" install
+#  cd kde5/build
+#  make DESTDIR="${pkgdir}" install
 }
 
-package_ldview-osmesa() {
-  test -d ${srcdir}/ldview-git/OSMesa && cd ${srcdir}/ldview-git/OSMesa || cd ../../OSMesa
-  make PREFIX="${pkgdir}" install
+osmesa() {
+  cd ../OSMesa
+  make PREFIX="${pkgdir}-osmesa" install
 }

@@ -951,7 +951,7 @@ UCSTR TCUserDefaults::defStringForKeyUC(const char* key, bool sessionSpecific,
 	QString string;
 	if (!qSettings->contains(qKey))
 	{
-		if (qDefaultValue == QString::null)
+		if (qDefaultValue.isNull())
 		{
 			return NULL;
 		}
@@ -1738,8 +1738,11 @@ TCStringArray* TCUserDefaults::defGetAllSessionNames(void)
 	qSettings->endGroup();
 #endif // _QT
 #ifdef COCOA
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 	NSArray *domainNames = [[NSUserDefaults standardUserDefaults]
 		persistentDomainNames];
+#pragma clang diagnostic pop
 	NSString *prefix = getSessionKey("");
 	int prefixLength = (int)[prefix length];
 	int i;

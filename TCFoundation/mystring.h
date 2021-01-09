@@ -68,7 +68,7 @@ TCExport char *strcasestr(const char *s1, const char *s2) __THROW;
 #endif // !__APPLE__
 TCExport char *strnstr2(const char *s1, const char *s2, size_t n,
 						int skipZero);
-TCExport char *strncasestr(const char *s1, const char *s2, size_t n, int
+TCExport char *strncasestr(const char *s1, const char *s2, size_t n, int 
 skipZero = 0);
 
 //int stringHasPrefix(const char *s1, const char *s2);

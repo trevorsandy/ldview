@@ -1,6 +1,13 @@
+#include <QtGlobal>
+#if QT_VERSION >= QT_VERSION_CHECK(6,0,0)
+#include <QWidget>
+#include <QTextCodec>
+#include <QtOpenGL>
+#else
 #include <QApplication>
 #include <QTextCodec>
 #include <qgl.h>
+#endif
 #include "LDViewMainWindow.h"
 #include "ModelViewerWidget.h"
 #include "SnapshotTaker.h"
@@ -50,13 +57,21 @@ public:
 };
 #endif // __linux__
 
+#if (QT_VERSION >= 0x50400) && defined(QOPENGLWIDGET)
+static QSurfaceFormat defaultFormat;
+#else
 static QGLFormat defaultFormat;
+#endif
 
 void setupDefaultFormat(void)
 {
+#if (QT_VERSION >= 0x50400) && defined(QOPENGLWIDGET)
+	QSurfaceFormat::setDefaultFormat(defaultFormat);
+#else
 	defaultFormat.setAlpha(true);
 	defaultFormat.setStencil(true);
 	QGLFormat::setDefaultFormat(defaultFormat);
+#endif
 }
 
 bool doCommandLine()
@@ -67,7 +82,11 @@ bool doCommandLine()
 #if QT_VERSION < 0x40600
 	long len = studImage.numBytes();
 #else
+#if QT_VERSION < QT_VERSION_CHECK(5,10,0)
 	long len = studImage.byteCount();
+#else
+	long len = studImage.sizeInBytes();
+#endif
 #endif
 	TREMainModel::setRawStudTextureData(studImage.bits(), len);
 	LDLModel::setFileCaseCallback(ModelViewerWidget::staticFileCaseCallback);
@@ -83,7 +102,9 @@ int main(int argc, char *argv[])
 	char locale[3];
 	QString filename;
 
+#if QT_VERSION < QT_VERSION_CHECK(5,8,0)
 	QApplication::setColorSpec(QApplication::CustomColor);
+#endif
 	QApplication a( argc, argv );
 
 //	printf("Compiled with Qt %s, running with Qt %s\n",QT_VERSION_STR,qVersion());
@@ -107,7 +128,9 @@ int main(int argc, char *argv[])
 	}
 	QString qloc = QString("Windows-")+QString::number(TCLocalStrings::getCodePage());
 	//QTextCodec::setCodecForLocale(QTextCodec::codecForName(qloc.toUtf8()));
+	// LPub3D Mod - application name
 	TCUserDefaults::setAppName("LDView - LPub3D Edition");
+	// LPub3D Mod End
 	if (doCommandLine())
 	{
 		return 0;

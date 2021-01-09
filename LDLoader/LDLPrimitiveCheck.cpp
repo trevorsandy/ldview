@@ -522,7 +522,7 @@ int LDLPrimitiveCheck::getNumCircleSegments(TCFloat fraction, bool is48)
 	if (fraction != 0.0f)
 	{
 		int i;
-
+		
 		for (i = m_curveQuality; !fEq(fraction * retValue,
 			(TCFloat)getUsedCircleSegments(retValue, fraction)) && i < 12; i++)
 		{

@@ -689,7 +689,7 @@ char* findExecutable(const char* executable)
 bool isDirectoryPath(const char* path)
 {
 	size_t len = strlen(path);
-
+	
 	if (len > 0)
 	{
 #ifdef WIN32
@@ -709,7 +709,7 @@ bool isDirectoryPath(const char* path)
 bool isDirectoryPath(const std::string &path)
 {
 	size_t len = path.length();
-
+	
 	if (len > 0)
 	{
 #ifdef WIN32
@@ -860,7 +860,7 @@ TCExport void combinePath(
 {
 	std::string leftStr;
 	std::string rightStr;
-
+	
 	if (left != NULL)
 	{
 		leftStr = left;
@@ -1011,7 +1011,7 @@ static size_t lastSlashIndex(const ucstring &path)
 	size_t slashSpot = path.rfind('/');
 #ifdef WIN32
 	size_t backslashSpot = path.rfind('\\');
-
+	
 	if (slashSpot >= path.size() ||
 		(backslashSpot < path.size() && backslashSpot > slashSpot))
 	{
@@ -2753,7 +2753,7 @@ TCExport bool ensurePath(const std::string &path)
 	{
 		int i = 0;
 		retValue = true;
-
+		
 		if (!isRelativePath(path.c_str()))
 		{
 #ifdef WIN32

@@ -1,11 +1,11 @@
+#include <TRE/TREGLExtensions.h>
+#include <TRE/TREGL.h>
 #include <QtGlobal>
 #include "SnapshotTaker.h"
 #include "SnapshotAlertHandler.h"
 #include <TCFoundation/TCAlertManager.h>
 #include <TCFoundation/TCAlert.h>
 #include <LDLib/LDSnapshotTaker.h>
-#include <TRE/TREGLExtensions.h>
-#include <TRE/TREGL.h>
 #if (QT_VERSION >= 0x50100) && defined(QOFFSCREEN)
 #include <QtOpenGL>
 #else
@@ -136,8 +136,8 @@ void SnapshotTaker::snapshotCallback(TCAlert *alert)
 			return;
 		}
 		qOglCtx->makeCurrent(qSurf);
-		qFbo = new QGLFramebufferObject(1024, 1024,
-			QGLFramebufferObject::CombinedDepthStencil, GL_TEXTURE_2D);
+		qFbo = new QOpenGLFramebufferObject(1024, 1024,
+			QOpenGLFramebufferObject::CombinedDepthStencil, GL_TEXTURE_2D);
 		qFbo->bind();
 		if (!qFbo->isValid())
 		{

@@ -1,8 +1,17 @@
 #ifndef __MODELVIEWERWIDGET_H__
 #define __MODELVIEWERWIDGET_H__
 
+#include <QtGlobal>
+#if QT_VERSION >= QT_VERSION_CHECK(6,0,0)
+#include <QtOpenGL>
+#include <QWidget>
+#else
 #include <qgl.h>
+#endif
 #include <QDateTime>
+#if QT_VERSION >= QT_VERSION_CHECK(4,7,0)
+#include <QElapsedTimer>
+#endif
 #include <TCFoundation/TCObject.h>
 #include <TCFoundation/TCAlertManager.h>
 
@@ -287,8 +296,13 @@ protected:
 	int spinButton;
 	int zoomButton;
 	QTime lastMoveTime;
+#if QT_VERSION >= QT_VERSION_CHECK(4,7,0)
+	QElapsedTimer lastProgressTime;
+	QElapsedTimer referenceFrameTime;
+#else
 	QTime lastProgressTime;
 	QTime referenceFrameTime;
+#endif
 	Preferences *preferences;
 	ExtraDir *extradir;
 	SnapshotSettings *snapshotsettings;

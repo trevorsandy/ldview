@@ -132,12 +132,12 @@ IDR_LIGHT_ANGLE_MM      ICON                    "Icons\\LightAngleMM.ico"
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE
+1 TEXTINCLUDE 
 BEGIN
     "Resource.h\0"
 END
 
-2 TEXTINCLUDE
+2 TEXTINCLUDE 
 BEGIN
     "#include ""TCFoundation/TCDefines.h""\r\n"
     "#include ""winresrc.h""\r\n"
@@ -148,7 +148,7 @@ BEGIN
     "\0"
 END
 
-3 TEXTINCLUDE
+3 TEXTINCLUDE 
 BEGIN
     "\r\n"
     "\0"
@@ -177,7 +177,7 @@ BEGIN
     LTEXT           "",IDC_STATIC,0,160,8,36,0,WS_EX_TRANSPARENT
     LTEXT           "",IDC_STATIC,237,160,8,36,0,WS_EX_TRANSPARENT
     LTEXT           "",IDC_STATIC,0,201,245,8,0,WS_EX_TRANSPARENT
-    LTEXT           "Trevor Sandy (LPub3D-specific modifications)\nChris Conley\nJoshua Delahunty\nLars C. Hassing\nDon Heyse\nPhilippe Hurbain\nRusty Larner\nAlex Raftis\nCarsten Schmitz\nWilly Tschager\nMartijn Zwaal",IDC_STATIC,25,67,203,88
+    LTEXT           "Trevor SANDY (LPub3D-specific modifications)\nChris Conley\nJoshua Delahunty\nLars C. Hassing\nDon Heyse\nPhilippe Hurbain\nRusty Larner\nAlex Raftis\nCarsten Schmitz\nWilly Tschager\nMartijn Zwaal",IDC_STATIC,25,67,203,88
     LTEXT           "Jean-loup Gailly, Mark Adler, and the rest of the zlib team\nGlenn Randers-Pehrson and the rest of the libpng team",IDC_STATIC,25,160,203,18
 END
 
@@ -1218,8 +1218,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 4,4,0,8
- PRODUCTVERSION 4,4,0,8
+ FILEVERSION 4,4,0,9
+ PRODUCTVERSION 4,4,0,9
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x9L
@@ -1236,12 +1236,12 @@ BEGIN
         BEGIN
             VALUE "Comments", "3D LEGO® Model Viewer for models in LDraw format."
             VALUE "FileDescription", "LDView - LPub3D Edition"
-            VALUE "FileVersion", "4.4 Beta 2"
+            VALUE "FileVersion", "4.4 Beta 3"
             VALUE "InternalName", "LDView"
             VALUE "LegalCopyright", "Copyright © 2020 Travis Cobbs & Peter Bartfai"
             VALUE "OriginalFilename", "LDView.exe"
             VALUE "ProductName", "LDView - LPub3D Edition"
-            VALUE "ProductVersion", "4.4 Beta 2"
+            VALUE "ProductVersion", "4.4 Beta 3"
         END
     END
     BLOCK "VarFileInfo"
@@ -1422,9 +1422,9 @@ IDR_EXTRA_DIRS_TOOLBAR   PNGDATA_1X                  "Icons\\extra_dirs_toolbar.
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
+//						 
 // PNGDATA_2X
-//
+//						 
 
 IDC_ALL_CONDITIONAL     PNGDATA_2X                 "Icons\\toolbar_all_cond@2x.png"
 

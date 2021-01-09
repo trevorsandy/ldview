@@ -8,16 +8,14 @@
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="ModelTree">
             <connections>
-                <outlet property="contentView" destination="15" id="48"/>
-                <outlet property="drawer" destination="14" id="21"/>
                 <outlet property="highlightCheck" destination="55" id="57"/>
                 <outlet property="highlightColorWell" destination="56" id="63"/>
                 <outlet property="optionsBox" destination="24" id="45"/>
                 <outlet property="optionsBoxLabel" destination="44" id="47"/>
                 <outlet property="optionsMatrix" destination="26" id="49"/>
                 <outlet property="outlineView" destination="17" id="22"/>
+                <outlet property="panel" destination="1nL-Us-DWh" id="Unl-Qh-aVf"/>
                 <outlet property="showHideOptionsButton" destination="51" id="53"/>
-                <outlet property="showLinesBottomConstraint" destination="jkM-q9-h3a" id="E8R-MO-rde"/>
                 <outlet property="statusTextField" destination="61" id="62"/>
             </connections>
         </customObject>
@@ -36,10 +34,7 @@
                     <textField verticalHuggingPriority="750" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="61">
                         <rect key="frame" x="140" y="137" width="283" height="22"/>
                         <constraints>
-                            <constraint firstAttribute="bottom" secondItem="26" secondAttribute="bottom" priority="250" constant="10" id="GrP-Og-oMa"/>
-                            <constraint firstItem="26" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="eRq-MM-nuO" secondAttribute="leading" constant="10" id="RnY-yZ-AGK"/>
-                            <constraint firstItem="26" firstAttribute="top" secondItem="eRq-MM-nuO" secondAttribute="top" priority="250" constant="10" id="TGI-g8-iIX"/>
-                            <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="26" secondAttribute="trailing" constant="10" id="tKA-hD-c5W"/>
+                            <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="101" id="JC4-WU-614"/>
                         </constraints>
                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" id="69">
                             <font key="font" metaFont="system"/>

@@ -1,10 +1,12 @@
-FROM ubuntu:19.04
+FROM ubuntu:20.10
 MAINTAINER Peter Bartfai pbartfai@stardust.hu
 
+ENV DEBIAN_FRONTEND=noninteractive
 ADD install-devel-packages.sh /
 RUN ./install-devel-packages.sh
 
 VOLUME /mnt/lego
 CMD cd ldview/QT ; \
 	git pull; \
-	./makedeb -qt5 ; \
+	sed -i 's/kdelibs5-dev//g' debian/control ; \
+	./makedeb -qt5

@@ -22,11 +22,23 @@
 #include <TCFoundation/TCUserDefaults.h>
 #include <LDLib/LDUserDefaultsKeys.h>
 
+@interface ModelTree()
+{
+	bool darkMode;
+}
+@end
+
 @implementation ModelTree
 
 - (void)dealloc
 {
 	[rootModelTreeItem release];
+#ifdef MAC_OS_X_VERSION_10_14
+	if (@available(macOS 10.14, *))
+	{
+		[outlineView removeObserver:self forKeyPath:@"effectiveAppearance"];
+	}
+#endif // macOS 10.14 or later
 	TCObject::release(modelTree);
 	[super dealloc];
 }
@@ -125,6 +137,35 @@
 	}
 }
 
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSString *,id> *)change context:(void *)context
+{
+	bool newDarkMode = [self isInDarkMode];
+	if (newDarkMode != darkMode)
+	{
+		darkMode = newDarkMode;
+		[self reloadOutlineView];
+	}
+}
+
+- (bool)isInDarkMode
+{
+#ifdef MAC_OS_X_VERSION_10_14
+	// NSAppearanceNameDarkAqua isn't defined before macOS 10.14, and @available
+	// is a run-time check. Because of that, the code won't compile at all
+	// before Xcode 10, so just disabled it completely there.
+	if (@available(macOS 10.14, *))
+	{
+		NSAppearance *effectiveAppearance = outlineView.effectiveAppearance;
+		NSString *appearanceName = [effectiveAppearance bestMatchFromAppearancesWithNames:@[NSAppearanceNameAqua, NSAppearanceNameDarkAqua]];
+		if ([appearanceName isEqualToString:NSAppearanceNameDarkAqua])
+		{
+			return true;
+		}
+	}
+#endif // macOS 10.14 or later
+	return false;
+}
+
 - (void)reloadOutlineView
 {
 	// The following is intentionally a copy.
@@ -178,22 +219,23 @@
 
 - (void)awakeFromNib
 {
-	float width = [OCUserDefaults floatForKey:[self widthKey] defaultValue:-1.0f sessionSpecific:NO];
 	int r, g, b;
 	long defHighlightColor = [self colorFromR:160 g:224 b:255];
 	long highlightColor = TCUserDefaults::longForKey(MODEL_TREE_HIGHLIGHT_COLOR_KEY, defHighlightColor, false);
 	LDrawModelViewer *modelViewer = [[modelWindow modelView] modelViewer];
 
+#ifdef MAC_OS_X_VERSION_10_14
+	if (@available(macOS 10.14, *))
+	{
+		[outlineView addObserver:self forKeyPath:@"effectiveAppearance" options:NSKeyValueObservingOptionNew context:NULL];
+	}
+#endif // macOS 10.14 or later
+	darkMode = [self isInDarkMode];
 	[outlineView setIntercellSpacing:NSMakeSize(0.0f, 0.0f)];
 	showHideStartY = [showHideOptionsButton frame].origin.y;
-	[drawer setParentWindow:[modelWindow window]];
-	if (width != -1.0f)
-	{
-		[drawer setContentSize:NSMakeSize(width, [drawer contentSize].height)];
-	}
 	[self modelChanged];
 	optionsBoxHeight = NSHeight(optionsBox.frame);
-	showLinesBottomConstraintConstant = showLinesBottomConstraint.constant;
+//    showLinesBottomConstraintConstant = showLinesBottomConstraint.constant;
 	if (!TCUserDefaults::boolForKey(MODEL_TREE_OPTIONS_SHOWN_KEY, true, false))
 	{
 		[self hideOptionsAnimated:NO];
@@ -235,7 +277,7 @@
 	{
 		TCFloat r, g, b;
 		
-		if (itemTree->getBackgroundRGB(r, g, b))
+		if (itemTree->getBackgroundRGB(r, g, b, darkMode))
 		{
 			[cell setBackgroundColor:[NSColor colorWithCalibratedRed:r green:g blue:b alpha:1.0f]];
 			[cell setDrawsBackground:YES];
@@ -328,7 +370,7 @@
 	anim.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut];
 	anim.duration = 0.2;
 	constraint.animations = [NSDictionary dictionaryWithObject:anim forKey:@"constant"];
-	showLinesBottomConstraint.animations = constraint.animations;
+//    showLinesBottomConstraint.animations = constraint.animations;
 
 	[optionsBox addConstraint:constraint];
 
@@ -340,14 +382,14 @@
 			[optionsBox setBorderType:NSNoBorder];
 		};
 		[constraint.animator setConstant:0.0];
-		[showLinesBottomConstraint.animator setConstant:0.0];
+//        [showLinesBottomConstraint.animator setConstant:0.0];
 		[NSAnimationContext endGrouping];
 	}
 	else
 	{
 		[optionsBox setBorderType:NSNoBorder];
 		[constraint setConstant:0.0];
-		[showLinesBottomConstraint.animator setConstant:0.0];
+//        [showLinesBottomConstraint.animator setConstant:0.0];
 	}
 	return [constraint retain];
 }
@@ -368,7 +410,7 @@
 			[theView removeConstraint:constraint];
 		};
 		[constraint.animator setConstant:optionsBoxHeight];
-		[showLinesBottomConstraint.animator setConstant:showLinesBottomConstraintConstant];
+//        [showLinesBottomConstraint.animator setConstant:showLinesBottomConstraintConstant];
 		[optionsBox setBorderType:NSGrooveBorder];
 		[NSAnimationContext endGrouping];
 	}
