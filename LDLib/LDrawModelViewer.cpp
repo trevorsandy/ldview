@@ -2266,6 +2266,70 @@ void LDrawModelViewer::setCurveQuality(int value)
 }
 
 // LPub3D Mod - stud style
+void LDrawModelViewer::setStudCylinderColor(TCULong value)
+{
+	if (value != studCylinderColor)
+	{
+		studCylinderColor = value;
+		flags.needsReparse = true;
+	}
+}
+
+void LDrawModelViewer::setPartEdgeColor(TCULong value)
+{
+	if (value != partEdgeColor)
+	{
+		partEdgeColor = value;
+		flags.needsReparse = true;
+	}
+}
+
+void LDrawModelViewer::setBlackEdgeColor(TCULong value)
+{
+	if (value != blackEdgeColor)
+	{
+		blackEdgeColor = value;
+		flags.needsReparse = true;
+	}
+}
+
+void LDrawModelViewer::setDarkEdgeColor(TCULong value)
+{
+	if (value != darkEdgeColor)
+	{
+		darkEdgeColor = value;
+		flags.needsReparse = true;
+	}
+}
+
+void LDrawModelViewer::setPartEdgeContrast(TCFloat value)
+{
+	if (value != partEdgeContrast)
+	{
+		partEdgeContrast = value;
+		flags.needsReparse = true;
+	}
+}
+
+void LDrawModelViewer::setPartColorValueLDIndex(TCFloat value)
+{
+	if (value != partColorValueLDIndex)
+	{
+		partColorValueLDIndex = value;
+		flags.needsReparse = true;
+	}
+}
+
+
+void LDrawModelViewer::setAutomateEdgeColor(bool value)
+{
+	if (value != automateEdgeColor)
+	{
+		automateEdgeColor = value;
+		flags.needsReparse = true;
+	}
+}
+
 void LDrawModelViewer::setStudStyle(int value)
 {
 	if (value != studStyle)

@@ -1939,6 +1939,8 @@ void LDViewPreferences::applyPrimitivesChanges(void)
 				trackBarGetPos(hTextureOffsetSlider)));
 		}
 		// LPub3D Mod - stud style
+		ldPrefs->setAutomateEdgeColor(getCheck(hPrimitivesPage, 
+			IDC_AUTOMATE_EDGE_COLOR));
 		ldPrefs->setStudStyle(CUIDialog::comboGetCurSel(hPrimitivesPage,
 			IDC_STUD_STYLE_COMBO));
 		// LPub3D Mod End
@@ -3796,6 +3798,7 @@ void LDViewPreferences::setupPrimitivesPage(void)
 	setupSubstitution();
 	// LPub3D Mod - stud style
 	setupStudStyle();
+	setCheck(hPrimitivesPage, IDC_AUTOMATE_EDGE_COLOR, ldPrefs->getAutomateEdgeColor());
 	// LPub3D Mod End
 	setCheck(hPrimitivesPage, IDC_STUD_QUALITY, !ldPrefs->getQualityStuds());
 	setCheck(hPrimitivesPage, IDC_HI_RES, ldPrefs->getHiResPrimitives());

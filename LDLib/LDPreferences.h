@@ -196,7 +196,17 @@ public:
 	bool getTexmaps(void) { return m_texmaps; }
 	bool getTexturesAfterTransparent(void) { return true; }
 	TCFloat getTextureOffsetFactor(void) { return m_textureOffsetFactor; }
+
 	// LPub3D Mod - stud style
+	void getStudCylinderColor(int& r, int& g, int& b, int& a);
+	void getPartEdgeColor(int& r, int& g, int& b, int& a);
+	void getBlackEdgeColor(int& r, int& g, int& b, int& a);
+	void getDarkEdgeColor(int& r, int& g, int& b, int& a);
+
+	TCFloat getPartEdgeContrast(void) { return m_partEdgeContrast; };
+	TCFloat getPartColorValueLDIndex(void) { return m_partColorValueLDIndex; };
+
+	bool getAutomateEdgeColor(void) { return m_automateEdgeColor; };
 	int getStudStyle(void) { return m_studStyle; }
 	// LPub3D Mod End
 
@@ -335,7 +345,17 @@ public:
 	void setTexmaps(bool value, bool commit = false, bool apply = false);
 	void setTexturesAfterTransparent(bool value, bool commit = false, bool apply = false);
 	void setTextureOffsetFactor(TCFloat value, bool commit = false, bool apply = false);
+
 	// LPub3D Mod - stud style
+	void setStudCylinderColor(int r, int g, int b, int a, bool commit = false);
+	void setPartEdgeColor(int r, int g, int b, int a, bool commit = false);
+	void setBlackEdgeColor(int r, int g, int b, int a, bool commit = false);
+	void setDarkEdgeColor(int r, int g, int b, int a, bool commit = false);
+
+	void setPartEdgeContrast(TCFloat value, bool commit = false);
+	void setPartColorValueLDIndex(TCFloat value, bool commit = false);
+
+	void setAutomateEdgeColor(bool value, bool commit = false);
 	void setStudStyle(int value, bool commit = false);
 	// LPub3D Mod End
 
@@ -382,6 +402,10 @@ protected:
 		const char *key, bool commit);
 	void setColorSetting(TCULong &setting, int r, int g, int b, const char *key,
 		bool commit);
+	// LPub3D Mod - stud style
+	void setRGBAColorSetting(TCULong& setting, int r, int g, int b, int a,
+		const char* key, bool commit);
+	// LPub3D Mod End
 	bool getBoolSetting(const char *key, bool defaultValue = false);
 	LongVector getLongVectorSetting(const char *key,
 		const LongVector &defaultValue = LongVector());
@@ -397,9 +421,18 @@ protected:
 		const char *defaultValue = NULL, bool isPath = false);
 	void getColorSetting(const char *key, int &r, int &g, int &b,
 		TCULong defaultColor = 0);
+	// LPub3D Mod - stud style
+	void getRGBAColorSetting(const char* key, int& r, int& g, int& b,
+		int& a, TCULong defaultColor);
+	long getRGBAFromStringSetting(const char* key, TCULong defaultValue = 0);
+	// LPub3D Mod End
 
 	virtual void getRGB(int color, int &r, int &g, int &b);
 	virtual int getColor(int r, int g, int b);
+	// LPub3D Mod - stud style
+	virtual void getRGBA(int color, int& r, int& g, int& b, int& a);
+	virtual TCULong getRGBAColor(int r, int g, int b, int a);
+	// LPub3D Mod End
 	virtual void commitSaveDir(SaveOp op);
 
 	// These are called from the constructor, and cannot be properly made into
@@ -500,7 +533,17 @@ protected:
 	bool m_hiResPrimitives;
 	bool m_texmaps;
 	TCFloat m_textureOffsetFactor;
+
 	// LPub3D Mod - stud style
+	TCULong m_studCylinderColor;
+	TCULong m_partEdgeColor;
+	TCULong m_blackEdgeColor;
+	TCULong m_darkEdgeColor;
+
+	TCFloat m_partEdgeContrast;
+	TCFloat m_partColorValueLDIndex;
+
+	bool m_automateEdgeColor;
 	int m_studStyle;
 	// LPub3D Mod End
 

@@ -590,10 +590,31 @@ class LDrawModelViewer: public TCAlertSender
 			StandardSizeVector &sizes);
 		static void resetUnofficialDownloadTimes(void);
 //		static bool doCommandLineExport(void);
+
 		// LPub3D Mod - stud style
+		void setStudCylinderColor(TCULong value);
+		void setPartEdgeColor(TCULong value);
+		void setBlackEdgeColor(TCULong value);
+		void setDarkEdgeColor(TCULong value);
+
+		void setPartEdgeContrast(TCFloat value);
+		void setPartColorValueLDIndex(TCFloat value);
+
+		void setAutomateEdgeColor(bool value);
 		void setStudStyle(int value);
+
+		TCULong getStudCylinderColor(void) const { return studCylinderColor; };
+		TCULong getPartEdgeColor(void) const { return partEdgeColor; };
+		TCULong getBlackEdgeColor(void) const { return blackEdgeColor; };
+		TCULong getDarkEdgeColor(void) const { return darkEdgeColor; };
+
+		TCFloat getPartEdgeContrast(void) { return partEdgeContrast; };
+		TCFloat getPartColorValueLDIndex(void) { return partColorValueLDIndex; };
+
+		bool getAutomateEdgeColor(void) { return automateEdgeColor; };
 		int getStudStyle(void) const { return studStyle; }
 		// LPub3D Mod End
+
 	protected:
 		~LDrawModelViewer(void);
 		void dealloc(void);
@@ -788,6 +809,15 @@ class LDrawModelViewer: public TCAlertSender
 		int highlightG;
 		int highlightB;
 		// LPub3D Mod - stud style
+		TCULong studCylinderColor;
+		TCULong partEdgeColor;
+		TCULong blackEdgeColor;
+		TCULong darkEdgeColor;
+
+		TCFloat partEdgeContrast;
+		TCFloat partColorValueLDIndex;
+
+		bool automateEdgeColor;
 		int studStyle;
 		// LPub3D Mod End
 #ifdef USE_STD_CHRONO
