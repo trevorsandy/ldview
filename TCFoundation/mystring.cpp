@@ -2955,23 +2955,3 @@ bool isLittleEndian()
 	return (numPtr[0] == 1);
 }
 
-// LPub3D Mod - stud style
-std::string tempStream(const std::string& file, const std::string& content)
-{
-	std::string filePath;
-#ifdef WIN32
-	TCHAR buf[MAX_PATH];
-	if (GetTempPath(MAX_PATH, buf) != 0)
-		filePath = buf;
-#else
-	filePath = "/tmp/";
-#endif
-	filePath.append("ldviewTmp_" + file);
-	std::ofstream ofs;
-	ofs.open(filePath.c_str(),
-		std::ios_base::trunc | std::ios_base::out);
-	ofs << content;
-	ofs.close();
-	return filePath;
-}
-// LPub3D Mod End

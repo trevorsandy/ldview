@@ -180,6 +180,12 @@ protected:
 	static bool verifyLDrawDir(const char *value);
 	static void initCheckDirs();
 
+	// LPub3D Mod - stud style
+	static int isStudStylePrimitive(const char* FileName, int studStyle);
+	static int getStudStyleFile(LDLModel* subModel, const char* dictName,
+		int studStyle, bool openStud);
+	// LPub3D Mod End
+
 	char *m_filename;
 	char *m_name;
 	char *m_author;

@@ -227,10 +227,6 @@ TCExport bool isInBase64Charset(char character);
 TCExport std::string formatString(const char *format, ...);
 // LPub3D Mod End
 
-// LPub3D Mod - stud style
-TCExport std::string tempStream(const std::string& file, const std::string& content);
-// LPub3D Mod End
-
 template<typename T, size_t size> size_t COUNT_OF(const T(&)[size]) { return size; }
 
 TCExport bool isLittleEndian();
