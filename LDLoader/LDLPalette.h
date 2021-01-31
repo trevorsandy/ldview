@@ -89,6 +89,21 @@ protected:
 	TCTypedObjectArray<CustomColor> *m_customColors;
 	StringIntMap m_namesMap;
 
+	// LPub3D Mod - stud style
+	void initStudStyleSettings(void);
+	int getStudStyleOrAutoEdgeColor(int colorNumber);
+	int getEdgeColorNumberFromRGB(const LDLColor& color);
+
+	static LDLColor sm_studCylinderColor;
+	static LDLColor sm_partEdgeColor;
+	static LDLColor sm_blackEdgeColor;
+	static LDLColor sm_darkEdgeColor;
+	static TCFloat sm_partEdgeContrast;
+	static TCFloat sm_partColorValueLDIndex;
+	static bool sm_automateEdgeColor;
+	static int  sm_studStyle;
+	// LPub3D Mod End
+
 	static LDLPalette *sm_defaultPalette;
 	static class LDLPaletteCleanup
 	{

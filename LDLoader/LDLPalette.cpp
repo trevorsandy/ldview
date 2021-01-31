@@ -1,6 +1,11 @@
 #include "LDLPalette.h"
 #include <string.h>
 #include <stdio.h>
+// LPub3D Mod - stud style
+#include <math.h>
+#include <LDLib/LDUserDefaultsKeys.h>
+#include <TCFoundation/TCUserDefaults.h>
+// LPub3D Mod End
 #include <TCFoundation/mystring.h>
 
 #ifdef WIN32
@@ -10,6 +15,21 @@
 #endif // WIN32
 
 #define GOLD_SCALE (255.0f / 240.0f * 2.0f)
+
+// LPub3D Mod - stud style
+#define TC_SRGB_TO_LINEAR(v) (powf(v, 2.2f))
+#define TC_LINEAR_TO_SRGB(v) (powf(v, 1.0f / 2.2f))
+#define TC_LUM_FROM_SRGB(r,g,b) ((0.2126f * TC_SRGB_TO_LINEAR(r)) + (0.7152f * TC_SRGB_TO_LINEAR(g)) + (0.0722f * TC_SRGB_TO_LINEAR(b)))
+
+LDLColor LDLPalette::sm_studCylinderColor{ 27,42,52,255 };
+LDLColor LDLPalette::sm_partEdgeColor{ 0,0,0,255 };
+LDLColor LDLPalette::sm_blackEdgeColor{ 255,255,255,255 };
+LDLColor LDLPalette::sm_darkEdgeColor{ 27,42,52,255 };
+TCFloat  LDLPalette::sm_partEdgeContrast = 0.5f;
+TCFloat  LDLPalette::sm_partColorValueLDIndex = 0.5f;
+bool     LDLPalette::sm_automateEdgeColor = false;
+int      LDLPalette::sm_studStyle = 0;
+// LPub3D Mod End
 
 LDLPalette *LDLPalette::sm_defaultPalette = NULL;
 LDLPalette::LDLPaletteCleanup LDLPalette::sm_cleanup;
@@ -193,6 +213,9 @@ void LDLPalette::init(void)
 	initStandardColors();
 	initDitherColors();
 	initOtherColors();
+	// LPub3D Mod - stud style
+	initStudStyleSettings();
+	// LPub3D Mod End
 }
 
 void LDLPalette::reset(void)
@@ -332,26 +355,139 @@ void LDLPalette::initOtherColors(void)
 	initSpecular(494, 0.9f, 0.9f, 1.5f, 1.0f, 5.0f);
 }
 
-int LDLPalette::getEdgeColorNumber(int colorNumber)
+// LPub3D Mod - stud style
+int LDLPalette::getEdgeColorNumberFromRGB(const LDLColor& color)
 {
-	if (colorNumber < 512 && colorNumber >= 0)
+	char hexColor[16];
+	int edgeColorNumber;
+	snprintf(hexColor, sizeof hexColor, "%02x%02x%02x", (int)color.r, (int)color.g, (int)color.b);
+	if (sscanf(hexColor, "%x", &edgeColorNumber) == 1)
 	{
-		return m_colors[colorNumber].edgeColorNumber;
+		edgeColorNumber &= 0xFFFFFF;
+		edgeColorNumber |= 0x2000000; // Encode EDGE as extended RGB color.
+		return edgeColorNumber;
+	}
+	debugPrintf("Failed to get extended HEX from RGB %s\n", hexColor);
+	return 0;
+}
+
+void LDLPalette::initStudStyleSettings()
+{
+	sm_studStyle = (int)TCUserDefaults::longForKey(STUD_STYLE_KEY, sm_studStyle);
+	sm_automateEdgeColor = TCUserDefaults::boolForKey(AUTOMATE_EDGE_COLOR_KEY, sm_automateEdgeColor);
+	sm_partEdgeContrast = TCUserDefaults::floatForKey(PART_EDGE_CONTRAST_KEY, sm_partEdgeContrast);
+	sm_partColorValueLDIndex = TCUserDefaults::floatForKey(PART_COLOR_VALUE_LD_INDEX_KEY, sm_partColorValueLDIndex);
+
+	if (sm_studStyle < 6 && !sm_automateEdgeColor)
+		return;
+	
+	int r, g, b, a;
+	std::string rgbaString = TCUserDefaults::stringForKey(STUD_CYLINDER_COLOR_KEY, "27,42,52,255");
+	if (sscanf(rgbaString.c_str(), "%d,%d,%d,%d", &r, &g, &b, &a) == 4)
+		sm_studCylinderColor = LDLColor{ (TCByte)r, (TCByte)g, (TCByte)b, (TCByte)a };
+	rgbaString = TCUserDefaults::stringForKey(PART_EDGE_COLOR_KEY, "0,0,0,255");
+	if (sscanf(rgbaString.c_str(), "%d,%d,%d,%d", &r, &g, &b, &a) == 4)
+		sm_partEdgeColor = LDLColor{ (TCByte)r, (TCByte)g, (TCByte)b, (TCByte)a };
+	rgbaString = TCUserDefaults::stringForKey(BLACK_EDGE_COLOR_KEY, "255,255,255,255");
+	if (sscanf(rgbaString.c_str(), "%d,%d,%d,%d", &r, &g, &b, &a) == 4)
+		sm_blackEdgeColor = LDLColor{ (TCByte)r, (TCByte)g, (TCByte)b, (TCByte)a };
+	rgbaString = TCUserDefaults::stringForKey(DARK_EDGE_COLOR_KEY, "27,42,52,255");
+	if (sscanf(rgbaString.c_str(), "%d,%d,%d,%d", &r, &g, &b, &a) == 4)
+		sm_darkEdgeColor = LDLColor{ (TCByte)r, (TCByte)g, (TCByte)b, (TCByte)a };
+
+	int edgeColorNumber = getEdgeColorNumberFromRGB(sm_partEdgeColor);
+	LDLColorInfo* colorInfo = updateColor(4242, sm_studCylinderColor, sm_studCylinderColor,
+		edgeColorNumber, (-25500.0f / 255.0f));
+	if (colorInfo)
+	{
+		char *name = "Stud Cylinder Colour";
+		strncpy(colorInfo->name, name, sizeof(colorInfo->name));
+		colorInfo->name[sizeof(colorInfo->name) - 1] = 0;
+		m_namesMap[name] = 4242;
+		colorInfo->rubber = false;
+		colorInfo->chrome = false;
+	}
+	else
+		debugPrintf("Error creating Stud Cylinder Colour (%d)\n", 4242);
+}
+
+int LDLPalette::getStudStyleOrAutoEdgeColor(int colorNumber)
+{
+	LDLColorInfo info = getAnyColorInfo(colorNumber);
+
+	float value[4];
+	value[0] = info.color.r / 255.0;
+	value[1] = info.color.g / 255.0;
+	value[2] = info.color.b / 255.0;
+
+	const float valueLuminescence = TC_LUM_FROM_SRGB(value[0], value[1], value[2]);
+	const float lightDarkIndex = TC_SRGB_TO_LINEAR(sm_partColorValueLDIndex);
+
+	if (sm_automateEdgeColor)
+	{
+		float edgeLuminescence = 0.0f;
+
+		if (valueLuminescence > lightDarkIndex)
+			edgeLuminescence = valueLuminescence - (valueLuminescence * sm_partEdgeContrast);
+		else
+			edgeLuminescence = (1.0f - valueLuminescence) * sm_partEdgeContrast + valueLuminescence;
+
+		edgeLuminescence = TC_LINEAR_TO_SRGB(edgeLuminescence);
+
+		LDLColor edgeColor;
+		edgeColor.r = (TCByte)(edgeLuminescence * 255.0f);
+		edgeColor.g = (TCByte)(edgeLuminescence * 255.0f);
+		edgeColor.b = (TCByte)(edgeLuminescence * 255.0f);
+		edgeColor.a = 255.0f;
+
+		return getEdgeColorNumberFromRGB(edgeColor);
 	}
 	else
 	{
-		LDLColorInfo colorInfo;
+		if (colorNumber == 0)
+			return getEdgeColorNumberFromRGB(sm_blackEdgeColor);
+		else if (colorNumber != 4242 &&
+			valueLuminescence < lightDarkIndex)
+			return getEdgeColorNumberFromRGB(sm_darkEdgeColor);
+		else
+			return getEdgeColorNumberFromRGB(sm_partEdgeColor);
+	}
 
-		if (getCustomColorInfo(colorNumber, colorInfo))
+	debugPrintf("Error creating edge color number for color: %d\n",
+		colorNumber);
+
+	return 0;
+}
+
+int LDLPalette::getEdgeColorNumber(int colorNumber)
+{
+
+	if (sm_studStyle > 5 || sm_automateEdgeColor)
+	{
+		return getStudStyleOrAutoEdgeColor(colorNumber);
+	}
+	else
+	{
+		if (colorNumber < 512 && colorNumber >= 0)
 		{
-			return colorInfo.edgeColorNumber;
+			return m_colors[colorNumber].edgeColorNumber;
 		}
 		else
 		{
-			return 0;
+			LDLColorInfo colorInfo;
+
+			if (getCustomColorInfo(colorNumber, colorInfo))
+			{
+				return colorInfo.edgeColorNumber;
+			}
+			else
+			{
+				return 0;
+			}
 		}
 	}
 }
+// LPub3D Mod End
 
 bool LDLPalette::getCustomColorInfo(int colorNumber, LDLColorInfo &colorInfo)
 {
