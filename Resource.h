@@ -370,7 +370,7 @@
 #define IDC_PROCESS_LDCONFIG            1295
 #define IDC_SEAMS                       1296
 #define IDC_SPECULAR                    1297
-#define IDC_STUD_STYLE                  1298
+#define IDC_AUTOMATE_EDGE_COLOR         1298
 #define IDC_STUD_STYLE_COMBO            1299
 #define IDC_STUD_QUALITY                1300
 #define IDC_TEXTURE_ANISO               1301
@@ -380,6 +380,7 @@
 #define IDC_RESET_TIMES                 1305
 #define IDC_IGNORE_FBO                  1305
 #define IDC_IGNORE_PIXEL_FORMAT         1306
+#define IDC_STUD_STYLE_LABLE            1307
 #define PRINTDLGORD                     1538
 #define PAGESETUPDLGORD                 1546
 #define IDD_PRIMITIVES_PREFS            1547
@@ -485,7 +486,7 @@
 #define _APS_3D_CONTROLS                     1
 #define _APS_NEXT_RESOURCE_VALUE        550
 #define _APS_NEXT_COMMAND_VALUE         40119
-#define _APS_NEXT_CONTROL_VALUE         1307
+#define _APS_NEXT_CONTROL_VALUE         1308
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

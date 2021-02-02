@@ -587,7 +587,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/,
 	  ucstring message = _UC("Command Line:\n");
 
 	  message += lpCmdLine;
-	  printf("Arguments = %s", message.c_str());
+	  printf("Arguments = %ls", message.c_str());
 	}
 	// LPub3D Mod end
 	if (TCUserDefaults::boolForKey(DEBUG_COMMAND_LINE_KEY, false, false))
