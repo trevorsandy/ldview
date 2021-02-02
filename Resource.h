@@ -370,8 +370,8 @@
 #define IDC_PROCESS_LDCONFIG            1295
 #define IDC_SEAMS                       1296
 #define IDC_SPECULAR                    1297
-#define IDC_STUD_LOGO                   1298
-#define IDC_STUD_LOGO_COMBO             1299
+#define IDC_STUD_STYLE                  1298
+#define IDC_STUD_STYLE_COMBO            1299
 #define IDC_STUD_QUALITY                1300
 #define IDC_TEXTURE_ANISO               1301
 #define IDC_TEXTURE_STUDS               1302

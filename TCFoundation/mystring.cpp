@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <stdarg.h>
-// LPub3D Mod - stud logo
+// LPub3D Mod - stud style
 #include <fstream>
 // LPub3D Mod End
 
@@ -2955,7 +2955,7 @@ bool isLittleEndian()
 	return (numPtr[0] == 1);
 }
 
-// LPub3D Mod - stud logo
+// LPub3D Mod - stud style
 std::string tempStream(const std::string& file, const std::string& content)
 {
 	std::string filePath;

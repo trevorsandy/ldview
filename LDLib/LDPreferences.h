@@ -196,8 +196,8 @@ public:
 	bool getTexmaps(void) { return m_texmaps; }
 	bool getTexturesAfterTransparent(void) { return true; }
 	TCFloat getTextureOffsetFactor(void) { return m_textureOffsetFactor; }
-	// LPub3D Mod - stud logo
-	int getStudLogo(void) { return m_studLogo; }
+	// LPub3D Mod - stud style
+	int getStudStyle(void) { return m_studStyle; }
 	// LPub3D Mod End
 
 	// Update settings
@@ -335,8 +335,8 @@ public:
 	void setTexmaps(bool value, bool commit = false, bool apply = false);
 	void setTexturesAfterTransparent(bool value, bool commit = false, bool apply = false);
 	void setTextureOffsetFactor(TCFloat value, bool commit = false, bool apply = false);
-	// LPub3D Mod - stud logo
-	void setStudLogo(int value, bool commit = false);
+	// LPub3D Mod - stud style
+	void setStudStyle(int value, bool commit = false);
 	// LPub3D Mod End
 
 	// Update settings
@@ -500,8 +500,8 @@ protected:
 	bool m_hiResPrimitives;
 	bool m_texmaps;
 	TCFloat m_textureOffsetFactor;
-	// LPub3D Mod - stud logo
-	int m_studLogo;
+	// LPub3D Mod - stud style
+	int m_studStyle;
 	// LPub3D Mod End
 
 	// Update settings

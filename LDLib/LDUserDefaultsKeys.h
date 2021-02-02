@@ -152,8 +152,8 @@
 #define WIREFRAME_FOG_KEY "WireframeFog"
 #define WIREFRAME_THICKNESS_KEY "WireframeThickness"
 #define ZOOM_MAX_KEY "ZoomMax"									// NO UI
-// LPub3D Mod - stud logo
-#define STUD_LOGO_KEY "StudLogo"
+// LPub3D Mod - stud style
+#define STUD_STYLE_KEY "StudStyle"
 // LPub3D Mod End
 
 // The following are undocumented, and should stay that way.

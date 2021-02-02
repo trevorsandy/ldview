@@ -234,7 +234,7 @@ LDLModel *LDLModel::subModelNamed(const char *subModelName, bool lowRes,
 	{
 		ancestorCheck = true;
 	}
-	// LPub3D Mod - stud logo
+	// LPub3D Mod - stud style
 	if (strcasecmp(subModelName, "stud.dat") == 0 ||
 	    strcasecmp(subModelName, "stud2.dat") == 0)
 	{
@@ -622,20 +622,20 @@ bool LDLModel::initializeNewSubModel(
 	{
 		subModel->m_flags.unofficial = true;
 	}
-	// LPub3D Mod - stud logo
-	bool setStudLogo = false;
-	int studLogo = TCUserDefaults::longForKey("StudLogo", 0, 0);
-	if (studLogo && m_flags.loadingPrimitive && m_flags.hasStuds)
+	// LPub3D Mod - stud style
+	bool setStudStyle = false;
+	int studStyle = TCUserDefaults::longForKey("StudStyle", 0, 0);
+	if (studStyle && m_flags.loadingPrimitive && m_flags.hasStuds)
 	{
 		//char* file = filenameFromPath(subModel->getFilename());
 		bool openStud = !strcmp(dictName, "stud2.dat");
-		if ((setStudLogo = (openStud || !strcmp(dictName,"stud.dat"))))
+		if ((setStudStyle = (openStud || !strcmp(dictName,"stud.dat"))))
 		{
-			// construct logo reference line
-			std::string logoNum     = studLogo > 1 ? std::to_string(studLogo) : "";
-			std::string logoRefLine = "1 16 0 0 0 1 0 0 0 1 0 0 0 1 ";
-			logoRefLine += openStud ? "stud2-logo" + logoNum + ".dat" :
-				                      "stud-logo" + logoNum + ".dat";
+			// construct style reference line
+			std::string styleNum     = studStyle > 1 ? std::to_string(studStyle) : "";
+			std::string styleRefLine = "1 16 0 0 0 1 0 0 0 1 0 0 0 1 ";
+			styleRefLine += openStud ? "stud2-logo" + styleNum + ".dat" :
+				                      "stud-logo" + styleNum + ".dat";
 
 			// construct primitive file
 			std::string in;
@@ -644,13 +644,13 @@ bool LDLModel::initializeNewSubModel(
 			in.append("0 Author: James Jessiman\n");
 			in.append("0 !LDRAW_ORG Primitive\n");
 			in.append("0 BFC CERTIFY CCW\n");
-			in.append(logoRefLine + "\n");
+			in.append(styleRefLine + "\n");
 
-			std::ifstream logoStream(tempStream(dictName,in), std::ios::binary);
-			setStudLogo = (logoStream.is_open() && subModel->load(logoStream));
+			std::ifstream styleStream(tempStream(dictName,in), std::ios::binary);
+			setStudStyle = (styleStream.is_open() && subModel->load(styleStream));
 		}
 	}
-	if (!setStudLogo && subModelStream.is_open() && !subModel->load(subModelStream))
+	if (!setStudStyle && subModelStream.is_open() && !subModel->load(subModelStream))
 	{
   // LPub3D Mod End
 		subModelDict->removeObjectForKey(dictName);

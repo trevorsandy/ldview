@@ -2265,12 +2265,12 @@ void LDrawModelViewer::setCurveQuality(int value)
 	}
 }
 
-// LPub3D Mod - stud logo
-void LDrawModelViewer::setStudLogo(int value)
+// LPub3D Mod - stud style
+void LDrawModelViewer::setStudStyle(int value)
 {
-	if (value != studLogo)
+	if (value != studStyle)
 	{
-		studLogo = value;
+		studStyle = value;
 		flags.needsReparse = true;
 	}
 }

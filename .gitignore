@@ -16,3 +16,5 @@ LDView.pro.user
 Makefile
 .qmake.stash
 8464.TestResult.*
+.vs
+tests

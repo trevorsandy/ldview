@@ -1938,9 +1938,9 @@ void LDViewPreferences::applyPrimitivesChanges(void)
 			ldPrefs->setTextureOffsetFactor(textureOffsetFromSliderValue(
 				trackBarGetPos(hTextureOffsetSlider)));
 		}
-		// LPub3D Mod - stud logo
-		ldPrefs->setStudLogo(CUIDialog::comboGetCurSel(hPrimitivesPage,
-			IDC_STUD_LOGO_COMBO));
+		// LPub3D Mod - stud style
+		ldPrefs->setStudStyle(CUIDialog::comboGetCurSel(hPrimitivesPage,
+			IDC_STUD_STYLE_COMBO));
 		// LPub3D Mod End
 		ldPrefs->setQualityStuds(!getCheck(hPrimitivesPage, IDC_STUD_QUALITY));
 		ldPrefs->setHiResPrimitives(getCheck(hPrimitivesPage, IDC_HI_RES));
@@ -2652,8 +2652,8 @@ DWORD LDViewPreferences::doComboSelChange(HWND hPage, int controlId,
 	case IDC_MEMORY_COMBO:
 		enableApply(hPage);
 		break;
-    // LPub3D Mod - stud logo		
-	case IDC_STUD_LOGO_COMBO:
+    // LPub3D Mod - stud style		
+	case IDC_STUD_STYLE_COMBO:
 		enableApply(hPage);
 		break;
 	// LPub3D Mod End
@@ -3047,16 +3047,19 @@ void LDViewPreferences::setupMemoryUsage(void)
 	CUIDialog::comboSetCurSel(hGeneralPage, IDC_MEMORY_COMBO, ldPrefs->getMemoryUsage());
 }
 
-// LPub3D Mod - stud logo
-void LDViewPreferences::setupStudLogo(void)
+// LPub3D Mod - stud style
+void LDViewPreferences::setupStudStyle(void)
 {
-	CUIDialog::comboResetContent(hPrimitivesPage, IDC_STUD_LOGO_COMBO);
-	CUIDialog::comboAddString(hPrimitivesPage, IDC_STUD_LOGO_COMBO, ls(_UC("SingleWire")));
-	CUIDialog::comboAddString(hPrimitivesPage, IDC_STUD_LOGO_COMBO, ls(_UC("DoubleWire")));
-	CUIDialog::comboAddString(hPrimitivesPage, IDC_STUD_LOGO_COMBO, ls(_UC("RaisedFlat")));
-	CUIDialog::comboAddString(hPrimitivesPage, IDC_STUD_LOGO_COMBO, ls(_UC("RaisedRounded")));
-	CUIDialog::comboAddString(hPrimitivesPage, IDC_STUD_LOGO_COMBO, ls(_UC("SubtleRounded")));
-	CUIDialog::comboSetCurSel(hPrimitivesPage, IDC_STUD_LOGO_COMBO, ldPrefs->getStudLogo());
+	CUIDialog::comboResetContent(hPrimitivesPage, IDC_STUD_STYLE_COMBO);
+	CUIDialog::comboAddString(hPrimitivesPage, IDC_STUD_STYLE_COMBO, ls(_UC("Plain")));
+	CUIDialog::comboAddString(hPrimitivesPage, IDC_STUD_STYLE_COMBO, ls(_UC("ThinLineLogo")));
+	CUIDialog::comboAddString(hPrimitivesPage, IDC_STUD_STYLE_COMBO, ls(_UC("OutlineLogo")));
+	CUIDialog::comboAddString(hPrimitivesPage, IDC_STUD_STYLE_COMBO, ls(_UC("SharpTopLogo")));
+	CUIDialog::comboAddString(hPrimitivesPage, IDC_STUD_STYLE_COMBO, ls(_UC("RoundedTopLogo")));
+	CUIDialog::comboAddString(hPrimitivesPage, IDC_STUD_STYLE_COMBO, ls(_UC("FlattenedLogo")));
+	CUIDialog::comboAddString(hPrimitivesPage, IDC_STUD_STYLE_COMBO, ls(_UC("HighContrast")));
+	CUIDialog::comboAddString(hPrimitivesPage, IDC_STUD_STYLE_COMBO, ls(_UC("HighContrastWithLogo")));
+	CUIDialog::comboSetCurSel(hPrimitivesPage, IDC_STUD_STYLE_COMBO, ldPrefs->getStudStyle());
 }
 // LPub3D Mod End
 
@@ -3791,8 +3794,8 @@ void LDViewPreferences::setupPrimitivesPage(void)
 	hPrimitivesPage = hwndArray->pointerAtIndex(primitivesPageNumber);
 	setupTextures();
 	setupSubstitution();
-	// LPub3D Mod - stud logo
-	setupStudLogo();
+	// LPub3D Mod - stud style
+	setupStudStyle();
 	// LPub3D Mod End
 	setCheck(hPrimitivesPage, IDC_STUD_QUALITY, !ldPrefs->getQualityStuds());
 	setCheck(hPrimitivesPage, IDC_HI_RES, ldPrefs->getHiResPrimitives());

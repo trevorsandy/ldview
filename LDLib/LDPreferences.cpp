@@ -292,8 +292,8 @@ void LDPreferences::applyPrimitivesSettings(void)
 		m_modelViewer->setTexmaps(m_texmaps);
 		m_modelViewer->setTexturesAfterTransparent(true);
 		m_modelViewer->setTextureOffsetFactor(m_textureOffsetFactor);
-        // LPub3D Mod - stud logo		
-		m_modelViewer->setStudLogo(m_studLogo);
+        // LPub3D Mod - stud style		
+		m_modelViewer->setStudStyle(m_studStyle);
 		// LPub3D Mod End
 	}
 }
@@ -490,8 +490,8 @@ void LDPreferences::loadDefaultPrimitivesSettings(bool initializing /*= true*/)
 	setTexmaps(true);
 	setTextureOffsetFactor(5.0);
 	m_initializing = false;
-	// LPub3D Mod - stud logo
-    setStudLogo(2/*3. Raised Flat*/);
+	// LPub3D Mod - stud style
+    setStudStyle(0/*Plain*/);
 	// LPub3D Mod End
 }
 
@@ -687,8 +687,8 @@ void LDPreferences::loadPrimitivesSettings(void)
 	m_texmaps = getBoolSetting(TEXMAPS_KEY, m_texmaps);
 	m_textureOffsetFactor = getFloatSetting(TEXTURE_OFFSET_FACTOR_KEY,
 		m_textureOffsetFactor);
-	// LPub3D Mod - stud logo
-	m_studLogo = getIntSetting(STUD_LOGO_KEY, m_studLogo);
+	// LPub3D Mod - stud style
+	m_studStyle = getIntSetting(STUD_STYLE_KEY, m_studStyle);
 	// LPub3D Mod End
 }
 
@@ -866,8 +866,8 @@ void LDPreferences::commitPrimitivesSettings(bool flush /*= true*/)
 	setHiResPrimitives(m_hiResPrimitives, true);
 	setTexmaps(m_texmaps, true);
 	setTextureOffsetFactor(m_textureOffsetFactor, true);
-	// LPub3D Mod - stud logo
-	setStudLogo(m_studLogo, true);
+	// LPub3D Mod - stud style
+	setStudStyle(m_studStyle, true);
 	// LPub3D Mod End
 	if (flush)
 	{
@@ -1870,10 +1870,10 @@ void LDPreferences::setCurveQuality(int value, bool commit)
 	setSetting(m_curveQuality, value, CURVE_QUALITY_KEY, commit);
 }
 
-// LPub3D Mod - stud logo
-void LDPreferences::setStudLogo(int value, bool commit)
+// LPub3D Mod - stud style
+void LDPreferences::setStudStyle(int value, bool commit)
 {
-	setSetting(m_studLogo, value, STUD_LOGO_KEY, commit);
+	setSetting(m_studStyle, value, STUD_STYLE_KEY, commit);
 }
 // LPub3D Mod End
 
