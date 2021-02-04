@@ -23,6 +23,9 @@ typedef struct
 	float luminance;
 	bool chrome;
 	bool rubber;
+	// LPub3D Mod - stud style
+	bool adjusted;
+	// LPub3D Mod End
 } LDLColorInfo;
 
 class LDLPalette : public TCObject

@@ -3,6 +3,7 @@
 #include <stdio.h>
 // LPub3D Mod - stud style
 #include <math.h>
+#include <TCFoundation/TCVector.h>
 #include <LDLib/LDUserDefaultsKeys.h>
 #include <TCFoundation/TCUserDefaults.h>
 // LPub3D Mod End
@@ -20,6 +21,9 @@
 #define TC_SRGB_TO_LINEAR(v) (powf(v, 2.2f))
 #define TC_LINEAR_TO_SRGB(v) (powf(v, 1.0f / 2.2f))
 #define TC_LUM_FROM_SRGB(r,g,b) ((0.2126f * TC_SRGB_TO_LINEAR(r)) + (0.7152f * TC_SRGB_TO_LINEAR(g)) + (0.0722f * TC_SRGB_TO_LINEAR(b)))
+#define TC_LUM_FROM_RGB(r,g,b) ((0.2126f * r) + (0.7152f * g) + (0.0722f * b))
+#define TC_RGB_EPSILON (0.5f / 255.0f)
+#define TC_RGB_TO_DEC(v) (v / 255.0f)
 
 LDLColor LDLPalette::sm_studCylinderColor{ 27,42,52,255 };
 LDLColor LDLPalette::sm_partEdgeColor{ 0,0,0,255 };
@@ -29,6 +33,123 @@ TCFloat  LDLPalette::sm_partEdgeContrast = 0.5f;
 TCFloat  LDLPalette::sm_partColorValueLDIndex = 0.5f;
 bool     LDLPalette::sm_automateEdgeColor = false;
 int      LDLPalette::sm_studStyle = 0;
+
+static TCVector TC_RGB2HSL(TCVector rgb)
+{
+	int Mi;
+	TCFloat M, m, C, h, S, L; // h is H/60
+
+	Mi = (rgb[0] >= rgb[1]) ? 0 : 1;
+	Mi = (rgb[Mi] >= rgb[2]) ? Mi : 2;
+	M = rgb[Mi];
+
+	m = (rgb[0] < rgb[1]) ? rgb[0] : rgb[1];
+	m = (m < rgb[2]) ? m : rgb[2];
+
+	C = M - m;
+	L = (M + m) / 2.0f;
+
+	if (C < TC_RGB_EPSILON)  // C == 0.0
+		h = 0.0f;
+	else if (Mi == 0)        // M == R
+		h = 0.0f + (rgb[1] - rgb[2]) / C;
+	else if (Mi == 1)        // M == G
+		h = 2.0f + (rgb[2] - rgb[0]) / C;
+	else                     // M = B
+		h = 4.0f + (rgb[0] - rgb[1]) / C;
+
+	h = (h < 0.0) ? h + 6.0f : h;
+	h = (h >= 6.0) ? h - 6.0f : h;
+
+	S = ((L < (TC_RGB_EPSILON / 2.0f)) || (L > (1.0f - (TC_RGB_EPSILON / 2.0f))))
+		? 0.0f : (2.0f * (M - L)) / (1.0f - fabs((2.0f * L) - 1.0f));
+
+	return TCVector(h, S, L);
+}
+
+static TCVector TC_HSL2RGB(TCVector hSL)
+{
+	TCVector rgb;
+	float h, S, L, C, X, m;
+
+	h = hSL[0];
+	S = hSL[1];
+	L = hSL[2];
+
+	C = (1.0f - fabs(2.0f * L - 1.0f)) * S;
+	X = C * (1.0f - fabs(fmodf(h, 2.0f) - 1.0f));
+
+	if (h < 1.0f)
+		rgb = TCVector(C, X, 0.0f);
+	else if (h < 2.0f)
+		rgb = TCVector(X, C, 0.0f);
+	else if (h < 3.0f)
+		rgb = TCVector(0.0f, C, X);
+	else if (h < 4.0f)
+		rgb = TCVector(0.0f, X, C);
+	else if (h < 5.0f)
+		rgb = TCVector(X, 0.0f, C);
+	else
+		rgb = TCVector(C, 0.0f, X);
+
+	m = L - C / 2.0f;
+
+	rgb[0] += m;
+	rgb[1] += m;
+	rgb[2] += m;
+
+	return rgb;
+}
+
+static LDLColor getAlgorithmicEdgeColor(const TCVector& Value, const float ValueLum, const float EdgeLum, const float Contrast, const float Saturation)
+{
+	float y1, yt;
+	float y0 = ValueLum;
+	float ye = EdgeLum;
+	float cont = Contrast;
+	float sat = Saturation;
+	TCVector hSL, rgb1, rgbf;
+
+	// Determine luma target
+	if (ye < y0)
+	{
+		// Light base color
+		yt = y0 - cont * y0;
+	}
+	else
+	{
+		// Dark base color
+		yt = y0 + cont * (1.0f - y0);
+	}
+
+	// Get base color in hSL
+	hSL = TC_RGB2HSL(Value);
+
+	// Desaturate
+	hSL[1] *= sat;
+
+	// Adjusted color to RGB
+	rgb1 = TC_HSL2RGB(TCVector(hSL[0], hSL[1], 0.5f));
+
+	// Fix adjusted color luma to target value
+	y1 = TC_LUM_FROM_RGB(rgb1[0], rgb1[1], rgb1[2]);
+	if (yt < y1)
+	{
+		// Make darker via scaling
+		rgbf = (yt / y1) * rgb1;
+	}
+	else
+	{
+		// Make lighter via scaling anti-color
+		rgbf = TCVector(1.0f, 1.0f, 1.0f) - rgb1;
+		rgbf *= (1.0f - yt) / (1.0f - y1);
+		rgbf = TCVector(1.0f, 1.0f, 1.0f) - rgbf;
+	}
+
+	TCVector rgb = TCVector(TC_LINEAR_TO_SRGB(rgbf[0]), TC_LINEAR_TO_SRGB(rgbf[1]), TC_LINEAR_TO_SRGB(rgbf[2])) *= 255;
+
+	return LDLColor{ (TCByte)rgb[0], (TCByte)rgb[1], (TCByte)rgb[2], 255};
+}
 // LPub3D Mod End
 
 LDLPalette *LDLPalette::sm_defaultPalette = NULL;
@@ -413,41 +534,39 @@ void LDLPalette::initStudStyleSettings()
 
 int LDLPalette::getStudStyleOrAutoEdgeColor(int colorNumber)
 {
-	LDLColorInfo info = getAnyColorInfo(colorNumber);
-
-	float value[4];
-	value[0] = info.color.r / 255.0;
-	value[1] = info.color.g / 255.0;
-	value[2] = info.color.b / 255.0;
+	LDLColorInfo colorInfo = getAnyColorInfo(colorNumber);
+	TCVector value(TC_RGB_TO_DEC((int)colorInfo.color.r), TC_RGB_TO_DEC((int)colorInfo.color.g), TC_RGB_TO_DEC((int)colorInfo.color.b));
 
 	const float valueLuminescence = TC_LUM_FROM_SRGB(value[0], value[1], value[2]);
-	const float lightDarkIndex = TC_SRGB_TO_LINEAR(sm_partColorValueLDIndex);
+	const float lightDarkControl = sm_automateEdgeColor ? sm_partColorValueLDIndex : TC_SRGB_TO_LINEAR(sm_partColorValueLDIndex);
 
 	if (sm_automateEdgeColor)
 	{
-		float edgeLuminescence = 0.0f;
-
-		if (valueLuminescence > lightDarkIndex)
-			edgeLuminescence = valueLuminescence - (valueLuminescence * sm_partEdgeContrast);
+		if (colorInfo.adjusted)
+		{
+			return colorInfo.edgeColorNumber;
+		} 
 		else
-			edgeLuminescence = (1.0f - valueLuminescence) * sm_partEdgeContrast + valueLuminescence;
+		{
+			int r, g, b, a;
+			getRGBA(colorInfo.edgeColorNumber, r, g, b, a);
+			const float edgeLuminescence = TC_LUM_FROM_SRGB(TC_RGB_TO_DEC(r), TC_RGB_TO_DEC(g), TC_RGB_TO_DEC(b));
 
-		edgeLuminescence = TC_LINEAR_TO_SRGB(edgeLuminescence);
+			LDLColor algEdgeColor = getAlgorithmicEdgeColor(value, valueLuminescence, edgeLuminescence, sm_partEdgeContrast, lightDarkControl);
+			int edgeColorNumber = getEdgeColorNumberFromRGB(algEdgeColor);
 
-		LDLColor edgeColor;
-		edgeColor.r = (TCByte)(edgeLuminescence * 255.0f);
-		edgeColor.g = (TCByte)(edgeLuminescence * 255.0f);
-		edgeColor.b = (TCByte)(edgeLuminescence * 255.0f);
-		edgeColor.a = 255.0f;
-
-		return getEdgeColorNumberFromRGB(edgeColor);
+			LDLColorInfo* adjustColorInfo;
+			adjustColorInfo = updateColor(colorNumber, colorInfo.color, colorInfo.ditherColor, edgeColorNumber);
+			adjustColorInfo->adjusted = true;
+			return edgeColorNumber;
+		}
 	}
 	else
 	{
 		if (colorNumber == 0)
 			return getEdgeColorNumberFromRGB(sm_blackEdgeColor);
 		else if (colorNumber != 4242 &&
-			valueLuminescence < lightDarkIndex)
+			valueLuminescence < lightDarkControl)
 			return getEdgeColorNumberFromRGB(sm_darkEdgeColor);
 		else
 			return getEdgeColorNumberFromRGB(sm_partEdgeColor);
@@ -570,6 +689,9 @@ void LDLPalette::initColorInfo(LDLColorInfo &colorInfo, int r, int g, int b,
 	colorInfo.luminance = -100.0f;
 	colorInfo.chrome = false;
 	colorInfo.rubber = false;
+	// LPub3D Mod - stud style
+	colorInfo.adjusted = false;
+	// LPub3D Mod End
 	initSpecularAndShininess(colorInfo);
 }
 
@@ -917,6 +1039,9 @@ LDLColorInfo *LDLPalette::updateColor(int colorNumber, const LDLColor &color,
 
 		customColor->colorNumber = colorNumber;
 		colorInfo = &customColor->colorInfo;
+		// LPub3D Mod - stud style
+		colorInfo->adjusted = false;
+		// LPub3D Mod End
 		m_customColors->addObject(customColor);
 		customColor->release();
 	}
