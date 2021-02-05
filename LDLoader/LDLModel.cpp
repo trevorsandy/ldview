@@ -768,8 +768,9 @@ bool LDLModel::initializeNewSubModel(
 	int studStyle = TCUserDefaults::longForKey("StudStyle", 0, 0);
 	if (studStyle && m_flags.loadingPrimitive && m_flags.hasStuds)
 	{
-		if (isStudStylePrimitive(dictName, studStyle))
-			studStylePrimitive = getStudStyleFile(subModel, dictName, studStyle, studStylePrimitive == 2/*openStud*/);
+		bool openStud;
+		if ((openStud = isStudStylePrimitive(dictName, studStyle) == 2))
+			studStylePrimitive = getStudStyleFile(subModel, dictName, studStyle, openStud);
 	}
 	if (!studStylePrimitive && subModelStream.is_open() && !subModel->load(subModelStream))
 	{
