@@ -430,18 +430,6 @@ void LDPreferences::loadDefaultGeneralSettings(bool initializing /*= true*/)
 	setFullScreenRefresh(0);
 	setFov(45.0f);
 	setMemoryUsage(2);
-	// LPub3D Mod - stud style
-	setStudCylinderColor(27, 42, 52, 255);
-	setPartEdgeColor(0, 0, 0, 255);
-	setBlackEdgeColor(255, 255, 255, 255);
-	setDarkEdgeColor(27, 42, 52, 255);
-
-	setPartEdgeContrast(0.5f);
-	setPartColorValueLDIndex(0.5f);
-
-	setAutomateEdgeColor(false);
-	setStudStyle(0/*Plain*/);
-	// LPub3D Mod End
 	for (i = 0; i < 16; i++)
 	{
 		int r, g, b, a;
@@ -538,6 +526,19 @@ void LDPreferences::loadDefaultPrimitivesSettings(bool initializing /*= true*/)
 	setTexmaps(true);
 	setTextureOffsetFactor(5.0);
 	setUseStrips(true);
+	
+	// LPub3D Mod - stud style
+	setStudCylinderColor(27, 42, 52, 255);
+	setPartEdgeColor(0, 0, 0, 255);
+	setBlackEdgeColor(255, 255, 255, 255);
+	setDarkEdgeColor(27, 42, 52, 255);
+
+	setPartEdgeContrast(0.5f);
+	setPartColorValueLDIndex(0.5f);
+
+	setAutomateEdgeColor(false);
+	setStudStyle(0/*Plain*/);
+	// LPub3D Mod End
 	m_initializing = false;
 }
 
@@ -2010,24 +2011,40 @@ void LDPreferences::setDarkEdgeColor(int r, int g, int b, int a, bool commit)
 	setRGBAColorSetting(m_darkEdgeColor, r, g, b, a, DARK_EDGE_COLOR_KEY, commit);
 }
 
-void LDPreferences::setPartEdgeContrast(TCFloat value, bool commit)
+void LDPreferences::setPartEdgeContrast(TCFloat value, bool commit, bool apply)
 {
 	setSetting(m_partEdgeContrast, value, PART_EDGE_CONTRAST_KEY, commit);
+	if (apply && m_modelViewer != NULL)
+	{
+		m_modelViewer->setPartEdgeContrast(m_partEdgeContrast);
+	}
 }
 
-void LDPreferences::setPartColorValueLDIndex(TCFloat value, bool commit)
+void LDPreferences::setPartColorValueLDIndex(TCFloat value, bool commit, bool apply)
 {
 	setSetting(m_partColorValueLDIndex, value, PART_COLOR_VALUE_LD_INDEX_KEY, commit);
+	if (apply && m_modelViewer != NULL)
+	{
+		m_modelViewer->setPartColorValueLDIndex(m_partColorValueLDIndex);
+	}
 }
 
-void LDPreferences::setAutomateEdgeColor(bool value, bool commit)
+void LDPreferences::setAutomateEdgeColor(bool value, bool commit, bool apply)
 {
 	setSetting(m_automateEdgeColor, value, AUTOMATE_EDGE_COLOR_KEY, commit);
+	if (apply && m_modelViewer != NULL)
+	{
+		m_modelViewer->setAutomateEdgeColor(m_automateEdgeColor);
+	}
 }
 
-void LDPreferences::setStudStyle(int value, bool commit)
+void LDPreferences::setStudStyle(int value, bool commit, bool apply)
 {
 	setSetting(m_studStyle, value, STUD_STYLE_KEY, commit);
+	if (apply && m_modelViewer != NULL)
+	{
+		m_modelViewer->setStudStyle(m_studStyle);
+	}
 }
 // LPub3D Mod End
 

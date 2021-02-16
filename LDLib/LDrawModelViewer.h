@@ -613,7 +613,10 @@ class LDrawModelViewer: public TCAlertSender
 		TCFloat getPartEdgeContrast(void) { return partEdgeContrast; };
 		TCFloat getPartColorValueLDIndex(void) { return partColorValueLDIndex; };
 
-		bool getAutomateEdgeColor(void) { return automateEdgeColor; };
+		bool getAutomateEdgeColor(void) 
+		{ 
+			return flags.automateEdgeColor != false;
+		};
 		int getStudStyle(void) const { return studStyle; }
 		// LPub3D Mod End
 
@@ -819,7 +822,6 @@ class LDrawModelViewer: public TCAlertSender
 		TCFloat partEdgeContrast;
 		TCFloat partColorValueLDIndex;
 
-		bool automateEdgeColor;
 		int studStyle;
 		// LPub3D Mod End
 #ifdef USE_STD_CHRONO
@@ -915,6 +917,10 @@ class LDrawModelViewer: public TCAlertSender
 			bool keepRightSideUp:1;
 			bool texmaps:1;
 			bool texturesAfterTransparent:1;
+			// LPub3D Mod - stud style
+			bool automateEdgeColor:1;
+			// LPub3D Mod End
+			bool useStrips:1;
 		} flags;
 		struct CameraData
 		{

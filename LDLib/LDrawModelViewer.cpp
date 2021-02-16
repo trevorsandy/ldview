@@ -230,6 +230,10 @@ LDrawModelViewer::LDrawModelViewer(TCFloat width, TCFloat height)
 	flags.noUI = false;
 	flags.keepRightSideUp = false;
 	flags.texmaps = true;
+	// LPub3D Mod - stud style
+	flags.automateEdgeColor = false;
+	// LPub3D Mod End
+	flags.useStrips = true;
 	TCAlertManager::registerHandler(LDLFindFileAlert::alertClass(), this,
 		(TCAlertCallback)&LDrawModelViewer::findFileAlertCallback);
 	// Set 4:4:4 as the default sub-sample pattern for JPEG images.
@@ -2323,9 +2327,9 @@ void LDrawModelViewer::setPartColorValueLDIndex(TCFloat value)
 
 void LDrawModelViewer::setAutomateEdgeColor(bool value)
 {
-	if (value != automateEdgeColor)
+	if (value != flags.automateEdgeColor)
 	{
-		automateEdgeColor = value;
+		flags.automateEdgeColor = value;
 		flags.needsReparse = true;
 	}
 }

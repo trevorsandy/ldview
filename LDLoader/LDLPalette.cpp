@@ -3,8 +3,8 @@
 #include <stdio.h>
 // LPub3D Mod - stud style
 #include <math.h>
-#include <TCFoundation/TCVector.h>
 #include <LDLib/LDUserDefaultsKeys.h>
+#include <TCFoundation/TCVector.h>
 #include <TCFoundation/TCUserDefaults.h>
 // LPub3D Mod End
 #include <TCFoundation/mystring.h>

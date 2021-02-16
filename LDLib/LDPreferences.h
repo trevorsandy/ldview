@@ -353,11 +353,11 @@ public:
 	void setBlackEdgeColor(int r, int g, int b, int a, bool commit = false);
 	void setDarkEdgeColor(int r, int g, int b, int a, bool commit = false);
 
-	void setPartEdgeContrast(TCFloat value, bool commit = false);
-	void setPartColorValueLDIndex(TCFloat value, bool commit = false);
+	void setPartEdgeContrast(TCFloat value, bool commit = false, bool apply = false);
+	void setPartColorValueLDIndex(TCFloat value, bool commit = false, bool apply = false);
 
-	void setAutomateEdgeColor(bool value, bool commit = false);
-	void setStudStyle(int value, bool commit = false);
+	void setAutomateEdgeColor(bool value, bool commit = false, bool apply = false);
+	void setStudStyle(int value, bool commit = false, bool apply = false);
 	// LPub3D Mod End
 
 	// Update settings
