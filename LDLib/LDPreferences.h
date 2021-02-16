@@ -345,7 +345,8 @@ public:
 	void setTexmaps(bool value, bool commit = false, bool apply = false);
 	void setTexturesAfterTransparent(bool value, bool commit = false, bool apply = false);
 	void setTextureOffsetFactor(TCFloat value, bool commit = false, bool apply = false);
-
+	void setUseStrips(bool value, bool commit = false, bool apply = false);
+	
 	// LPub3D Mod - stud style
 	void setStudCylinderColor(int r, int g, int b, int a, bool commit = false);
 	void setPartEdgeColor(int r, int g, int b, int a, bool commit = false);
@@ -533,7 +534,8 @@ protected:
 	bool m_hiResPrimitives;
 	bool m_texmaps;
 	TCFloat m_textureOffsetFactor;
-
+	bool m_useStrips;
+	
 	// LPub3D Mod - stud style
 	TCULong m_studCylinderColor;
 	TCULong m_partEdgeColor;

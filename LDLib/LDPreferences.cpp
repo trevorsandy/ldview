@@ -42,6 +42,7 @@ LDPreferences::LDPreferences(LDrawModelViewer* modelViewer)
 	m_globalSettings[MULTI_THREADED_KEY] = true;
 	m_globalSettings[LDRAWDIR_KEY] = true;
 	m_globalSettings[EXTRA_SEARCH_DIRS_KEY] = true;
+	m_globalSettings[STRIPS_KEY] = true;
 	m_defaultColorNumber = -1;
 	for (i = 0; i < 16; i++)
 	{
@@ -316,7 +317,8 @@ void LDPreferences::applyPrimitivesSettings(void)
 		m_modelViewer->setTexmaps(m_texmaps);
 		m_modelViewer->setTexturesAfterTransparent(true);
 		m_modelViewer->setTextureOffsetFactor(m_textureOffsetFactor);
-
+		m_modelViewer->setUseStrips(m_useStrips);
+		
         // LPub3D Mod - stud style	
 		m_modelViewer->setStudCylinderColor(m_studCylinderColor);
 		m_modelViewer->setPartEdgeColor(m_partEdgeColor);
@@ -535,6 +537,7 @@ void LDPreferences::loadDefaultPrimitivesSettings(bool initializing /*= true*/)
 	setHiResPrimitives(false);
 	setTexmaps(true);
 	setTextureOffsetFactor(5.0);
+	setUseStrips(true);
 	m_initializing = false;
 }
 
@@ -730,7 +733,8 @@ void LDPreferences::loadPrimitivesSettings(void)
 	m_texmaps = getBoolSetting(TEXMAPS_KEY, m_texmaps);
 	m_textureOffsetFactor = getFloatSetting(TEXTURE_OFFSET_FACTOR_KEY,
 		m_textureOffsetFactor);
-
+	m_useStrips = getBoolSetting(STRIPS_KEY, m_useStrips);
+		
 	// LPub3D Mod - stud style
 	m_studCylinderColor = (TCULong)getRGBAFromStringSetting(STUD_CYLINDER_COLOR_KEY, m_studCylinderColor);
 	m_partEdgeColor = (TCULong)getRGBAFromStringSetting(PART_EDGE_COLOR_KEY, m_partEdgeColor);
@@ -919,7 +923,8 @@ void LDPreferences::commitPrimitivesSettings(bool flush /*= true*/)
 	setHiResPrimitives(m_hiResPrimitives, true);
 	setTexmaps(m_texmaps, true);
 	setTextureOffsetFactor(m_textureOffsetFactor, true);
-
+	setUseStrips(m_useStrips, true);
+	
 	// LPub3D Mod - stud style
 	int r, g, b, a;
 	getRGBA(m_studCylinderColor, r, g, b, a);
@@ -2062,6 +2067,14 @@ void LDPreferences::setTextureOffsetFactor(TCFloat value, bool commit, bool appl
 	}
 }
 
+void LDPreferences::setUseStrips(bool value, bool commit, bool apply)
+{
+	setSetting(m_useStrips, value, STRIPS_KEY, commit);
+	if (apply && m_modelViewer != NULL)
+	{
+		m_modelViewer->setUseStrips(m_useStrips);
+	}
+}
 
 // Update settings
 void LDPreferences::setProxyType(int value, bool commit)

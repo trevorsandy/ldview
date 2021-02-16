@@ -158,9 +158,9 @@ int mainLoop()
 		{
 			topParent = newParent;
 		}
-		if (screenSaver || !TranslateAccelerator(
-		    topParent,     // handle to receiving window
-			hAccel,        // handle to active accelerator table
+		if (screenSaver || !TranslateAccelerator( 
+		    topParent,     // handle to receiving window 
+			hAccel,        // handle to active accelerator table 
 			&msg))
 		{
 			if (!parentWindow || !IsDialogMessage(parentWindow, &msg))
@@ -180,7 +180,7 @@ int mainLoop()
 
 BOOL flushPreviewEvents(HWND hWindow)
 {
-    // In preview mode, "pause" (enter a limited message loop) briefly
+    // In preview mode, "pause" (enter a limited message loop) briefly 
     // before proceeding, so the display control panel knows to update itself.
     BOOL waitForInputIdle = TRUE;
 
@@ -412,7 +412,9 @@ static bool setupUserDefaults(
 	bool screenSaver,
 	bool removableDrive)
 {
+	// LPub3D Mod - ini file	
 	char *appName = "Travis Cobbs/LDView - LPub3D Edition";
+	// LPub3D Mod - end
 	char *sessionName;
 	bool retValue = true;
 
@@ -508,7 +510,7 @@ static bool isRemovableDrive(HINSTANCE hInstance)
 //	{
 //		typedef HRESULT (__stdcall *PSetCurrentProcessExplicitAppUserModelID)(PCWSTR AppID);
 //		PSetCurrentProcessExplicitAppUserModelID
-//			pSetCurrentProcessExplicitAppUserModelID =
+//			pSetCurrentProcessExplicitAppUserModelID = 
 //			(PSetCurrentProcessExplicitAppUserModelID)GetProcAddress(hShell32,
 //			"SetCurrentProcessExplicitAppUserModelID");
 //
@@ -595,7 +597,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/,
 		ucstring message = _UC("Command Line:\n");
 
 		message += lpCmdLine;
+		// LPub3D Mod - print arguments
 		MessageBox(NULL, message.c_str(), _UC("LDView - LPub3D Edition"), MB_OK);
+		// LPub3D Mod end
 	}
 	if (!udok && !TCUserDefaults::longForKey("IniFailureShown", 0, 0))
 	{
