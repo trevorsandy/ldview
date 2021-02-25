@@ -71,6 +71,8 @@ float fmodf(float x, float y)
 #define DEF_DISTANCE_MULT 1.0f
 
 LDrawModelViewer::StandardSizeList LDrawModelViewer::standardSizes;
+std::string LDrawModelViewer::sm_appVersion;
+std::string LDrawModelViewer::sm_appCopyright;
 
 LDrawModelViewer::LDrawModelViewer(TCFloat width, TCFloat height)
 	:mainTREModel(NULL),

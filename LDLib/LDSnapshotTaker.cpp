@@ -1906,6 +1906,7 @@ bool LDSnapshotTaker::doCommandLine(
 				}
 				while (std::getline(stream, line))
 				{
+					stripCRLF(line);
 					if (firstLine && stringHasPrefix(line.c_str(),
 						commonPrefix.c_str()))
 					{
@@ -1914,7 +1915,6 @@ bool LDSnapshotTaker::doCommandLine(
 					else if (!line.empty() && line[0] != ';')
 					{
 						firstLine = false;
-						stripCRLF(&line[0]);
 						if (commonArgs.empty())
 						{
 							TCUserDefaults::setCommandLine(line.c_str());
