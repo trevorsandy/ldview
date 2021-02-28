@@ -344,12 +344,8 @@ void LDPovExporter::loadSettings(void)
 	temp = stringForKey("PovLights", EXPORT_POV_LIGHTS_DEFAULT);
 	if (temp != NULL)
 	{
-		m_povLights = temp;
+		loadLights(temp);
 		delete[] temp;
-	}
-	else
-	{
-		m_povLights = "";
 	}
     // LPub3D Mod End
 }
@@ -526,8 +522,9 @@ void LDPovExporter::initSettings(void) const
 	{
 		return;
 	}
+	const std::string lightString = getLightsString();
 	addSetting(pGroup, LDExporterSetting(ls(_UC("PovLights")),
-		m_povLights.c_str(), udKey("Lights").c_str()));
+		lightString.c_str(), udKey("Lights").c_str()));
 	m_settings.back().setTooltip("PovLightsTT");
     // LPub3D Mod End
 
@@ -594,6 +591,76 @@ void LDPovExporter::loadXmlMatrices(TiXmlElement *matrices)
 		m_xmlMatrices[element->Value()] = element->GetText();
 	}
 }
+
+// LPub3D Mod - lights
+void LDPovExporter::loadLights(const char* povLights)
+{
+	if (povLights != NULL)
+	{
+		m_povLightList.clear();
+		const char* value = "";
+		char tmpBuf[1024];
+		while (povLights[0])
+		{
+			const char* end = strchr(povLights, ';');
+			if (end)
+			{
+				int length = (int)(end - povLights);
+				strncpy(tmpBuf, povLights, length);
+				tmpBuf[length] = 0;
+				if (length)
+				{
+					value = tmpBuf;
+				}
+				povLights += length + 1;
+			}
+			else
+			{
+				if (strlen(povLights))
+				{
+					value = povLights;
+				}
+				povLights += strlen(povLights);
+			}
+			int     shadow, size, grid;
+			TCFloat lat, lon, intsy;
+			if (value && sscanf(value, "%d %f %f %f %d %d",
+				&shadow, &lat, &lon, &intsy, &size, &grid) == 6)
+			{
+				Light light { (bool)shadow, lat, lon, intsy, size, grid };
+				m_povLightList.push_back(light);
+			}
+		}
+	}
+}
+
+std::string LDPovExporter::getLightsString(void) const
+{
+	int index = 0;
+	char output[200] = "";
+	for (LightList::const_iterator it = m_povLightList.begin(); it != m_povLightList.end(); ++it)
+	{
+		bool lastItem = (index + 1) >= m_povLightList.size();
+		index++;
+		const Light& light = *it;
+		char buffer[100];
+		snprintf(
+			buffer, 
+			sizeof(buffer),
+			"%d %g %g %g %d %d%s", 
+			light.shadowless ? 1 : 0,
+			light.latitude,
+			light.longitude,
+			light.intensity,
+			light.size,
+			light.grid,
+			lastItem ? "" : ";");
+		strcat(output, buffer);
+	}
+
+	return std::string(output);
+}
+// LPub3D Mod End
 
 void LDPovExporter::loadPovCodes(
 	TiXmlElement *element,
@@ -1077,6 +1144,30 @@ bool LDPovExporter::writeHeader(void)
 	std::string cameraLookAtString;
 	std::string cameraSkyString;
 
+	// LPub3D Mod - lights
+	bool areaLight = false;
+	float floorR = 0.8f;
+	float floorG = 0.8f;
+	float floorB = 0.8f;
+	float floorAmb = 0.4f;
+	float floorDif = 0.4f;
+	for (LightList::const_iterator it = m_povLightList.begin(); it != m_povLightList.end(); ++it)
+	{
+		const Light& light = *it;
+		if (!areaLight)
+		{
+			areaLight = light.size;
+			if (areaLight)
+			{
+				floorR = 1.0f;
+				floorG = 1.0f;
+				floorB = 1.0f;
+				floorAmb = 0.0f;
+				floorDif = 0.9f;
+			}
+		}
+	}
+	// LPub3D Mod End 
 	fprintf(m_pPovFile, "// %s %s%s%s %s\n", (const char *)ls("PovGeneratedBy"),
 		m_appName.c_str(), m_appVersion.size() > 0 ? " " : "",
 		m_appVersion.c_str(), m_appCopyright.c_str());
@@ -1097,7 +1188,6 @@ bool LDPovExporter::writeHeader(void)
 	}
 	fprintf(m_pPovFile, ls("PovNote"), m_appName.c_str());
 	fprintf(m_pPovFile, "#version %g;\n\n", m_fileVersion);
-	fprintf(m_pPovFile, "#if (version >= 3.7) global_settings {assumed_gamma 1} #end\n\n");
 	writeDeclare("LDXQual", m_quality, "PovQualDesc");
 	writeDeclare("LDXSW", m_seamWidth, "PovSeamWidthDesc");
 	writeDeclare("LDXStuds", !m_hideStuds, "PovStudsDesc");
@@ -1152,11 +1242,13 @@ bool LDPovExporter::writeHeader(void)
 	}
 	writeDeclare("LDXFloorLoc", floorLoc, "PovFloorLocDesc");
 	writeDeclare("LDXFloorAxis", floorAxis, "PovFloorAxisDesc");
-	writeDeclare("LDXFloorR", 0.8, "PovFloorRDesc");
-	writeDeclare("LDXFloorG", 0.8, "PovFloorGDesc");
-	writeDeclare("LDXFloorB", 0.8, "PovFloorBDesc");
-	writeDeclare("LDXFloorAmb", 0.4, "PovFloorAmbDesc");
-	writeDeclare("LDXFloorDif", 0.4, "PovFloorDifDesc");
+	// LPub3D Mod - lights
+	writeDeclare("LDXFloorR", floorR, "PovFloorRDesc");
+	writeDeclare("LDXFloorG", floorG, "PovFloorGDesc");
+	writeDeclare("LDXFloorB", floorB, "PovFloorBDesc");
+	writeDeclare("LDXFloorAmb", floorAmb, "PovFloorAmbDesc");
+	writeDeclare("LDXFloorDif", floorDif, "PovFloorDifDesc");
+	// LPub3D Mod End
 	writeDeclare("LDXAmb", m_ambient);
 	writeDeclare("LDXDif", m_diffuse);
 	writeDeclare("LDXRefl", m_refl);
@@ -1687,12 +1779,17 @@ void LDPovExporter::writeGlobalSettings(void)
 	fprintf(m_pPovFile, "\n");
 
 	fprintf(m_pPovFile,
+		"#include \"rad_def.inc\"\n"
+		"\n"
 		"#ifndef (LDXSkipGlobalSettings)\n"
 		"  #if (version >= 3.7)\n"
 		"    global_settings {\n"
-		"      assumed_gamma 1.4\n"
+		"      assumed_gamma 1.0\n"
 		"      adc_bailout 0.01/2\n"
-		"      max_trace_level 5\n"
+		"      max_trace_level 10\n"
+		"      radiosity {\n"
+		"	     Rad_Settings(Radiosity_Final, on, off)\n"
+		"	   }\n"
 		"    }\n"
 		"  #end\n"
 		"#end\n\n");
@@ -1702,29 +1799,41 @@ void LDPovExporter::writeGlobalSettings(void)
 // LPub3D Mod - light source macro
 void LDPovExporter::writeLightSourceMacro(void)
 {
-	writeDeclare("CameraTheta", "0.5235979");
+	writeDeclare("LDXCameraTheta", "0.5235979");
 
 	fprintf(m_pPovFile,"\n");
 
 	fprintf(m_pPovFile,
-		"// Lat, Lon: degree\n"
-		"// LightPower: 0~1 float\n"
-		"// Shadowless: 0=false, 1=true\n");
+		"// Light %s: degrees\n"
+		"// Light %s: 0~1 float\n"
+		"// Light %s: 0=false, 1=true\n"
+		"// Light %s: int\n"
+		"// Light %s: int\n", 
+		(const char*)ls("PovLatLon"), 
+		(const char*)ls("PovLightPower"),
+		(const char*)ls("PovLightShadow"),
+		(const char*)ls("PovLightSize"),
+		(const char*)ls("PovLightGrid"));
 	fprintf(m_pPovFile,
-		"#macro WriteLight(Lat, Lon, LightPower, Shadowless, AreaLightWidth, AreaLightColumns)\n"
+		"#macro WriteLight(Lat, Lon, LightPower, Shadowless, LightSize, LightGrid)\n"
 		"#local latRad = radians(Lat);\n"
-		"#local lonRad = radians(-Lon)-CameraTheta;\n"
+		"#local lonRad = radians(-Lon) - LDXCameraTheta;\n"
 		"#local sinLat = sin(latRad);\n"
 		"#local cosLat = cos(latRad);\n"
 		"#local sinLon = sin(lonRad);\n"
 		"#local cosLon = cos(lonRad);\n"
 		"#local lightVectorSize = 2*LDXRadius;\n"
+		"#local AreaLight = LightSize;\n"
+		"#local AreaLightWidth = LightSize;\n"
+		"#local AreaLightHeight = LightSize;\n"
+		"#local AreaLightRows = LightGrid;\n"
+		"#local AreaLightColumns = LightGrid;\n"
 		"light_source {\n"
 		"	<lightVectorSize*((-sinLon)*cosLat),lightVectorSize*(-sinLat),lightVectorSize*(-cosLon)*cosLat> + LDXCenter\n"
 		"	color rgb <1,1,1>*LightPower\n"
 		"	#if (Shadowless = 0)\n"
-		"	    #if (AreaLightWidth > 0)\n"
-		"	        area_light AreaLightWidth, AreaLightWidth, AreaLightColumns, AreaLightColumns\n"
+		"	    #if (AreaLight > 0)\n"
+		"	        area_light AreaLightWidth, AreaLightHeight, AreaLightRows, AreaLightColumns\n"
 		"	        adaptive 1\n"
 		"	        jitter\n"
 		"	        circular\n"
@@ -1740,61 +1849,31 @@ void LDPovExporter::writeLightSourceMacro(void)
 
 // LPub3D Mod - lights
 void LDPovExporter::writeLight(int num, TCFloat lat, TCFloat lon,
-	int shadow, TCFloat intsy, int width, int columns)
+	int shadowless, TCFloat intsy, int size, int grid)
 {
 	fprintf(m_pPovFile,
 		"#ifndef (LDXSkipLight%d)\n"
-		"WriteLight(%s, %s, %s, %d, %d, %d)\t// %s: %s,%s\n"
-		"#end\n\n", num, ftostr(lat).c_str(), ftostr(lon).c_str(),
-		ftostr(intsy).c_str(), shadow, width, columns,
-		(const char *)ls("PovLatLon"), ftostr(lat).c_str(), ftostr(lon).c_str());
+		"WriteLight(%s, %s, %s, %d, %d, %d)\t// %s: %s, %s: %s, %s: %s, %s: %d, %s: %d, %s: %d\n"
+		"#end\n\n", num, ftostr(lat).c_str(), ftostr(lon).c_str(), ftostr(intsy).c_str(), shadowless, size, grid,
+		(const char*)ls("PovLightLat"), ftostr(lat).c_str(), 
+		(const char*)ls("PovLightLon"), ftostr(lon).c_str(),
+		(const char*)ls("PovLightPower"), ftostr(intsy).c_str(),
+		(const char*)ls("PovLightShadow"), shadowless,
+		(const char*)ls("PovLightSize"), size,
+		(const char*)ls("PovLightGrid"), grid);
 }
-// LPub3D Mod End
 
-// LPub3D Mod - lights
 bool LDPovExporter::writeLights(void)
 {
 	fprintf(m_pPovFile, "// Lights\n");
-	const char* temp = m_povLights.c_str();
-	if (temp != NULL)
+	int num = 0;
+	for (LightList::const_iterator it = m_povLightList.begin(); it != m_povLightList.end(); ++it)
 	{
-		int num = 0;
-		const char* value;
-		char tmpBuf[1024];
-		while (temp[0])
-		{
-			const char *end = strchr(temp, ';');
-			if (end)
-			{
-				int length = (int)(end - temp);
-				strncpy(tmpBuf, temp, length);
-				tmpBuf[length] = 0;
-				if (length)
-				{
-					value = tmpBuf;
-				}
-				temp += length + 1;
-			}
-			else
-			{
-				if (strlen(temp))
-				{
-					value = temp;
-				}
-				temp += strlen(temp);
-			}
-			int     shadow, width, colomns;
-			TCFloat lat, lon, intsy;
-			if (value && sscanf(value, "%d %f %f %f %d %d",
-				&shadow, &lat, &lon, &intsy, &width, &colomns) == 6)
-			{
-				num++;
-				writeLight(num, lat, lon, shadow, intsy, width, colomns);
-			}
-		}
-		return true;
+		num++;
+		const Light& light = *it;
+		writeLight(num, light.latitude, light.longitude, light.shadowless, light.intensity, light.size, light.grid);
 	}
-    return false;
+    return true;
 }
 // LPub3D Mod End
 

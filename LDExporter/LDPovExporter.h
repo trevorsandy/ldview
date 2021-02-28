@@ -8,8 +8,9 @@
 #include <TCFoundation/TCVector.h>
 
 // LPub3D Mod - default lights
-#define POV_LIGHT_01              "0 60.0 -80.0 0.7 200 5"    // 0
-#define POV_LIGHT_02              "0 80.0 60.0 0.3 200 3"     // 1
+// Elements: shadow, longitude, latitude, intensity, size, grid
+#define POV_LIGHT_01 "0 60.0 -80.0 0.7 200 5" // 0
+#define POV_LIGHT_02 "0 80.0  60.0 0.3 200 3" // 1
 #define EXPORT_POV_LIGHTS_DEFAULT POV_LIGHT_01 ";" POV_LIGHT_02
 // LPub3D Mod End
 
@@ -112,6 +113,19 @@ protected:
 		VectorVectorMap normals;
 		size_t smoothPass;
 	};
+	// LPub3D Mod - lights
+	struct Light
+	{
+		bool  shadowless;
+		float longitude;
+		float latitude;
+		float intensity;
+		int   size;
+		int   grid;
+	};
+
+	typedef std::list<Light> LightList;
+	// LPub3D Mod End
 	typedef std::list<Shape> ShapeList;
 	typedef std::map<int, ShapeList> IntShapeListMap;
 	typedef std::vector<SmoothTriangle> SmoothTriangleVector;
@@ -141,7 +155,7 @@ protected:
 	bool writeLights(void);
     // LPub3D Mod - lights
 	void writeLight(int num, TCFloat lat, TCFloat lon, int shadow,
-		TCFloat intsy = 0.0, int width = 0, int columns = 0);
+		TCFloat intsy = 0.0, int size = 0, int grid = 0);
     // LPub3D Mod End
 	bool writeModelObject(LDLModel *pModel, bool mirrored,
 		const TCFloat *matrix, bool inPart);
@@ -228,6 +242,10 @@ protected:
 	void loadXmlColors(TiXmlElement *matrices);
 	std::string loadPovMapping(TiXmlElement *element,
 		const char *ldrawElementName, PovMapping &mapping);
+	// LPub3D Mod - lights
+	void loadLights(const char* povLights);
+	std::string getLightsString(void) const;
+	// LPub3D Mod End
 	void loadPovDependency(TiXmlElement *element, PovMapping &mapping);
 	void loadPovFilenames(TiXmlElement *element, PovMapping &mapping,
 		const std::string &povVersion = std::string());
@@ -340,9 +358,9 @@ protected:
 	std::string m_xmlMapPath;
 	std::string m_topInclude;
 	std::string m_bottomInclude;
-    // LPub3D Mod - lights
-	std::string m_povLights;
-    // LPub3D Mod End
+	// LPub3D Mod - lights
+	LightList m_povLightList;
+	// LPub3D Mod End
 	bool m_inlinePov;
 	bool m_hideStuds;
 	bool m_smoothCurves;
