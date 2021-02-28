@@ -17,6 +17,8 @@
 
 #define GOLD_SCALE (255.0f / 240.0f * 2.0f)
 
+static const TCByte transA = 110;
+
 // LPub3D Mod - stud style
 #define TC_SRGB_TO_LINEAR(v) (powf(v, 2.2f))
 #define TC_LINEAR_TO_SRGB(v) (powf(v, 1.0f / 2.2f))
@@ -153,6 +155,7 @@ static LDLColor getAlgorithmicEdgeColor(const TCVector& Value, const float Value
 // LPub3D Mod End
 
 LDLPalette *LDLPalette::sm_defaultPalette = NULL;
+TCByte LDLPalette::sm_transA = transA;
 LDLPalette::LDLPaletteCleanup LDLPalette::sm_cleanup;
 
 LDLPalette::LDLPaletteCleanup::~LDLPaletteCleanup(void)
@@ -161,7 +164,6 @@ LDLPalette::LDLPaletteCleanup::~LDLPaletteCleanup(void)
 	LDLPalette::sm_defaultPalette = NULL;
 }
 
-static const TCByte transA = 110;
 static const int standardColorSize = 5;
 
 static const char standardColorNames[][64] =

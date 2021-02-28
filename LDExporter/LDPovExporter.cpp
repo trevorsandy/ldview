@@ -3212,6 +3212,7 @@ void LDPovExporter::writeInnerColorDeclaration(
 			double dr = r / 255.0;
 			double dg = g / 255.0;
 			double db = b / 255.0;
+			std::string filter;
 
 			switch (getColorType(colorNumber))
 			{
@@ -3223,6 +3224,7 @@ void LDPovExporter::writeInnerColorDeclaration(
 				dr = alphaMod(r);
 				dg = alphaMod(g);
 				db = alphaMod(b);
+				filter = filterForAlpha(a);
 				break;
 			case CTChrome:
 				macroName = "LDXChromeColor";
@@ -3233,9 +3235,19 @@ void LDPovExporter::writeInnerColorDeclaration(
 			}
 			if (macroName != NULL)
 			{
-				fprintf(m_pPovFile, "#declare LDXColor%d = %s(%s,%s,%s)\n",
-					colorNumber, macroName, ftostr(dr).c_str(),
-					ftostr(dg).c_str(), ftostr(db).c_str());
+				if (filter.empty())
+				{
+					fprintf(m_pPovFile, "#declare LDXColor%d = %s(%s,%s,%s)\n",
+						colorNumber, macroName, ftostr(dr).c_str(),
+						ftostr(dg).c_str(), ftostr(db).c_str());
+				}
+				else
+				{
+					fprintf(m_pPovFile,
+						"#declare LDXColor%d = %s(%s,%s,%s,%s)\n",
+						colorNumber, macroName, ftostr(dr).c_str(),
+						ftostr(dg).c_str(), ftostr(db).c_str(), filter.c_str());
+				}
 				return;
 			}
 		}
@@ -3346,14 +3358,14 @@ void LDPovExporter::writeLDXTransColor(void)
 	if (m_macros.find("LDXTransColor") == m_macros.end())
 	{
 		fprintf(m_pPovFile, "#ifndef (LDXSkipTransColorMacro)\n");
-		fprintf(m_pPovFile, "#macro LDXTransColor(r, g, b)\n");
+		fprintf(m_pPovFile, "#macro LDXTransColor(r, g, b, f)\n");
 		fprintf(m_pPovFile, "#if (version >= 3.1) material { #end\n");
 		fprintf(m_pPovFile, "	texture {\n");
 		fprintf(m_pPovFile, "#if (version >= 3.7)\n");
-		fprintf(m_pPovFile, "		pigment { #if (LDXQual > 1) srgbf <r,g,b,LDXTFilt>"
+		fprintf(m_pPovFile, "		pigment { #if (LDXQual > 1) srgbf <r,g,b,f>"
 				" #else srgbf <0.6,0.6,0.6,0> #end }\n");
 		fprintf(m_pPovFile, "#else\n");
-		fprintf(m_pPovFile, "		pigment { #if (LDXQual > 1) rgbf <r,g,b,LDXTFilt>"
+		fprintf(m_pPovFile, "		pigment { #if (LDXQual > 1) rgbf <r,g,b,f>"
 				" #else rgbf <0.6,0.6,0.6,0> #end }\n");
 		fprintf(m_pPovFile, "#end\n");
 		fprintf(m_pPovFile, "#if (LDXQual > 1)\n");
@@ -3494,9 +3506,12 @@ void LDPovExporter::writeColorDeclaration(int colorNumber)
 	}
 }
 
-// Note: static function
 double LDPovExporter::alphaMod(int color)
 {
+	if (fEq(m_fileVersion, 3.7) || m_fileVersion > 3.7)
+	{
+		return color / 255.0;
+	}
 	if (color > 127)
 	{
 		return (255.0 - ((255.0 - color) * .1)) / 255.0;
@@ -3508,14 +3523,31 @@ double LDPovExporter::alphaMod(int color)
 	}
 }
 
+// Note: static function
+std::string LDPovExporter::filterForAlpha(int alpha)
+{
+	if (alpha == 255)
+	{
+		return "0";
+	}
+	else if (alpha == LDLPalette::getTransA())
+	{
+		return "LDXTFilt";
+	}
+	else
+	{
+		double filter = 1.0 - alpha / 255.0;
+		return ftostr(filter);
+	}
+}
+
 void LDPovExporter::writeRGBA(int r, int g, int b, int a)
 {
-	const char *filter = "0";
+	std::string filter = filterForAlpha(a);
 	double dr, dg, db;
 
 	if (a != 255)
 	{
-		filter = "LDXTFilt";
 		dr = alphaMod(r);
 		dg = alphaMod(g);
 		db = alphaMod(b);
@@ -3528,10 +3560,10 @@ void LDPovExporter::writeRGBA(int r, int g, int b, int a)
 	}
 	fprintf(m_pPovFile, "#if (version >= 3.7)\n");
 	fprintf(m_pPovFile, "srgbf <%s,%s,%s,%s>", ftostr(dr).c_str(),
-		ftostr(dg).c_str(), ftostr(db).c_str(), filter);
+		ftostr(dg).c_str(), ftostr(db).c_str(), filter.c_str());
 	fprintf(m_pPovFile, "#else\n");
 	fprintf(m_pPovFile, "rgbf <%s,%s,%s,%s>", ftostr(dr).c_str(),
-		ftostr(dg).c_str(), ftostr(db).c_str(), filter);
+		ftostr(dg).c_str(), ftostr(db).c_str(), filter.c_str());
 	fprintf(m_pPovFile, "#end\n");
 }
 
