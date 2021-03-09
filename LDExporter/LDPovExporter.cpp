@@ -304,7 +304,9 @@ void LDPovExporter::loadSettings(void)
 	m_selectedAspectRatio = longForKey("SelectedAspectRatio", -1);
 	m_customAspectRatio = floatForKey("CustomAspectRatio", 1.5f);
 	m_edgeRadius = floatForKey("EdgeRadius", 0.15f);
-	m_ambient = floatForKey("Ambient", 0.4f);
+	// LPub3D Mod - reduce ambient light
+	m_ambient = floatForKey("Ambient", 0.2f);
+	// LPub3D Mod End
 	m_diffuse = floatForKey("Diffuse", 0.4f);
 	m_refl = floatForKey("Refl", 0.08f);
 	m_phong = floatForKey("Phong", 0.5f);
@@ -1779,17 +1781,12 @@ void LDPovExporter::writeGlobalSettings(void)
 	fprintf(m_pPovFile, "\n");
 
 	fprintf(m_pPovFile,
-		"#include \"rad_def.inc\"\n"
-		"\n"
 		"#ifndef (LDXSkipGlobalSettings)\n"
 		"  #if (version >= 3.7)\n"
 		"    global_settings {\n"
 		"      assumed_gamma 1.0\n"
 		"      adc_bailout 0.01/2\n"
 		"      max_trace_level 10\n"
-		"      radiosity {\n"
-		"	     Rad_Settings(Radiosity_Final, on, off)\n"
-		"	   }\n"
 		"    }\n"
 		"  #end\n"
 		"#end\n\n");
