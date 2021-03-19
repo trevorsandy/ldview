@@ -523,7 +523,7 @@ void LDLPalette::initStudStyleSettings()
 		edgeColorNumber, (-25500.0f / 255.0f));
 	if (colorInfo)
 	{
-		char *name = "Stud Cylinder Colour";
+		const char *name = "Stud Cylinder Colour";
 		strncpy(colorInfo->name, name, sizeof(colorInfo->name));
 		colorInfo->name[sizeof(colorInfo->name) - 1] = 0;
 		m_namesMap[name] = 4242;
