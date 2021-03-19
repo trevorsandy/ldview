@@ -1,10 +1,11 @@
 language: cpp
-sudo: required
+
+os: linux
+
 dist: trusty
-cache: ccache
 
 git:
-  depth: 200
+  depth: false
 
 branches:
   only:
@@ -19,21 +20,24 @@ addons:
     - libjpeg-dev
 
 cache:
+  ccache: true
   directories:
   - ${HOME}/ldraw
   - ${HOME}/Library/ldraw
 
-matrix:
+jobs:
   fast_finish: true
   include:
   - os: linux
+    dist: bionic
     compiler: gcc
     env:
-     - QT_BASE=59
+     - QT_BASE=515
   - os: osx
+    osx_image: xcode11.3
     compiler: clang
     env:
-     - QT_BASE=59
+     - QT_BASE=515
 
 before_install:
   # Skip build if the commit message contains [skip travis] or [travis skip]
@@ -59,14 +63,7 @@ before_install:
       && export LDV_BUILD_PKG=yes
       && export LDV_DEPLOY_PKG=yes || true
   # Add private qt repositories
-  - if [[ "$QT_BASE" = "52" && "$TRAVIS_OS_NAME" = "linux" ]]; then sudo add-apt-repository ppa:beineri/opt-qt521-trusty -y; fi
-  - if [[ "$QT_BASE" = "53" && "$TRAVIS_OS_NAME" = "linux" ]]; then sudo add-apt-repository ppa:beineri/opt-qt532-trusty -y; fi
-  - if [[ "$QT_BASE" = "54" && "$TRAVIS_OS_NAME" = "linux" ]]; then sudo add-apt-repository ppa:beineri/opt-qt542-trusty -y; fi
-  - if [[ "$QT_BASE" = "55" && "$TRAVIS_OS_NAME" = "linux" ]]; then sudo add-apt-repository ppa:beineri/opt-qt551-trusty -y; fi
-  - if [[ "$QT_BASE" = "56" && "$TRAVIS_OS_NAME" = "linux" ]]; then sudo add-apt-repository ppa:beineri/opt-qt562-trusty -y; fi
-  - if [[ "$QT_BASE" = "57" && "$TRAVIS_OS_NAME" = "linux" ]]; then sudo add-apt-repository ppa:beineri/opt-qt571-trusty -y; fi
-  - if [[ "$QT_BASE" = "58" && "$TRAVIS_OS_NAME" = "linux" ]]; then sudo add-apt-repository ppa:beineri/opt-qt58-trusty  -y; fi
-  - if [[ "$QT_BASE" = "59" && "$TRAVIS_OS_NAME" = "linux" ]]; then sudo add-apt-repository ppa:beineri/opt-qt593-trusty -y; fi
+  - if [[ "$QT_BASE" = "515" && "$TRAVIS_OS_NAME" = "linux" ]]; then sudo add-apt-repository ppa:beineri/opt-qt-5.15.2-$TRAVIS_DIST -y; fi
   # Update repository index and download package dependencies/docker-engine if required
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then
       sudo apt-get update -qq; 
@@ -74,7 +71,6 @@ before_install:
       export LDV_DIST_DIR=lpub3d_linux_3rdparty;
       export LDRAWDIR=${HOME}/ldraw;
     else
-      brew update;
       brew install ccache tinyxml gl2ps libjpeg minizip;
       export PATH="/usr/local/opt/ccache/libexec:$PATH";
       export LDV_DIST_DIR=lpub3d_macos_3rdparty;
@@ -83,23 +79,11 @@ before_install:
 
 install:
   # Install qt5 on Linux
-  - if [[ "$QT_BASE" = "52" && "$TRAVIS_OS_NAME" = "linux" ]]; then sudo apt-get install -qq qt52base; source /opt/qt52/bin/qt52-env.sh; fi
-  - if [[ "$QT_BASE" = "53" && "$TRAVIS_OS_NAME" = "linux" ]]; then sudo apt-get install -qq qt53base; source /opt/qt53/bin/qt53-env.sh; fi
-  - if [[ "$QT_BASE" = "54" && "$TRAVIS_OS_NAME" = "linux" ]]; then sudo apt-get install -qq qt54base; source /opt/qt54/bin/qt54-env.sh; fi
-  - if [[ "$QT_BASE" = "55" && "$TRAVIS_OS_NAME" = "linux" ]]; then sudo apt-get install -qq qt55base; source /opt/qt55/bin/qt55-env.sh; fi
-  - if [[ "$QT_BASE" = "56" && "$TRAVIS_OS_NAME" = "linux" ]]; then sudo apt-get install -qq qt56base; source /opt/qt56/bin/qt56-env.sh; fi
-  - if [[ "$QT_BASE" = "57" && "$TRAVIS_OS_NAME" = "linux" ]]; then sudo apt-get install -qq qt57base; source /opt/qt57/bin/qt57-env.sh; fi
-  - if [[ "$QT_BASE" = "58" && "$TRAVIS_OS_NAME" = "linux" ]]; then sudo apt-get install -qq qt58base; source /opt/qt58/bin/qt58-env.sh; fi
-  - if [[ "$QT_BASE" = "59" && "$TRAVIS_OS_NAME" = "linux" ]]; then sudo apt-get install -qq qt59base; source /opt/qt59/bin/qt59-env.sh; fi
+  - if [[ "$QT_BASE" = "515" && "$TRAVIS_OS_NAME" = "linux" ]]; then sudo apt-get install -qq qt${QT_BASE}base; source /opt/qt${QT_BASE}/bin/qt${QT_BASE}-env.sh; fi
   # Install qt5 on MacOS, clone lpub3d_macos_3rd party repository and download LDraw library archive files
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then
-      if [ "$QT_BASE" = "55" ]; then
-        brew install qt55;
-        brew link --force qt55;
-      else
-        brew install qt5;
-        brew link --force qt5;
-      fi;
+      brew install qt5;
+      brew link --force qt5;
     fi
   # Install ldraw library
   - if [ ! -d ${LDRAWDIR}/parts ]; then
@@ -134,14 +118,15 @@ before_deploy:
 
 deploy:
   provider: releases
-  api_key:
+  token:
     secure: 7Rd6ucWhoORZo5v3kjilzCH7GWpA+ncVmyskqdjFoIqFa+VECyeSLJdOLZIZxZYTdqSHkvgRNxmUMZJI2rGFdkbEcGJ9BMRls4ClKL1OA5TU9ZAGIrbpG2Rl+lwmmqfBSupjAOSAabL5fn8NuxOqDyjjmHChZPPIdJwnP/dt3DaW0bbWnFvOCOVRbQx/cydJ31VFwXrTyqdVHbM2J3HgXEqqzEnuMZMht39983SZM2uzf7JcqyRfKC5YW87ykGGB3BmE0tQBsrLQSDJlcOskqVheIuqkOOG81ci1cz62vskVuWAEZd/hlZ8luAm/7VkMQO1KvuxKBRqDfDZb5DCJ2nIh2fN7dO3jirrFXQiEILAa823qPpCIonI+TZOyfqsnNZLTlglZ62rtcXH/7Tj+nQfC7WX057lT7bTxgf1epkPYyIdXpiqPFUhHXHSbEnDfDgvoBeGGgUcriM1GkIXBvpw0dk5IdRj7r7sda3T9ZoFMaYuk48WfBmVqoRYjFOfCoAPV3a654EvRA6cIKdLn5yFlK+z1geUb6FiVyPKTi6MXpCVDe99/qqxSMwm6nQtRfXp8PM/pkZmO8rSh88bH5ql0Jh8mfPPxQkDL0wz/tLh54szBj0mTi0/AKzYHkeO/EUkkp+Jtl9pU5VZUBtTzheFZsa+nBwUcGwPPhIgUwzw=
   file: ${LDV_DIST_DIR}.tar.gz
   overwrite: true
   name: ${LDV_DIST_DIR}
-  body: 'LDView - `uname` archive package of LPub3D image renderer'
+  release_notes: 'LDView - `uname` archive package of LPub3D image renderer'
   prerelease: true
-  skip_cleanup: true
+  cleanup: false
+  edge: true  # opt in to dpl v2
   on:
     repo: trevorsandy/ldview
     branch: qmake-build
