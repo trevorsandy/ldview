@@ -3,12 +3,12 @@
 ######################################################################
 
 TEMPLATE         = app
-QT  		-= core
+QT  		    -= core
 QT              -= opengl
-QT  		-= gui
-CONFIG		-= qt
-CONFIG		-= opengl
-CONFIG		+= warn_on
+QT  		    -= gui
+CONFIG		    -= qt
+CONFIG		    -= opengl
+CONFIG		    += warn_on
 win32: CONFIG   += console
 macx:  CONFIG   -= app_bundle
 
@@ -19,13 +19,23 @@ include(../LDViewGlobal.pri)
 
 message("~~~ LGEOTables MODULE $$BUILD ~~~")
 
-TARGET      = LGEOTables
+TARGET          = LGEOTables
 
-INCLUDEPATH = $${TINYXML_INC}
+INCLUDEPATH     = . .. $${TINYXML_INC}
+        
+LIBDIRS         = -L../TCFoundation/$$DESTDIR
 
-DEFINES 	 += TIXML_USE_STL
+LIBDIRS        += -L../LDLoader/$$DESTDIR
+               
+LDLIBS          = ../TCFoundation/$$DESTDIR/libTCFoundation$${POSTFIX}.a
 
-LIBS       += $${TINYXML_LIBDIR} -ltinyxml
+LDLIBS         += ../LDLoader/$$DESTDIR/libLDLoader$${POSTFIX}.a
+               
+DEFINES        += TIXML_USE_STL
+               
+LIBS           += $${LDLIBS} $${LIBDIRS} $${TINYXML_LIBDIR} -ltinyxml
+
+PRE_TARGETDEPS += $${LDLIBS}
 
 # Input
-SOURCES    += LGEOTables.cpp
+SOURCES        += LGEOTables.cpp

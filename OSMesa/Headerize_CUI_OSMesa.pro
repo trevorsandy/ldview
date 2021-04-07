@@ -3,12 +3,12 @@
 ######################################################################
 
 TEMPLATE         = app
-QT  		        -= core
+QT              -= core
 QT              -= opengl
-QT  		        -= gui
-CONFIG		      -= qt
-CONFIG		      -= opengl
-CONFIG		      += warn_on
+QT              -= gui
+CONFIG          -= qt
+CONFIG          -= opengl
+CONFIG          += warn_on
 win32: CONFIG   += console
 macx:  CONFIG   -= app_bundle
 
@@ -21,13 +21,16 @@ message("~~~ Headerize $$BUILD BUILD ~~~")
 
 TARGET          = Headerize
 
+INCLUDEPATH     = . ..
+
 LIBDIRS         = -L../TCFoundation/$$DESTDIR
 
 LDLIBS          = ../TCFoundation/$$DESTDIR/libTCFoundation$${POSTFIX}.a
 
 LIBDIRS        += $${JPEG_LIBDIR} $${PNG_LIBDIR} $${ZLIB_LIBDIR}
 
-LIBS 	         += $${LDLIBS} $${LIBDIRS} -lTCFoundation$${POSTFIX} -l$${LIB_JPEG} -l$${LIB_PNG} -l$${LIB_Z}
+LIBS           += $${LDLIBS} $${LIBDIRS} -lTCFoundation$${POSTFIX} -l$${LIB_JPEG} -l$${LIB_PNG} -l$${LIB_Z}
+
 PRE_TARGETDEPS += $${LDLIBS}
 
 # Input
