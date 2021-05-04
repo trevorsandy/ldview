@@ -1,8 +1,19 @@
-language: cpp
+# Build and check LPub3D on Linux and macOS
+# Trevor SANDY <trevor.sandy@gmail.com>
+# Last Update: May 04, 2021
+# Copyright (c) 2017 - 2021 by Trevor SANDY
+#
+
+# The following variables can be set to true from
+# Travis-CI Site->More Options->Settings->Environment Variables
+#
+# LDV_SKIP_TRAVIS_VAR     ; skip Travis-CI build 
 
 os: linux
 
-dist: trusty
+dist: xenial
+
+language: cpp
 
 git:
   depth: false
@@ -46,8 +57,8 @@ before_install:
       echo "$TRAVIS_COMMIT_MESSAGE" | awk '{print tolower($0)}' | \
       grep -E '\[(skip travis|travis skip)\]' \
       && echo "[skip travis] detected, exiting." \
-      && exit 0 || [ "$LP3D_SKIP_TRAVIS_VAR" = "true" ] \
-      && echo "'Skip Travis-CI' detected in environment variable." \
+      && exit 0 || [ "$LDV_SKIP_TRAVIS_VAR" = "true" ] \
+      && echo "'Skip Travis-CI' build detected in environment variable." \
       && exit 0 || true
   # Build package if commit message contains [build pkg]
   - >

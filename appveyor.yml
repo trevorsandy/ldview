@@ -1,3 +1,14 @@
+# Build and check LPub3D x86 and x86_64 architectures unsing Qt/MinGW/VS2017 platforms
+# Trevor SANDY <trevor.sandy@gmail.com>
+# Last Update: May 04, 2021
+# Copyright (c) 2017 - 2021 by Trevor SANDY
+#
+
+# The following variables can be set to true from
+# AppVeyor Site->Project->Settings->Environment Variables
+#
+# LDV_SKIP_APPVEYOR_VAR     ; skip AppVeyor build
+
 # Build and check LDView x86 and x86_64 architectures unsing MSBuild
 version: LDView-AV-4.4.0.{build}
 
@@ -29,8 +40,8 @@ environment:
 
 init:
  - ps: |
-      If ($env:LP3D_SKIP_APPVEYOR_VAR -eq "true") {
-         write-host "Exit build detected."
+      If ($env:LDV_SKIP_APPVEYOR_VAR -eq "true") {
+         write-host "Skip Appveyor build detected in environment variable."
          Exit-AppveyorBuild
       }
  - ps: write-host "Building LDView x86 and x86_64 architectures..."
