@@ -224,31 +224,54 @@ USE_OSMESA_STATIC {
     }
 }
 
-LIBS               += $${LDLIBS} $${LIBDIRS} $${LIBS_DIR} $${_LIBS} $${LIBS_}
+LIBS += $${LDLIBS} $${LIBDIRS} $${LIBS_DIR} $${_LIBS} $${LIBS_}
 
-ini.target = LDViewMessages.ini
-ini.depends = $$_PRO_FILE_PWD_/../LDViewMessages.ini $$_PRO_FILE_PWD_/../LDExporter/LDExportMessages.ini
-ini.commands = cat $$_PRO_FILE_PWD_/../LDViewMessages.ini $$_PRO_FILE_PWD_/../LDExporter/LDExportMessages.ini > $$_PRO_FILE_PWD_/LDViewMessages.ini
-
-!equals(PWD, $${OUT_PWD}) {
-    message("~~~ YESSIR!, shadow building ~~~")
-    ldviewmessages_commands = ./$$DESTDIR/Headerize $$_PRO_FILE_PWD_/LDViewMessages.ini; mv LDViewMessages.h $$_PRO_FILE_PWD_/LDViewMessages.h
-    studlogo_commands = ./$$DESTDIR/Headerize $$_PRO_FILE_PWD_/../Textures/StudLogo.png; mv StudLogo.h $$_PRO_FILE_PWD_/StudLogo.h
+LDV_MESSAGES = $$system_path( $$absolute_path( $$_PRO_FILE_PWD_/../LDViewMessages.ini ))
+LDV_EXP_MESSAGES = $$system_path( $$absolute_path( $$_PRO_FILE_PWD_/../LDExporter/LDExportMessages.ini ))
+LDV_CONCAT_MESSAGES = $$_PRO_FILE_PWD_/LDViewMessages.ini
+exists($$LDV_MESSAGES) {
+    message("~~~ MESSAGES LDViewMessages found at $$LDV_MESSAGES ~~~")
+    exists($$LDV_EXP_MESSAGES) {
+        message("~~~ MESSAGES LDExportMessages found at $$LDV_EXP_MESSAGES ~~~")
+        LDV_MESSAGES_CMD = cat $$LDV_MESSAGES $$LDV_EXP_MESSAGES > $$LDV_CONCAT_MESSAGES
+        # message("~~~ LDV_MESSAGES_CMD $$LDV_MESSAGES_CMD ~~~")
+        BUILD_FLATPAK {
+            system( $$LDV_MESSAGES_CMD )
+            exists($$LDV_CONCAT_MESSAGES): message("~~~ MESSAGES $$LDV_CONCAT_MESSAGES concatenated ~~~")
+            else: message("~~~ ERROR $$LDV_CONCAT_MESSAGES was not concatenated ~~~")
+        } else {
+            ini.target = LDViewMessages.ini
+            ini.depends = $$LDV_MESSAGES $$LDV_EXP_MESSAGES
+            ini.commands = $$LDV_MESSAGES_CMD
+            QMAKE_EXTRA_TARGETS += ini
+        }
+    } else {
+        message("~~~ ERROR $$LDV_EXP_MESSAGES was not found ~~~")
+    }
 } else {
-    message("~~~ NOSIR! not shadow building ~~~")
-    ldviewmessages_commands = ./$$DESTDIR/Headerize $$_PRO_FILE_PWD_/LDViewMessages.ini
-    studlogo_commands = ./$$DESTDIR/Headerize $$_PRO_FILE_PWD_/../Textures/StudLogo.png
+    message("~~~ ERROR $$LDV_MESSAGES was not found ~~~")
 }
 
-ldviewmessages.target = LDViewMessages.h
-ldviewmessages.depends = $$DESTDIR/Headerize $$_PRO_FILE_PWD_/LDViewMessages.ini
-ldviewmessages.commands = $$ldviewmessages_commands
+LDV_STUD_LOGO_TEXTURE = $$_PRO_FILE_PWD_/../Textures/StudLogo.png
+!equals(PWD, $${OUT_PWD}) {
+    message("~~~ YESSIR! Shadow building ~~~")
+    ldviewmessages_commands = ./$$DESTDIR/Headerize $$LDV_CONCAT_MESSAGES; mv LDViewMessages.h $$_PRO_FILE_PWD_/LDViewMessages.h
+    studlogo_commands = ./$$DESTDIR/Headerize $$LDV_STUD_LOGO_TEXTURE; mv StudLogo.h $$_PRO_FILE_PWD_/StudLogo.h
+} else {
+    message("~~~ NOSIR! Not shadow building ~~~")
+    ldviewmessages_commands = ./$$DESTDIR/Headerize $$LDV_CONCAT_MESSAGES
+    studlogo_commands = ./$$DESTDIR/Headerize $$LDV_STUD_LOGO_TEXTURE
+}
 
 studlogo.target = StudLogo.h
-studlogo.depends = $$DESTDIR/Headerize $$_PRO_FILE_PWD_/../Textures/StudLogo.png
+studlogo.depends = $$DESTDIR/Headerize $$LDV_STUD_LOGO_TEXTURE
 studlogo.commands = $$studlogo_commands
 
-QMAKE_EXTRA_TARGETS += ini ldviewmessages studlogo
+ldviewmessages.target = LDViewMessages.h
+ldviewmessages.depends = $$DESTDIR/Headerize $$LDV_CONCAT_MESSAGES
+ldviewmessages.commands = $$ldviewmessages_commands
+
+QMAKE_EXTRA_TARGETS += studlogo ldviewmessages
 PRE_TARGETDEPS += LDViewMessages.ini LDViewMessages.h StudLogo.h
 
 # tests on unix (linux OSX)

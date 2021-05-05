@@ -72,6 +72,8 @@ macx:HOST = $$system(echo `sw_vers -productName` `sw_vers -productVersion`)
 isEmpty(HOST):HOST = UNKNOWN HOST
 
 # qmake Configuration settings
+# CONFIG+=BUILD_CHECK
+# CONFIG+=BUILD_FLATPAK
 # CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_linux_3rdparty
 # CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_macos_3rdparty
 # CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_windows_3rdparty

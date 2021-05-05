@@ -1,5 +1,6 @@
 # qmake Configuration settings
 # CONFIG+=BUILD_CHECK
+# CONFIG+=BUILD_FLATPAK
 # CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_linux_3rdparty
 # CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_macos_3rdparty
 # CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_windows_3rdparty
@@ -30,7 +31,7 @@ isEmpty(HOST):HOST = UNKNOWN HOST
 !isEmpty(3RD_ARG): CONFIG -= $$3RD_ARG
 CONFIG += $$section(3RD_ARG, =, 0, 0)
 isEmpty(3RD_PREFIX): 3RD_PREFIX = $$_PRO_FILE_PWD_/$$section(3RD_ARG, =, 1, 1)
-!exists($${3RD_PREFIX}): message("~~~ ERROR - 3rd party repository path not found ~~~")
+!exists($${3RD_PREFIX}): !BUILD_FLATPAK: message("~~~ ERROR - 3rd party repository path not found ~~~")
 
 # same more funky stuff to get the local library prefix - all this just to build on OBS' RHEL
 OSMESA_ARG = $$find(CONFIG, USE_OSMESA_LOCAL.*)
