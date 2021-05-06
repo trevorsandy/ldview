@@ -54,22 +54,19 @@ before_install:
   # Skip build if the commit message contains [skip travis] or [travis skip]
   # or environment variable LP3D_SKIP_TRAVIS_VAR is true
   - >
-      echo "$TRAVIS_COMMIT_MESSAGE" | awk '{print tolower($0)}' | \
-      grep -E '\[(skip travis|travis skip)\]' \
-      && echo "[skip travis] detected, exiting." \
-      && exit 0 || [ "$LDV_SKIP_TRAVIS_VAR" = "true" ] \
-      && echo "'Skip Travis-CI' build detected in environment variable." \
+      echo "$TRAVIS_COMMIT_MESSAGE" | awk '{print tolower($0)}' | grep -E '\[(skip travis|travis skip)\]'
+      && echo "[skip travis] detected, exiting."
+      && exit 0 || [ "$LDV_SKIP_TRAVIS_VAR" = "true" ]
+      && echo "'Skip Travis-CI' build detected in environment variable, exiting."
       && exit 0 || true
   # Build package if commit message contains [build pkg]
   - >
-      echo "$TRAVIS_COMMIT_MESSAGE"
-      | grep -E  '\[build pkg\]'
+      echo "$TRAVIS_COMMIT_MESSAGE" | awk '{print tolower($0)}' | grep -E '\[build pkg.*\]'
       && echo "[build pkg] detected."
       && export LDV_BUILD_PKG=yes || true
   # Build and deploy package if commit message contains [deploy pkg]
   - >
-      echo "$TRAVIS_COMMIT_MESSAGE"
-      | grep -E  '\[deploy pkg\]'
+      echo "$TRAVIS_COMMIT_MESSAGE" | awk '{print tolower($0)}' | grep -E '\[deploy pkg\]'
       && echo "[deploy pkg] detected."
       && export LDV_BUILD_PKG=yes
       && export LDV_DEPLOY_PKG=yes || true
