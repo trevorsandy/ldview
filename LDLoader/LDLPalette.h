@@ -5,7 +5,7 @@
 #include <TCFoundation/TCTypedObjectArray.h>
 #include <TCFoundation/TCStlIncludes.h>
 
-typedef std::map<std::string, int, less_no_case> StringIntMap;
+typedef std::map<std::string, int, less_no_case> CIStringIntMap;
 
 typedef struct
 {
@@ -91,7 +91,7 @@ protected:
 
 	LDLColorInfo m_colors[512];
 	TCTypedObjectArray<CustomColor> *m_customColors;
-	StringIntMap m_namesMap;
+	CIStringIntMap m_namesMap;
 
 	// LPub3D Mod - stud style
 	void initStudStyleSettings(void);
