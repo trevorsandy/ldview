@@ -386,7 +386,9 @@
 #define IDC_X                           1310
 #define IDC_Y                           1311
 #define IDC_Z                           1312
-#define IDC_STUD_STYLE_LABLE            1313
+#define IDC_LOOKATORIGIN_CHECK          1313
+#define IDC_LOOKATMODEL_CHECK           1314
+#define IDC_STUD_STYLE_LABLE            1315
 #define PRINTDLGORD                     1538
 #define PAGESETUPDLGORD                 1546
 #define IDD_PRIMITIVES_PREFS            1547
@@ -493,7 +495,7 @@
 #define _APS_3D_CONTROLS                1
 #define _APS_NEXT_RESOURCE_VALUE        548
 #define _APS_NEXT_COMMAND_VALUE         40120
-#define _APS_NEXT_CONTROL_VALUE         1314
+#define _APS_NEXT_CONTROL_VALUE         1316
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
