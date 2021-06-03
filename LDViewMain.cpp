@@ -32,6 +32,8 @@
 #define new DEBUG_CLIENTBLOCK
 #endif
 
+static bool debugToFile = false;
+
 typedef BOOL (__stdcall *PFNATTACHCONSOLE)(DWORD dwProcessId);
 typedef HRESULT (__stdcall *PFNDLLREGISTERSERVER)(void);
 
@@ -91,9 +93,12 @@ bool isScreenSaver(void)
 	return retVal;
 }
 
-void debugOut(char * /*fmt*/, ...)
+void debugOut(char *fmt, ...)
 {
-/*
+	if (!debugToFile)
+	{
+		return;
+	}
 	static const char* userProfile = getenv("USERPROFILE");
 	std::string debugPath = "C:\\LDViewDebug.txt";
 	if (userProfile != NULL)
@@ -117,7 +122,6 @@ void debugOut(char * /*fmt*/, ...)
 		va_end(marker);
 		fclose(debugFile);
 	}
-*/
 }
 
 int mainLoop()
@@ -419,6 +423,7 @@ static bool setupUserDefaults(
 	bool retValue = true;
 
 	TCUserDefaults::setCommandLine(lpCmdLine);
+	debugToFile = TCUserDefaults::boolForKey("DebugToFile", false, false);
 	std::string haveStdOut =
 		TCUserDefaults::commandLineStringForKey("HaveStdOut");
 	if (!haveStdOut.empty())
@@ -572,6 +577,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/,
 	ucstringtoutf8(utf8CmdLine, lpCmdLine);
 	bool udok = setupUserDefaults(utf8CmdLine.c_str(), screenSaver,
 		isRemovableDrive(hInstance));
+	debugOut("Command Line: <<%ls>>\n", lpCmdLine);
 #ifdef _DEBUG
 	int _debugFlag = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
 	_debugFlag |= _CRTDBG_LEAK_CHECK_DF;
