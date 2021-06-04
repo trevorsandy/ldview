@@ -12,6 +12,7 @@ xcuserdata
 LDView.aps
 debian
 ipch
+/.vs/**
 LDView.pro.user
 Makefile
 .qmake.stash
