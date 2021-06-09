@@ -8,8 +8,8 @@ rem LDView distributions and package the build contents (exe, doc and
 rem resources ) as LPub3D 3rd Party components.
 rem --
 rem  Trevor SANDY <trevor.sandy@gmail.com>
-rem  Last Update: July 18, 2020
-rem  Copyright (c) 2020 by Trevor SANDY
+rem  Last Update: June 10, 2021
+rem  Copyright (c) 2020 - 2021 by Trevor SANDY
 rem --
 rem This script is distributed in the hope that it will be useful,
 rem but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -36,7 +36,13 @@ IF "%APPVEYOR%" EQU "True" (
   SET LDRAW_DIR=%USERPROFILE%\LDraw
   SET DIST_DIR=..\lpub3d_windows_3rdparty
 )
-SET LP3D_VCVARSALL=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build
+rem Visual C++ 2012 -vcvars_ver=11.0
+rem Visual C++ 2013 -vcvars_ver=12.0
+rem Visual C++ 2015 -vcvars_ver=14.0
+rem Visual C++ 2017 -vcvars_ver=14.1
+rem Visual C++ 2019 -vcvars_ver=14.2
+SET LP3D_VCVARSALL=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build
+SET LP3D_VCVARSALL_VER=-vcvars_ver=14.2
 SET INI_POV_FILE=%PWD%\OSMesa\ldviewPOV.ini
 SET zipWin64=C:\program files\7-zip
 SET OfficialCONTENT=complete.zip
@@ -233,13 +239,14 @@ GOTO :END
 :CONFIGURE_BUILD_ENV
 ECHO.
 ECHO -Configure %PACKAGE% %PLATFORM% build environment...
+rem Set vcvars for AppVeyor or local build environments
 IF "%PATH_PREPENDED%" NEQ "True" (
   IF %PLATFORM% EQU Win32 (
     ECHO.
-    CALL "%LP3D_VCVARSALL%\vcvars32.bat" -vcvars_ver=14.0
+    CALL "%LP3D_VCVARSALL%\vcvars32.bat" %LP3D_VCVARSALL_VER%
   ) ELSE (
     ECHO.
-    CALL "%LP3D_VCVARSALL%\vcvars64.bat" -vcvars_ver=14.0
+    CALL "%LP3D_VCVARSALL%\vcvars64.bat" %LP3D_VCVARSALL_VER%
   )
   rem Display MSVC Compiler settings
   echo _MSC_VER > %TEMP%\settings.c

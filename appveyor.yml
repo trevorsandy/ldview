@@ -1,6 +1,6 @@
 # Build and check LPub3D x86 and x86_64 architectures unsing Qt/MinGW/VS2017 platforms
 # Trevor SANDY <trevor.sandy@gmail.com>
-# Last Update: May 04, 2021
+# Last Update: June 09, 2021
 # Copyright (c) 2017 - 2021 by Trevor SANDY
 #
 
@@ -23,7 +23,7 @@ branches:
   only:
    - qmake-build
 
-image: Visual Studio 2017
+image: Visual Studio 2019
 
 skip_commits:
   files:
@@ -35,8 +35,8 @@ matrix:
   fast_finish: true
 
 environment:
-  LP3D_DIST_DIR: lpub3d_windows_3rdparty
-  LP3D_DIST_DIR_PATH: $(APPVEYOR_BUILD_FOLDER)\$(LP3D_DIST_DIR)
+  LP3D_3RD_DIST_DIR: lpub3d_windows_3rdparty
+  LP3D_DIST_DIR_PATH: $(APPVEYOR_BUILD_FOLDER)\$(LP3D_3RD_DIST_DIR)
 
 init:
  - ps: |
@@ -75,9 +75,9 @@ test: off
 after_build:
  - ps: |
       If (($env:LDV_BUILD_PKG -eq "yes") -and ([int]$env:LDV_ARTEFACT_ITEM_COUNT -gt 5)) {
-        cd $env:APPVEYOR_BUILD_FOLDER; write-host "Creating zip archive artefact from ./$env:LP3D_DIST_DIR..."
-        7z a -tzip $env:LP3D_DIST_DIR $env:LP3D_DIST_DIR | Select-String -Pattern '(^Creating)|(^Everything)' -CaseSensitive; write-host "Zip archive $env:LP3D_DIST_DIR.zip created."
-        $root = Resolve-Path $env:APPVEYOR_BUILD_FOLDER; [IO.Directory]::GetFiles($root.Path, '*.zip', 'TopDirectoryOnly') | % { Push-AppveyorArtifact $_ -Type zip -FileName $_.Substring($root.Path.Length + 1) -DeploymentName $env:LP3D_DIST_DIR}
+        cd $env:APPVEYOR_BUILD_FOLDER; write-host "Creating zip archive artefact from ./$env:LP3D_3RD_DIST_DIR..."
+        7z a -tzip $env:LP3D_3RD_DIST_DIR $env:LP3D_3RD_DIST_DIR | Select-String -Pattern '(^Creating)|(^Everything)' -CaseSensitive; write-host "Zip archive $env:LP3D_3RD_DIST_DIR.zip created."
+        $root = Resolve-Path $env:APPVEYOR_BUILD_FOLDER; [IO.Directory]::GetFiles($root.Path, '*.zip', 'TopDirectoryOnly') | % { Push-AppveyorArtifact $_ -Type zip -FileName $_.Substring($root.Path.Length + 1) -DeploymentName $env:LP3D_3RD_DIST_DIR}
       }
 
 deploy:
@@ -86,8 +86,8 @@ deploy:
    description: 'LDView - Windows archive package of LPub3D image renderer'
    auth_token:
      secure: rnf4qpF81ISjm8q13OgkAaoKZReXpjODhU9fbGFMhMydHrda1ezLubGXRU9OKGu4
-   release: $(LP3D_DIST_DIR)
-   artifact: $(LP3D_DIST_DIR).zip
+   release: $(LP3D_3RD_DIST_DIR)
+   artifact: $(LP3D_3RD_DIST_DIR).zip
    prerelease: true
    force_update: true
    on:
