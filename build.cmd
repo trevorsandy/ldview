@@ -8,7 +8,7 @@ rem LDView distributions and package the build contents (exe, doc and
 rem resources ) as LPub3D 3rd Party components.
 rem --
 rem  Trevor SANDY <trevor.sandy@gmail.com>
-rem  Last Update: June 10, 2021
+rem  Last Update: June 11, 2021
 rem  Copyright (c) 2020 - 2021 by Trevor SANDY
 rem --
 rem This script is distributed in the hope that it will be useful,
@@ -28,10 +28,14 @@ IF "%APPVEYOR%" EQU "True" (
     ECHO  -%~nx0 terminated!
     GOTO :END
   )
+  IF "%APPVEYOR_BUILD_WORKER_IMAGE%" == "Visual Studio 2019" (
+    SET VSVERSION=2019
+  )
   SET DIST_DIR=%LP3D_DIST_DIR_PATH%
   SET LDRAW_DOWNLOAD_DIR=%APPVEYOR_BUILD_FOLDER%
   SET LDRAW_DIR=%APPVEYOR_BUILD_FOLDER%\LDraw
 ) ELSE (
+  SET VSVERSION=2019
   SET LDRAW_DOWNLOAD_DIR=%USERPROFILE%
   SET LDRAW_DIR=%USERPROFILE%\LDraw
   SET DIST_DIR=..\lpub3d_windows_3rdparty
@@ -42,13 +46,16 @@ rem Visual C++ 2015 -vcvars_ver=14.0
 rem Visual C++ 2017 -vcvars_ver=14.1
 rem Visual C++ 2019 -vcvars_ver=14.2
 SET LP3D_VCVARSALL=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build
-SET LP3D_VCVARSALL_VER=-vcvars_ver=14.2
+SET LP3D_VCVARSALL_VER=-vcvars_ver=14.0
+SET VCVERSION=8.1
+SET VCTOOLSET=v140
 SET INI_POV_FILE=%PWD%\OSMesa\ldviewPOV.ini
 SET zipWin64=C:\program files\7-zip
 SET OfficialCONTENT=complete.zip
 
 SET PACKAGE=LDView
 SET VERSION=4.4
+SET PROJECT=LDView.vcxproj
 SET CONFIGURATION=Release
 
 SET MINIMUM_LOGGING=unknown
@@ -137,6 +144,7 @@ IF /I "%2"=="-chk" (
 rem Display build settings
 IF "%APPVEYOR%" EQU "True" (
   ECHO   BUILD_HOST.............[APPVEYOR CONTINUOUS INTEGRATION SERVICE]
+  ECHO   BUILD_WORKER_IMAGE.....[%APPVEYOR_BUILD_WORKER_IMAGE%]
   ECHO   BUILD_ID...............[%APPVEYOR_BUILD_ID%]
   ECHO   BUILD_BRANCH...........[%APPVEYOR_REPO_BRANCH%]
   ECHO   PROJECT_NAME...........[%APPVEYOR_PROJECT_NAME%]
@@ -181,6 +189,11 @@ IF /I "%PLATFORM%"=="-all" (
   GOTO :BUILD_ALL
 )
 
+rem Check if build Win32 and vs2019, set to vs2017 for WinXP compat
+IF "%VSVERSION%"=="2019" (
+  CALL :CONFIGURE_VCTOOLSET %PLATFORM%
+)
+
 rem Initialize the Visual Studio command line development environment
 CALL :CONFIGURE_BUILD_ENV
 
@@ -189,7 +202,7 @@ ECHO.
 ECHO -Building %PLATFORM% Platform...
 ECHO.
 rem Assemble command line
-SET COMMAND_LINE=msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%PLATFORM% LDView.vcxproj %LOGGING_FLAGS%
+SET COMMAND_LINE=msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%PLATFORM% /p:WindowsTargetPlatformVersion=%VCVERSION% /p:PlatformToolset=%VCTOOLSET% %PROJECT% %LOGGING_FLAGS%
 ECHO -Command: %COMMAND_LINE%
 rem Launch msbuild
 %COMMAND_LINE%
@@ -197,9 +210,9 @@ rem Perform build check if specified
 IF %CHECK%==1 CALL :CHECK_BUILD %PLATFORM%
 rem Package 3rd party install content
 IF %THIRD_INSTALL%==1 (
-	IF %PLATFORM%==Win32 SET INSTALL_32BIT=1
-    IF %PLATFORM%==x64 SET INSTALL_64BIT=1
-	CALL :3RD_PARTY_INSTALL
+  IF %PLATFORM%==Win32 SET INSTALL_32BIT=1
+  IF %PLATFORM%==x64 SET INSTALL_64BIT=1
+  CALL :3RD_PARTY_INSTALL
 )
 rem Restore ini file
 CALL :RESTORE_INI_FILES
@@ -215,13 +228,26 @@ FOR %%P IN ( Win32, x64 ) DO (
   ECHO.
   rem Initialize the Visual Studio command line development environment
   SET PLATFORM=%%P
+  IF "%VSVERSION%"=="2019" (
+    CALL :CONFIGURE_VCTOOLSET %%P
+  )
   CALL :CONFIGURE_BUILD_ENV
   rem Assemble command line parameters
-  SET COMMAND_LINE=msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%%P LDView.vcxproj %LOGGING_FLAGS%
+  SET COMMAND_LINE=msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%%P /p:WindowsTargetPlatformVersion=%VCVERSION% /p:PlatformToolset=%VCTOOLSET% %PROJECT% %LOGGING_FLAGS%
   SETLOCAL ENABLEDELAYEDEXPANSION
   ECHO -Build Command: !COMMAND_LINE!
   rem Launch msbuild
   !COMMAND_LINE!
+  IF %%P == x64 (
+    SET EXE=Build\%CONFIGURATION%64\%PACKAGE%64.exe
+  ) ELSE (
+    SET EXE=Build\%CONFIGURATION%\%PACKAGE%.exe
+  )
+  IF NOT EXIST "!EXE!" (
+    ECHO.
+    ECHO "-ERROR - !EXE! was not successfully built - build will trminate."
+    GOTO :END
+  )
   ENDLOCAL
   rem Perform build check if specified
   IF %CHECK%==1 CALL :CHECK_BUILD %%P
@@ -230,11 +256,19 @@ rem Restore ini file
 CALL :RESTORE_INI_FILES
 rem Package 3rd party install
 IF %THIRD_INSTALL%==1 (
-    SET INSTALL_32BIT=1
-    SET INSTALL_64BIT=1
-	  CALL :3RD_PARTY_INSTALL
+  SET INSTALL_32BIT=1
+  SET INSTALL_64BIT=1
+  CALL :3RD_PARTY_INSTALL
 )
 GOTO :END
+
+:CONFIGURE_VCTOOLSET
+IF %1==x64 (
+  SET LP3D_VCVARSALL_VER=-vcvars_ver=14.2
+  SET VCTOOLSET=v142
+)
+ECHO -Set %1 MSBuild platform toolset to %VCTOOLSET%
+EXIT /b
 
 :CONFIGURE_BUILD_ENV
 ECHO.
@@ -268,10 +302,10 @@ ECHO -Update %INI_POV_FILE% at line !LineToReplace! with !Replacement!
 ENDLOCAL
 (FOR /f "tokens=1*delims=:" %%a IN ('findstr /n "^" "%INI_POV_FILE%"') DO (
   SET "Line=%%b"
-  IF %%a equ %LineToReplace% SET "Line=%Replacement%"
-    SETLOCAL ENABLEDELAYEDEXPANSION
-    ECHO(!Line!
-    ENDLOCAL
+  IF %%a EQU %LineToReplace% SET "Line=%Replacement%"
+  SETLOCAL ENABLEDELAYEDEXPANSION
+  ECHO(!Line!
+  ENDLOCAL
 ))>"%INI_POV_FILE%.new"
 MOVE /Y "%INI_POV_FILE%.new" "%INI_POV_FILE%" >nul 2>&1
 ) ELSE (
@@ -309,8 +343,8 @@ IF %CHECK%==1 (
   )
   %COMMAND% > Check.out 2>&1
   IF EXIST "Check.out" (
-	  FOR %%R IN (Check.out) DO IF NOT %%~zR lss 1 ECHO. & TYPE "Check.out"
-	  DEL /Q "Check.out"
+    FOR %%R IN (Check.out) DO IF NOT %%~zR lss 1 ECHO. & TYPE "Check.out"
+    DEL /Q "Check.out"
   )
   IF EXIST "%OUT_FILE%" (
     ECHO.
@@ -327,12 +361,12 @@ ECHO -Installing distribution files...
 SET COPY_CMD=COPY /V /Y
 SET DIST_INSTALL_PATH=%DIST_DIR%\%PACKAGE%-%VERSION%\bin\i386
 IF %INSTALL_32BIT% == 1 (
-	ECHO.
-	ECHO -Installing %PACKAGE% 32bit exe to [%DIST_INSTALL_PATH%]...
-	IF NOT EXIST "%DIST_INSTALL_PATH%\" (
-	  MKDIR "%DIST_INSTALL_PATH%\"
-	)
-	%COPY_CMD% "Build\Release\%PACKAGE%.exe*" "%DIST_INSTALL_PATH%\" /B
+  ECHO.
+  ECHO -Installing %PACKAGE% 32bit exe to [%DIST_INSTALL_PATH%]...
+  IF NOT EXIST "%DIST_INSTALL_PATH%\" (
+    MKDIR "%DIST_INSTALL_PATH%\"
+  )
+  %COPY_CMD% "Build\Release\%PACKAGE%.exe*" "%DIST_INSTALL_PATH%\" /B
   ECHO.
   ECHO -Installing %PACKAGE% 32bit libraries to [%DIST_INSTALL_PATH%]...
   %COPY_CMD% "LDLib\Build\Release\LDLib.lib*" "%DIST_INSTALL_PATH%\" /B
@@ -342,7 +376,11 @@ IF %INSTALL_32BIT% == 1 (
   %COPY_CMD% "TCFoundation\Build\Release\TCFoundation.lib*" "%DIST_INSTALL_PATH%\" /B
   %COPY_CMD% "3rdParty\gl2ps\Build\Release\gl2ps.lib*" "%DIST_INSTALL_PATH%\" /B
   %COPY_CMD% "3rdParty\tinyxml\Build\Release\tinyxml_STL.lib*" "%DIST_INSTALL_PATH%\" /B
-  %COPY_CMD% "lib\*-vs2015.lib" "%DIST_INSTALL_PATH%\" /B
+  IF "%VSVERSION%"=="2019" (
+    %COPY_CMD% "lib\*-vs2017.lib" "%DIST_INSTALL_PATH%\" /B
+  ) ELSE (
+    %COPY_CMD% "lib\*-vs2015.lib" "%DIST_INSTALL_PATH%\" /B
+  )
   IF EXIST "Build\Debug\LDView.exe" (
     ECHO.
     ECHO -Installing %PACKAGE% 32bit Debug libraries to [%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug]...
@@ -352,17 +390,21 @@ IF %INSTALL_32BIT% == 1 (
     %COPY_CMD% "Build\Debug\*.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
     %COPY_CMD% "Build\Debug\*.bsc" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
     %COPY_CMD% "Build\Debug\*.pdb" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
-    %COPY_CMD% "lib\*-vs2015.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
+    IF "%VSVERSION%"=="2019" (
+      %COPY_CMD% "lib\*-vs2017.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
+    ) ELSE (
+      %COPY_CMD% "lib\*-vs2015.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
+    )
   )
 )
 SET DIST_INSTALL_PATH=%DIST_DIR%\%PACKAGE%-%VERSION%\bin\x86_64
 IF %INSTALL_64BIT% == 1 (
-	ECHO.
-	ECHO -Installing %PACKAGE% 64bit exe to [%DIST_INSTALL_PATH%]...
-	IF NOT EXIST "%DIST_INSTALL_PATH%\" (
-	  MKDIR "%DIST_INSTALL_PATH%\"
-	)
-	%COPY_CMD% "Build\Release64\%PACKAGE%64.exe*" "%DIST_INSTALL_PATH%\" /B
+  ECHO.
+  ECHO -Installing %PACKAGE% 64bit exe to [%DIST_INSTALL_PATH%]...
+  IF NOT EXIST "%DIST_INSTALL_PATH%\" (
+    MKDIR "%DIST_INSTALL_PATH%\"
+  )
+  %COPY_CMD% "Build\Release64\%PACKAGE%64.exe*" "%DIST_INSTALL_PATH%\" /B
   ECHO.
   ECHO -Installing %PACKAGE% 64bit libraries to [%DIST_INSTALL_PATH%]...
   %COPY_CMD% "LDLib\Build\Release64\LDLib.lib*" "%DIST_INSTALL_PATH%\" /B
@@ -372,7 +414,11 @@ IF %INSTALL_64BIT% == 1 (
   %COPY_CMD% "TCFoundation\Build\Release64\TCFoundation.lib*" "%DIST_INSTALL_PATH%\" /B
   %COPY_CMD% "3rdParty\gl2ps\Build\Release64\gl2ps.lib*" "%DIST_INSTALL_PATH%\" /B
   %COPY_CMD% "3rdParty\tinyxml\Build\Release64\tinyxml_STL.lib*" "%DIST_INSTALL_PATH%\" /B
-  %COPY_CMD% "lib\x64\*-vs2015.lib" "%DIST_INSTALL_PATH%\" /B
+  IF "%VSVERSION%"=="2019" (
+    %COPY_CMD% "lib\x64\*-vs2019.lib" "%DIST_INSTALL_PATH%\" /B
+  ) ELSE (
+    %COPY_CMD% "lib\x64\*-vs2015.lib" "%DIST_INSTALL_PATH%\" /B
+  )
   IF EXIST "Build\Debug64\LDView64.exe" (
     ECHO.
     ECHO -Installing %PACKAGE% 64bit Debug libraries to [%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64]...
@@ -382,7 +428,11 @@ IF %INSTALL_64BIT% == 1 (
     %COPY_CMD% "Build\Debug64\*.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
     %COPY_CMD% "Build\Debug64\*.bsc" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
     %COPY_CMD% "Build\Debug64\*.pdb" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
-    %COPY_CMD% "lib\x64\*-vs2015.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
+    IF "%VSVERSION%"=="2019" (
+      %COPY_CMD% "lib\x64\*-vs2019.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
+    ) ELSE (
+      %COPY_CMD% "lib\x64\*-vs2015.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
+    )
   )
 )
 SET DIST_INSTALL_PATH=%DIST_DIR%\%PACKAGE%-%VERSION%\include
