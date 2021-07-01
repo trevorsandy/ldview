@@ -8,47 +8,83 @@ rem LDView distributions and package the build contents (exe, doc and
 rem resources ) as LPub3D 3rd Party components.
 rem --
 rem  Trevor SANDY <trevor.sandy@gmail.com>
-rem  Last Update: June 11, 2021
+rem  Last Update: July 01, 2021
 rem  Copyright (c) 2020 - 2021 by Trevor SANDY
 rem --
 rem This script is distributed in the hope that it will be useful,
 rem but WITHOUT ANY WARRANTY; without even the implied warranty of
 rem MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-SET start=%time%
+CALL :ELAPSED_BUILD_TIME Start
 
 SET PWD=%CD%
 
 rem Variables
 rem Static defaults
+IF "%GITHUB%" EQU "True" (
+  IF [%LP3D_DIST_DIR_PATH%] == [] (
+    ECHO.
+    ECHO  -ERROR: Distribution directory path not defined.
+    ECHO  -%~nx0 terminated!
+    GOTO :ERROR_END
+  )
+  IF "%GITHUB_RUNNER_IMAGE%" == "Visual Studio 2019" (
+    SET LP3D_VSVERSION=2019
+  )
+  SET DIST_DIR=%LP3D_DIST_DIR_PATH%
+  SET LDRAW_DOWNLOAD_DIR=%LP3D_3RD_PARTY_PATH%
+  SET LDRAW_DIR=%LP3D_LDRAW_DIR_PATH%
+)
+
 IF "%APPVEYOR%" EQU "True" (
   IF [%LP3D_DIST_DIR_PATH%] == [] (
     ECHO.
     ECHO  -ERROR: Distribution directory path not defined.
     ECHO  -%~nx0 terminated!
-    GOTO :END
+    GOTO :ERROR_END
   )
   IF "%APPVEYOR_BUILD_WORKER_IMAGE%" == "Visual Studio 2019" (
-    SET VSVERSION=2019
+    SET LP3D_VSVERSION=2019
   )
   SET DIST_DIR=%LP3D_DIST_DIR_PATH%
   SET LDRAW_DOWNLOAD_DIR=%APPVEYOR_BUILD_FOLDER%
   SET LDRAW_DIR=%APPVEYOR_BUILD_FOLDER%\LDraw
-) ELSE (
-  SET VSVERSION=2019
-  SET LDRAW_DOWNLOAD_DIR=%USERPROFILE%
-  SET LDRAW_DIR=%USERPROFILE%\LDraw
-  SET DIST_DIR=..\lpub3d_windows_3rdparty
 )
+
+IF "%GITHUB%" NEQ "True" (
+  IF "%APPVEYOR%" NEQ "True" (
+    SET LP3D_VSVERSION=2019
+    SET LDRAW_DOWNLOAD_DIR=%USERPROFILE%
+    SET LDRAW_DIR=%USERPROFILE%\LDraw
+    SET DIST_DIR=..\lpub3d_windows_3rdparty
+  )
+)
+
+IF EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build" (
+  SET LP3D_VCVARSALL=C:\Program Files ^(x86^)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build
+)
+IF EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build" (
+  SET LP3D_VCVARSALL=C:\Program Files ^(x86^)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build
+)
+IF EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build" (
+  SET LP3D_VCVARSALL=C:\Program Files ^(x86^)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build
+)
+IF "%LP3D_VCVARSALL%" == "" (
+  ECHO.
+  ECHO  -ERROR: Microsoft Visual Studio C++ environment not defined.
+  ECHO  -%~nx0 terminated!
+  GOTO :ERROR_END
+)
+
 rem Visual C++ 2012 -vcvars_ver=11.0
 rem Visual C++ 2013 -vcvars_ver=12.0
 rem Visual C++ 2015 -vcvars_ver=14.0
 rem Visual C++ 2017 -vcvars_ver=14.1
 rem Visual C++ 2019 -vcvars_ver=14.2
-SET LP3D_VCVARSALL=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build
 SET LP3D_VCVARSALL_VER=-vcvars_ver=14.0
-SET VCVERSION=8.1
-SET VCTOOLSET=v140
+SET LP3D_VCVERSION=8.1
+SET LP3D_VCTOOLSET=v140
+
 SET INI_POV_FILE=%PWD%\OSMesa\ldviewPOV.ini
 SET zipWin64=C:\program files\7-zip
 SET OfficialCONTENT=complete.zip
@@ -142,6 +178,15 @@ IF /I "%2"=="-chk" (
 
 :BUILD
 rem Display build settings
+IF "%GITHUB%" EQU "True" (
+  ECHO   BUILD_HOST.............[GITHUB CONTINUOUS INTEGRATION SERVICE]
+  ECHO   BUILD_WORKER_IMAGE.....[%GITHUB_RUNNER_IMAGE%]
+  ECHO   BUILD_JOB..............[%GITHUB_JOB%]
+  ECHO   GITHUB_REF.............[%GITHUB_REF%]
+  ECHO   GITHUB_RUNNER_OS.......[%RUNNER_OS%]
+  ECHO   PROJECT REPOSITORY.....[%GITHUB_REPOSITORY%]
+  ECHO   DIST_DIRECTORY.........[%DIST_DIR%]
+)
 IF "%APPVEYOR%" EQU "True" (
   ECHO   BUILD_HOST.............[APPVEYOR CONTINUOUS INTEGRATION SERVICE]
   ECHO   BUILD_WORKER_IMAGE.....[%APPVEYOR_BUILD_WORKER_IMAGE%]
@@ -154,6 +199,8 @@ IF "%APPVEYOR%" EQU "True" (
 )
 ECHO   PACKAGE................[%PACKAGE%]
 ECHO   VERSION................[%VERSION%]
+ECHO   MSVC_VERSION...........[%LP3D_VCVERSION%]
+ECHO   MSVC_TOOLSET...........[%LP3D_VCTOOLSET%]
 ECHO   WORKING_DIR............[%CD%]
 ECHO   LDRAW_DIR..............[%LDRAW_DIR%]
 ECHO.  LDRAW_DOWNLOAD_DIR.....[%LDRAW_DOWNLOAD_DIR%]
@@ -190,8 +237,8 @@ IF /I "%PLATFORM%"=="-all" (
 )
 
 rem Check if build Win32 and vs2019, set to vs2017 for WinXP compat
-IF "%VSVERSION%"=="2019" (
-  CALL :CONFIGURE_VCTOOLSET %PLATFORM%
+IF "%LP3D_VSVERSION%"=="2019" (
+  CALL :CONFIGURE_VCTOOLS %PLATFORM%
 )
 
 rem Initialize the Visual Studio command line development environment
@@ -202,7 +249,7 @@ ECHO.
 ECHO -Building %PLATFORM% Platform...
 ECHO.
 rem Assemble command line
-SET COMMAND_LINE=msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%PLATFORM% /p:WindowsTargetPlatformVersion=%VCVERSION% /p:PlatformToolset=%VCTOOLSET% %PROJECT% %LOGGING_FLAGS%
+SET COMMAND_LINE=msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%PLATFORM% /p:WindowsTargetPlatformVersion=%LP3D_VCVERSION% /p:PlatformToolset=%LP3D_VCTOOLSET% %PROJECT% %LOGGING_FLAGS%
 ECHO -Command: %COMMAND_LINE%
 rem Launch msbuild
 %COMMAND_LINE%
@@ -228,12 +275,12 @@ FOR %%P IN ( Win32, x64 ) DO (
   ECHO.
   rem Initialize the Visual Studio command line development environment
   SET PLATFORM=%%P
-  IF "%VSVERSION%"=="2019" (
-    CALL :CONFIGURE_VCTOOLSET %%P
+  IF "%LP3D_VSVERSION%"=="2019" (
+    CALL :CONFIGURE_VCTOOLS %%P
   )
   CALL :CONFIGURE_BUILD_ENV
   rem Assemble command line parameters
-  SET COMMAND_LINE=msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%%P /p:WindowsTargetPlatformVersion=%VCVERSION% /p:PlatformToolset=%VCTOOLSET% %PROJECT% %LOGGING_FLAGS%
+  SET COMMAND_LINE=msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%%P /p:WindowsTargetPlatformVersion=%LP3D_VCVERSION% /p:PlatformToolset=%LP3D_VCTOOLSET% %PROJECT% %LOGGING_FLAGS%
   SETLOCAL ENABLEDELAYEDEXPANSION
   ECHO -Build Command: !COMMAND_LINE!
   rem Launch msbuild
@@ -246,7 +293,7 @@ FOR %%P IN ( Win32, x64 ) DO (
   IF NOT EXIST "!EXE!" (
     ECHO.
     ECHO "-ERROR - !EXE! was not successfully built - build will trminate."
-    GOTO :END
+    GOTO :ERROR_END
   )
   ENDLOCAL
   rem Perform build check if specified
@@ -262,12 +309,14 @@ IF %THIRD_INSTALL%==1 (
 )
 GOTO :END
 
-:CONFIGURE_VCTOOLSET
+:CONFIGURE_VCTOOLS
 IF %1==x64 (
   SET LP3D_VCVARSALL_VER=-vcvars_ver=14.2
-  SET VCTOOLSET=v142
+  SET LP3D_VCVERSION=10.0
+  SET LP3D_VCTOOLSET=v142
 )
-ECHO -Set %1 MSBuild platform toolset to %VCTOOLSET%
+ECHO.
+ECHO -Set %1 MSBuild platform toolset to %LP3D_VCTOOLSET%
 EXIT /b
 
 :CONFIGURE_BUILD_ENV
@@ -277,10 +326,22 @@ rem Set vcvars for AppVeyor or local build environments
 IF "%PATH_PREPENDED%" NEQ "True" (
   IF %PLATFORM% EQU Win32 (
     ECHO.
-    CALL "%LP3D_VCVARSALL%\vcvars32.bat" %LP3D_VCVARSALL_VER%
+    IF EXIST "%LP3D_VCVARSALL%\vcvars32.bat" (
+      CALL "%LP3D_VCVARSALL%\vcvars32.bat" %LP3D_VCVARSALL_VER%
+    ) ELSE (
+      ECHO -ERROR: vcvars32.bat not found.
+      ECHO -%~nx0 terminated!
+      GOTO :ERROR_END
+    )
   ) ELSE (
     ECHO.
-    CALL "%LP3D_VCVARSALL%\vcvars64.bat" %LP3D_VCVARSALL_VER%
+    IF EXIST "%LP3D_VCVARSALL%\vcvars64.bat" (
+      CALL "%LP3D_VCVARSALL%\vcvars64.bat" %LP3D_VCVARSALL_VER%
+    ) ELSE (
+      ECHO -ERROR: vcvars64.bat not found.
+      ECHO -%~nx0 terminated!
+      GOTO :ERROR_END
+    )
   )
   rem Display MSVC Compiler settings
   echo _MSC_VER > %TEMP%\settings.c
@@ -376,7 +437,7 @@ IF %INSTALL_32BIT% == 1 (
   %COPY_CMD% "TCFoundation\Build\Release\TCFoundation.lib*" "%DIST_INSTALL_PATH%\" /B
   %COPY_CMD% "3rdParty\gl2ps\Build\Release\gl2ps.lib*" "%DIST_INSTALL_PATH%\" /B
   %COPY_CMD% "3rdParty\tinyxml\Build\Release\tinyxml_STL.lib*" "%DIST_INSTALL_PATH%\" /B
-  IF "%VSVERSION%"=="2019" (
+  IF "%LP3D_VSVERSION%"=="2019" (
     %COPY_CMD% "lib\*-vs2017.lib" "%DIST_INSTALL_PATH%\" /B
   ) ELSE (
     %COPY_CMD% "lib\*-vs2015.lib" "%DIST_INSTALL_PATH%\" /B
@@ -390,7 +451,7 @@ IF %INSTALL_32BIT% == 1 (
     %COPY_CMD% "Build\Debug\*.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
     %COPY_CMD% "Build\Debug\*.bsc" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
     %COPY_CMD% "Build\Debug\*.pdb" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
-    IF "%VSVERSION%"=="2019" (
+    IF "%LP3D_VSVERSION%"=="2019" (
       %COPY_CMD% "lib\*-vs2017.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
     ) ELSE (
       %COPY_CMD% "lib\*-vs2015.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
@@ -414,7 +475,7 @@ IF %INSTALL_64BIT% == 1 (
   %COPY_CMD% "TCFoundation\Build\Release64\TCFoundation.lib*" "%DIST_INSTALL_PATH%\" /B
   %COPY_CMD% "3rdParty\gl2ps\Build\Release64\gl2ps.lib*" "%DIST_INSTALL_PATH%\" /B
   %COPY_CMD% "3rdParty\tinyxml\Build\Release64\tinyxml_STL.lib*" "%DIST_INSTALL_PATH%\" /B
-  IF "%VSVERSION%"=="2019" (
+  IF "%LP3D_VSVERSION%"=="2019" (
     %COPY_CMD% "lib\x64\*-vs2019.lib" "%DIST_INSTALL_PATH%\" /B
   ) ELSE (
     %COPY_CMD% "lib\x64\*-vs2015.lib" "%DIST_INSTALL_PATH%\" /B
@@ -428,7 +489,7 @@ IF %INSTALL_64BIT% == 1 (
     %COPY_CMD% "Build\Debug64\*.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
     %COPY_CMD% "Build\Debug64\*.bsc" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
     %COPY_CMD% "Build\Debug64\*.pdb" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
-    IF "%VSVERSION%"=="2019" (
+    IF "%LP3D_VSVERSION%"=="2019" (
       %COPY_CMD% "lib\x64\*-vs2019.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
     ) ELSE (
       %COPY_CMD% "lib\x64\*-vs2015.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
@@ -658,7 +719,7 @@ CALL :USAGE
 ECHO.
 ECHO -01. (FLAG ERROR) Platform or usage flag is invalid. Use x86, x86_64 or -build_all [%~nx0 %*].
 ECHO      For usage help use -help.
-GOTO :END
+GOTO :ERROR_END
 
 :CONFIGURATION_ERROR
 ECHO.
@@ -666,7 +727,7 @@ CALL :USAGE
 ECHO.
 ECHO -02. (FLAG ERROR) Configuration flag is invalid [%~nx0 %*].
 ECHO      Use -rel (release), or -3rd (3rd party install).
-GOTO :END
+GOTO :ERROR_END
 
 :COMMAND_ERROR
 ECHO.
@@ -674,7 +735,7 @@ CALL :USAGE
 ECHO.
 ECHO -03. (COMMAND ERROR) Invalid command string [%~nx0 %*].
 ECHO      See Usage.
-GOTO :END
+GOTO :ERROR_END
 
 
 :USAGE
@@ -726,9 +787,17 @@ ECHO If no flag is supplied, 64bit platform, Release Configuration built by defa
 ECHO ----------------------------------------------------------------
 EXIT /b
 
-:END
+:ELAPSED_BUILD_TIME
+IF [%1] EQU [] (SET start=%build_start%) ELSE (
+  IF "%1"=="Start" (
+    SET build_start=%time%
+    EXIT /b
+  ) ELSE (
+    SET start=%1
+  )
+)
 ECHO.
-ECHO -%~nx0 [%PACKAGE% v%VERSION%] finished.
+ECHO -%~nx0 finished.
 SET end=%time%
 SET options="tokens=1-4 delims=:.,"
 FOR /f %options% %%a IN ("%start%") DO SET start_h=%%a&SET /a start_m=100%%b %% 100&SET /a start_s=100%%c %% 100&SET /a start_ms=100%%d %% 100
@@ -745,4 +814,12 @@ IF %hours% lss 0 SET /a hours = 24%hours%
 IF 1%ms% lss 100 SET ms=0%ms%
 ECHO -Elapsed build time %hours%:%mins%:%secs%.%ms%
 ENDLOCAL
+EXIT /b
+
+:ERROR_END
+CALL :ELAPSED_BUILD_TIME
+EXIT /b 3
+
+:END
+CALL :ELAPSED_BUILD_TIME
 EXIT /b
