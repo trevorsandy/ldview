@@ -98,7 +98,7 @@ SET MINIMUM_LOGGING=unknown
 SET THIRD_INSTALL=unknown
 SET INSTALL_32BIT=unknown
 SET INSTALL_64BIT=unknown
-SET PLATFORM=unknown
+SET PLATFORM_ARCH=unknown
 SET INI_FILE=unknown
 SET CHECK=unknown
 
@@ -118,19 +118,19 @@ IF NOT [%1]==[] (
 
 rem Parse platform input flag
 IF [%1]==[] (
-  SET PLATFORM=-all
+  SET PLATFORM_ARCH=-all
   GOTO :SET_CONFIGURATION
 )
 IF /I "%1"=="x86" (
-  SET PLATFORM=Win32
+  SET PLATFORM_ARCH=Win32
   GOTO :SET_CONFIGURATION
 )
 IF /I "%1"=="x86_64" (
-  SET PLATFORM=x64
+  SET PLATFORM_ARCH=x64
   GOTO :SET_CONFIGURATION
 )
 IF /I "%1"=="-all" (
-  SET PLATFORM=-all
+  SET PLATFORM_ARCH=-all
   GOTO :SET_CONFIGURATION
 )
 IF /I "%1"=="-help" (
@@ -231,38 +231,36 @@ rem If check specified, update inifile with ldraw directory path
 CALL :UPDATE_INI_POV_FILE
 
 rem Check if build all platforms
-IF /I "%PLATFORM%"=="-all" (
+IF /I "%PLATFORM_ARCH%"=="-all" (
   GOTO :BUILD_ALL
 )
 
 rem Display platform setting
 ECHO.
-ECHO -Building %PLATFORM% Platform...
+ECHO -Building %PLATFORM_ARCH% Platform...
 rem Check if build Win32 and vs2019, set to vs2017 for WinXP compat
-CALL :CONFIGURE_VCTOOLS %PLATFORM%
+CALL :CONFIGURE_VCTOOLS %PLATFORM_ARCH%
 rem Initialize the Visual Studio command line development environment
 CALL :CONFIGURE_BUILD_ENV
 rem Assemble command line
-SET COMMAND_LINE=msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%PLATFORM% /p:WindowsTargetPlatformVersion=%LP3D_VCVERSION% /p:PlatformToolset=%LP3D_VCTOOLSET% %PROJECT% %LOGGING_FLAGS%
+SET COMMAND_LINE=msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%PLATFORM_ARCH% /p:WindowsTargetPlatformVersion=%LP3D_VCVERSION% /p:PlatformToolset=%LP3D_VCTOOLSET% %PROJECT% %LOGGING_FLAGS%
 ECHO -Build Command: %COMMAND_LINE%
 rem Launch msbuild
 %COMMAND_LINE%
 rem Check build status
-IF %PLATFORM%==Win32 (SET EXE=Build\%CONFIGURATION%\%PACKAGE%.exe)
-IF %PLATFORM%==x64 (SET EXE=Build\%CONFIGURATION%64\%PACKAGE%64.exe)
-SETLOCAL ENABLEDELAYEDEXPANSION
-IF NOT EXIST "!EXE!" (
+IF %PLATFORM_ARCH%==Win32 (SET EXE=Build\%CONFIGURATION%\%PACKAGE%.exe)
+IF %PLATFORM_ARCH%==x64 (SET EXE=Build\%CONFIGURATION%64\%PACKAGE%64.exe)
+IF NOT EXIST "%EXE%" (
   ECHO.
-  ECHO "-ERROR - !EXE! was not successfully built - %~nx0 will trminate."
+  ECHO "-ERROR - %EXE% was not successfully built - %~nx0 will trminate."
   GOTO :ERROR_END
 )
-ENDLOCAL
 rem Perform build check if specified
-IF %CHECK%==1 (CALL :CHECK_BUILD %PLATFORM%)
+IF %CHECK%==1 (CALL :CHECK_BUILD %PLATFORM_ARCH%)
 rem Package 3rd party install content
 IF %THIRD_INSTALL%==1 (
-  IF %PLATFORM%==Win32 (SET INSTALL_32BIT=1)
-  IF %PLATFORM%==x64 (SET INSTALL_64BIT=1)
+  IF %PLATFORM_ARCH%==Win32 (SET INSTALL_32BIT=1)
+  IF %PLATFORM_ARCH%==x64 (SET INSTALL_64BIT=1)
   CALL :3RD_PARTY_INSTALL
 )
 rem Restore ini file
@@ -276,7 +274,7 @@ ECHO -Build x86 and x86_64 platforms...
 FOR %%P IN ( Win32, x64 ) DO (
   ECHO.
   ECHO -Building %%P Platform...
-  SET PLATFORM=%%P
+  SET PLATFORM_ARCH=%%P
   CALL :CONFIGURE_VCTOOLS %%P
   CALL :CONFIGURE_BUILD_ENV
   SETLOCAL ENABLEDELAYEDEXPANSION
@@ -325,10 +323,10 @@ EXIT /b
 
 :CONFIGURE_BUILD_ENV
 ECHO.
-ECHO -Configure %PACKAGE% %PLATFORM% build environment...
+ECHO -Configure %PACKAGE% %PLATFORM_ARCH% build environment...
 rem Set vcvars for AppVeyor or local build environments
 IF "%PATH_PREPENDED%" NEQ "True" (
-  IF %PLATFORM% EQU Win32 (
+  IF %PLATFORM_ARCH% EQU Win32 (
     ECHO.
     IF EXIST "%LP3D_VCVARSALL%\vcvars32.bat" (
       CALL "%LP3D_VCVARSALL%\vcvars32.bat" %LP3D_VCVARSALL_VER%
@@ -353,7 +351,7 @@ IF "%PATH_PREPENDED%" NEQ "True" (
   ECHO.
 ) ELSE (
   ECHO.
-  ECHO -%PLATFORM% build environment already configured...
+  ECHO -%PLATFORM_ARCH% build environment already configured...
 )
 EXIT /b
 
