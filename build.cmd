@@ -15,7 +15,7 @@ rem This script is distributed in the hope that it will be useful,
 rem but WITHOUT ANY WARRANTY; without even the implied warranty of
 rem MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-CALL :ELAPSED_BUILD_TIME Start
+CALL :LDV_ELAPSED_BUILD_TIME Start
 
 SET PWD=%CD%
 
@@ -788,7 +788,7 @@ ECHO If no flag is supplied, 64bit platform, Release Configuration built by defa
 ECHO ----------------------------------------------------------------
 EXIT /b
 
-:ELAPSED_BUILD_TIME
+:LDV_ELAPSED_BUILD_TIME
 IF [%1] EQU [] (SET start=%build_start%) ELSE (
   IF "%1"=="Start" (
     SET build_start=%time%
@@ -818,9 +818,9 @@ ENDLOCAL
 EXIT /b
 
 :ERROR_END
-CALL :ELAPSED_BUILD_TIME
+CALL :LDV_ELAPSED_BUILD_TIME
 EXIT /b 3
 
 :END
-CALL :ELAPSED_BUILD_TIME
+CALL :LDV_ELAPSED_BUILD_TIME
 EXIT /b
