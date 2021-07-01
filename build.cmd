@@ -8,7 +8,7 @@ rem LDView distributions and package the build contents (exe, doc and
 rem resources ) as LPub3D 3rd Party components.
 rem --
 rem  Trevor SANDY <trevor.sandy@gmail.com>
-rem  Last Update: July 01, 2021
+rem  Last Update: July 02, 2021
 rem  Copyright (c) 2020 - 2021 by Trevor SANDY
 rem --
 rem This script is distributed in the hope that it will be useful,
@@ -178,6 +178,7 @@ IF /I "%2"=="-chk" (
 
 :BUILD
 rem Display build settings
+ECHO.
 IF "%GITHUB%" EQU "True" (
   ECHO   BUILD_HOST.............[GITHUB CONTINUOUS INTEGRATION SERVICE]
   ECHO   BUILD_WORKER_IMAGE.....[%GITHUB_RUNNER_IMAGE%]
@@ -199,8 +200,6 @@ IF "%APPVEYOR%" EQU "True" (
 )
 ECHO   PACKAGE................[%PACKAGE%]
 ECHO   VERSION................[%VERSION%]
-ECHO   MSVC_VERSION...........[%LP3D_VCVERSION%]
-ECHO   MSVC_TOOLSET...........[%LP3D_VCTOOLSET%]
 ECHO   WORKING_DIR............[%CD%]
 ECHO   LDRAW_DIR..............[%LDRAW_DIR%]
 ECHO.  LDRAW_DOWNLOAD_DIR.....[%LDRAW_DOWNLOAD_DIR%]
@@ -236,29 +235,34 @@ IF /I "%PLATFORM%"=="-all" (
   GOTO :BUILD_ALL
 )
 
-rem Check if build Win32 and vs2019, set to vs2017 for WinXP compat
-IF "%LP3D_VSVERSION%"=="2019" (
-  CALL :CONFIGURE_VCTOOLS %PLATFORM%
-)
-
-rem Initialize the Visual Studio command line development environment
-CALL :CONFIGURE_BUILD_ENV
-
 rem Display platform setting
 ECHO.
 ECHO -Building %PLATFORM% Platform...
-ECHO.
+rem Check if build Win32 and vs2019, set to vs2017 for WinXP compat
+CALL :CONFIGURE_VCTOOLS %PLATFORM%
+rem Initialize the Visual Studio command line development environment
+CALL :CONFIGURE_BUILD_ENV
 rem Assemble command line
 SET COMMAND_LINE=msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%PLATFORM% /p:WindowsTargetPlatformVersion=%LP3D_VCVERSION% /p:PlatformToolset=%LP3D_VCTOOLSET% %PROJECT% %LOGGING_FLAGS%
-ECHO -Command: %COMMAND_LINE%
+ECHO -Build Command: %COMMAND_LINE%
 rem Launch msbuild
 %COMMAND_LINE%
+rem Check build status
+IF %PLATFORM%==Win32 (SET EXE=Build\%CONFIGURATION%\%PACKAGE%.exe)
+IF %PLATFORM%==x64 (SET EXE=Build\%CONFIGURATION%64\%PACKAGE%64.exe)
+SETLOCAL ENABLEDELAYEDEXPANSION
+IF NOT EXIST "!EXE!" (
+  ECHO.
+  ECHO "-ERROR - !EXE! was not successfully built - %~nx0 will trminate."
+  GOTO :ERROR_END
+)
+ENDLOCAL
 rem Perform build check if specified
-IF %CHECK%==1 CALL :CHECK_BUILD %PLATFORM%
+IF %CHECK%==1 (CALL :CHECK_BUILD %PLATFORM%)
 rem Package 3rd party install content
 IF %THIRD_INSTALL%==1 (
-  IF %PLATFORM%==Win32 SET INSTALL_32BIT=1
-  IF %PLATFORM%==x64 SET INSTALL_64BIT=1
+  IF %PLATFORM%==Win32 (SET INSTALL_32BIT=1)
+  IF %PLATFORM%==x64 (SET INSTALL_64BIT=1)
   CALL :3RD_PARTY_INSTALL
 )
 rem Restore ini file
@@ -272,32 +276,23 @@ ECHO -Build x86 and x86_64 platforms...
 FOR %%P IN ( Win32, x64 ) DO (
   ECHO.
   ECHO -Building %%P Platform...
-  ECHO.
-  rem Initialize the Visual Studio command line development environment
   SET PLATFORM=%%P
-  IF "%LP3D_VSVERSION%"=="2019" (
-    CALL :CONFIGURE_VCTOOLS %%P
-  )
+  CALL :CONFIGURE_VCTOOLS %%P
   CALL :CONFIGURE_BUILD_ENV
-  rem Assemble command line parameters
-  SET COMMAND_LINE=msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%%P /p:WindowsTargetPlatformVersion=%LP3D_VCVERSION% /p:PlatformToolset=%LP3D_VCTOOLSET% %PROJECT% %LOGGING_FLAGS%
   SETLOCAL ENABLEDELAYEDEXPANSION
+  SET COMMAND_LINE=msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%%P /p:WindowsTargetPlatformVersion=!LP3D_VCVERSION! /p:PlatformToolset=!LP3D_VCTOOLSET! %PROJECT% %LOGGING_FLAGS%
   ECHO -Build Command: !COMMAND_LINE!
-  rem Launch msbuild
   !COMMAND_LINE!
-  IF %%P == x64 (
-    SET EXE=Build\%CONFIGURATION%64\%PACKAGE%64.exe
-  ) ELSE (
-    SET EXE=Build\%CONFIGURATION%\%PACKAGE%.exe
-  )
+  IF %%P==Win32 (SET EXE=Build\%CONFIGURATION%\%PACKAGE%.exe)
+  IF %%P==x64 (SET EXE=Build\%CONFIGURATION%64\%PACKAGE%64.exe)
   IF NOT EXIST "!EXE!" (
     ECHO.
-    ECHO "-ERROR - !EXE! was not successfully built - build will trminate."
+    ECHO "-ERROR - !EXE! was not successfully built - %~nx0 will trminate."
     GOTO :ERROR_END
   )
   ENDLOCAL
   rem Perform build check if specified
-  IF %CHECK%==1 CALL :CHECK_BUILD %%P
+  IF %CHECK%==1 (CALL :CHECK_BUILD %%P)
 )
 rem Restore ini file
 CALL :RESTORE_INI_FILES
@@ -310,13 +305,22 @@ IF %THIRD_INSTALL%==1 (
 GOTO :END
 
 :CONFIGURE_VCTOOLS
+ECHO.
+ECHO -Set MSBuild platform toolset...
 IF %1==x64 (
-  SET LP3D_VCVARSALL_VER=-vcvars_ver=14.2
   SET LP3D_VCVERSION=10.0
   SET LP3D_VCTOOLSET=v142
+  SET LP3D_VCVARSALL_VER=-vcvars_ver=14.2
+) ELSE (
+  SET LP3D_VCVERSION=8.1
+  SET LP3D_VCTOOLSET=v140
+  SET LP3D_VCVARSALL_VER=-vcvars_ver=14.0
 )
 ECHO.
-ECHO -Set %1 MSBuild platform toolset to %LP3D_VCTOOLSET%
+ECHO   PLATFORM_ARCH..........[%1]
+ECHO   MSVS_VERSION...........[%LP3D_VSVERSION%]
+ECHO   MSVC_VERSION...........[%LP3D_VCVERSION%]
+ECHO   MSVC_TOOLSET...........[%LP3D_VCTOOLSET%]
 EXIT /b
 
 :CONFIGURE_BUILD_ENV
