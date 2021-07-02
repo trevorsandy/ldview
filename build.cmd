@@ -186,7 +186,6 @@ IF "%GITHUB%" EQU "True" (
   ECHO   GITHUB_REF.............[%GITHUB_REF%]
   ECHO   GITHUB_RUNNER_OS.......[%RUNNER_OS%]
   ECHO   PROJECT REPOSITORY.....[%GITHUB_REPOSITORY%]
-  ECHO   DIST_DIRECTORY.........[%DIST_DIR%]
 )
 IF "%APPVEYOR%" EQU "True" (
   ECHO   BUILD_HOST.............[APPVEYOR CONTINUOUS INTEGRATION SERVICE]
@@ -196,11 +195,11 @@ IF "%APPVEYOR%" EQU "True" (
   ECHO   PROJECT_NAME...........[%APPVEYOR_PROJECT_NAME%]
   ECHO   REPOSITORY_NAME........[%APPVEYOR_REPO_NAME%]
   ECHO   REPO_PROVIDER..........[%APPVEYOR_REPO_PROVIDER%]
-  ECHO   DIST_DIRECTORY.........[%DIST_DIR%]
 )
 ECHO   PACKAGE................[%PACKAGE%]
 ECHO   VERSION................[%VERSION%]
-ECHO   WORKING_DIR............[%CD%]
+ECHO   WORKING_DIR............[%PWD%]
+ECHO   DIST_DIRECTORY.........[%DIST_DIR%]
 ECHO   LDRAW_DIR..............[%LDRAW_DIR%]
 ECHO.  LDRAW_DOWNLOAD_DIR.....[%LDRAW_DOWNLOAD_DIR%]
 
@@ -237,7 +236,7 @@ IF /I "%PLATFORM_ARCH%"=="-all" (
 
 rem Display platform setting
 ECHO.
-ECHO -Building %PLATFORM_ARCH% Platform...
+ECHO -Building %PLATFORM_ARCH% Platform, %CONFIGURATION% configuration...
 rem Check if build Win32 and vs2019, set to vs2017 for WinXP compat
 CALL :CONFIGURE_VCTOOLS %PLATFORM_ARCH%
 rem Initialize the Visual Studio command line development environment
@@ -248,6 +247,11 @@ ECHO -Build Command: %COMMAND_LINE%
 rem Launch msbuild
 %COMMAND_LINE%
 rem Check build status
+ECHO.
+ECHO DEBUG WORKING DIRECTORY
+ECHO PWD: %PWD%
+ECHO CD:  %CD%
+ECHO.
 IF %PLATFORM_ARCH%==Win32 (SET EXE=Build\%CONFIGURATION%\%PACKAGE%.exe)
 IF %PLATFORM_ARCH%==x64 (SET EXE=Build\%CONFIGURATION%64\%PACKAGE%64.exe)
 IF NOT EXIST "%EXE%" (
@@ -273,7 +277,7 @@ ECHO.
 ECHO -Build x86 and x86_64 platforms...
 FOR %%P IN ( Win32, x64 ) DO (
   ECHO.
-  ECHO -Building %%P Platform...
+  ECHO -Building %%P Platform, %CONFIGURATION% configuration...
   SET PLATFORM_ARCH=%%P
   CALL :CONFIGURE_VCTOOLS %%P
   CALL :CONFIGURE_BUILD_ENV
@@ -289,12 +293,9 @@ FOR %%P IN ( Win32, x64 ) DO (
     GOTO :ERROR_END
   )
   ENDLOCAL
-  rem Perform build check if specified
   IF %CHECK%==1 (CALL :CHECK_BUILD %%P)
 )
-rem Restore ini file
 CALL :RESTORE_INI_FILES
-rem Package 3rd party install
 IF %THIRD_INSTALL%==1 (
   SET INSTALL_32BIT=1
   SET INSTALL_64BIT=1
