@@ -72,7 +72,7 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "\0"
             VALUE "FileDescription", "LDViewThumbs Module\0"
-            VALUE "FileVersion", "4.4 Beta 5\0"
+            VALUE "FileVersion", "4.4\0"
             VALUE "InternalName", "LDViewThumbs\0"
             VALUE "LegalCopyright", "Copyright 2021\0"
 #if defined(_M_X64)
@@ -83,7 +83,7 @@ BEGIN
             VALUE "OriginalFilename", "LDViewThumbs.dll\0"
 #endif // TC_NO_UNICODE
             VALUE "ProductName", "LDView\0"
-            VALUE "ProductVersion", "4.4 Beta 5\0"
+            VALUE "ProductVersion", "4.4\0"
             VALUE "OLESelfRegister", "\0"
         END
     END
