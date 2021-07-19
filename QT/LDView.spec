@@ -313,6 +313,11 @@ else
         qmake -spec %{qplatform} %{use_cpp11}
 fi
 %else
+%if 0%{?qt6}
+if which qmake6 >/dev/null 2>/dev/null ; then
+	qmake6 -spec %{qplatform} %{use_cpp11}
+fi
+%else
 if which qmake-qt4 >/dev/null 2>/dev/null ; then
 	qmake-qt4 -spec %{qplatform} %{use_cpp11}
 else
