@@ -1087,7 +1087,9 @@ bool LDrawModelViewer::calcSize(void)
 		}
 		if (!flags.overrideModelSize)
 		{
-			size = curModel->getMaxRadius(center, true) * 2.0f;
+			size = curModel->getMaxRadius(center, true,
+				flags.boundingBoxesOnly ? NULL : &mainModel->m_statistics) *
+				2.0f;
 			if (mainModel->getBBoxIgnoreUsed())
 			{
 				clipSize = curModel->getMaxRadius(center, false) * 2.0f;
@@ -1099,6 +1101,10 @@ bool LDrawModelViewer::calcSize(void)
 			else
 			{
 				clipSize = size;
+			}
+			if (!flags.boundingBoxesOnly)
+			{
+				mainModel->m_statistics.calculated = true;
 			}
 		}
 		TCProgressAlert::send("LDrawModelViewer",
@@ -2810,8 +2816,7 @@ void LDrawModelViewer::setBoundingBoxesOnly(bool value)
 	if (value != flags.boundingBoxesOnly)
 	{
 		flags.boundingBoxesOnly = value;
-		flags.needsReparse = true;
-		flags.needsCalcSize = true;
+		flags.needsReload = true;
 	}
 }
 
