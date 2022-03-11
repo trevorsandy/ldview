@@ -1133,6 +1133,7 @@ bool LDrawModelViewer::loadLDLModel(void)
 	mainModel->setBlackEdgeLines(flags.blackHighlights);
 	mainModel->setExtraSearchDirs(extraSearchDirs);
 	mainModel->setProcessLDConfig(flags.processLDConfig);
+	mainModel->setCustomConfigPath(m_customConfigPath);
 	mainModel->setSkipValidation(flags.skipValidation);
 	mainModel->setBoundingBoxesOnly(flags.boundingBoxesOnly);
 	mainModel->setSeamWidth(seamWidth);
@@ -1300,6 +1301,15 @@ void LDrawModelViewer::setProcessLDConfig(bool value)
 	if (flags.processLDConfig != value)
 	{
 		flags.processLDConfig = value;
+		flags.needsReload = true;
+	}
+}
+
+void LDrawModelViewer::setCustomConfigPath(const std::string& value)
+{
+	if (m_customConfigPath != value)
+	{
+		m_customConfigPath = value;
 		flags.needsReload = true;
 	}
 }
