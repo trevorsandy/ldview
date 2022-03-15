@@ -388,7 +388,14 @@
 #define IDC_Z                           1312
 #define IDC_LOOKATORIGIN_CHECK          1313
 #define IDC_LOOKATMODEL_CHECK           1314
-#define IDC_STUD_STYLE_LABLE            1315
+#define IDC_PARTS                       1315
+#define IDC_MODELS                      1316
+#define IDC_TRIANGLES                   1317
+#define IDC_QUADS                       1318
+#define IDC_LINES                       1319
+#define IDC_EDGE_LINES                  1320
+#define IDC_CONDITIONAL_LINES           1321
+#define IDC_STUD_STYLE_LABLE            1322
 #define PRINTDLGORD                     1538
 #define PAGESETUPDLGORD                 1546
 #define IDD_PRIMITIVES_PREFS            1547
@@ -399,6 +406,7 @@
 #define IDD_OPTIONS_SCROLLER            1552
 #define IDD_CAMERA_LOCATION             1553
 #define IDD_ROTATION_CENTER             1554
+#define IDD_STATISTICS                  1555
 #define ID_HELP_ABOUT                   40003
 #define ID_FILE_EXIT                    40004
 #define ID_EDIT_PREFERENCES             40005
@@ -484,6 +492,7 @@
 #define ID_VIEW_WALK                    40118
 #define ID_VIEW_CAMERALOCATION          40119
 #define ID_VIEW_ROTATIONCENTER          40120
+#define ID_TOOLS_STATISTICS             40121
 #define ID_FILE_OPEN                    0xE101
 #define ID_FILE_SAVE                    0xE103
 #define ID_FILE_PRINT                   0xE107
@@ -497,7 +506,7 @@
 #define _APS_3D_CONTROLS                1
 #define _APS_NEXT_RESOURCE_VALUE        548
 #define _APS_NEXT_COMMAND_VALUE         40121
-#define _APS_NEXT_CONTROL_VALUE         1316
+#define _APS_NEXT_CONTROL_VALUE         1323
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
