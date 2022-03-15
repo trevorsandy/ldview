@@ -166,7 +166,12 @@ enum
 	}
 	if ([control isKindOfClass:[NSSegmentedControl class]] && [control respondsToSelector:@selector(setSegmentStyle:)])
 	{
-		[(NSSegmentedControl *)control setSegmentStyle:NSSegmentStyleCapsule];
+		if (@available(macOS 11.0, *)) {
+			[(NSSegmentedControl *)control setSegmentStyle:NSSegmentStyleRounded];
+		} else {
+			// Fallback on earlier versions
+			[(NSSegmentedControl *)control setSegmentStyle:NSSegmentStyleCapsule];
+		}
 	}
 	size = [control frame].size;
 	size.height += 1.0f;
