@@ -20,7 +20,8 @@ jobs:
           echo "LDV_DIST_DIR=lpub3d_linux_3rdparty" >> ${GITHUB_ENV}
       - name: Install developement packages
         run: |
-          echo "Installing dev packages..." && $(cd QT/docker ; sudo ./install-devel-packages.sh)
+          echo "Installing dev packages..."
+          $(cd QT/docker ; chmod a+x install-devel-packages.sh && sudo ./install-devel-packages.sh)
       - name: Cache LDraw
         id: cache-ldraw
         uses: actions/cache@v2
@@ -44,6 +45,7 @@ jobs:
           make && make install
 
   build-windows:
+    if: ${{ false }} # uncomment to disable
     runs-on: windows-2019
     steps:
       - name: Checkout
@@ -80,7 +82,7 @@ jobs:
       - name: Install Dev Packages
         run: |
           echo "/usr/local/opt/ccache/libexec" >> ${GITHUB_PATH}
-          brew install grep ccache tinyxml gl2ps libjpeg minizip qt5
+          brew install grep ccache tinyxml gl2ps minizip qt5
           brew link --force qt5;
       - name: Cache LDraw
         id: cache-ldraw
@@ -95,12 +97,11 @@ jobs:
             curl -s -O http://www.ldraw.org/library/updates/complete.zip
             unzip -d ~/Library -q complete.zip; rm complete.zip
             if test -d ${LDRAWDIR}; then echo "LDraw library extracted, LDRAWDIR defined."; fi
-          else
-            echo "LDraw library defined at ${LDRAWDIR}."
           fi
-          echo "set LDRAWDIR in environment.plist..." && (cd QT ; sudo ./set-ldrawdir.command)
+          echo "set LDRAWDIR in environment.plist..."
+          chmod a+x QT/set-ldrawdir.command && sudo ./QT/set-ldrawdir.command
           grep -A1 -e 'LDRAWDIR' ~/.MacOSX/environment.plist
-          echo "set LDRAWDIR Completed: ${LDRAWDIR}"
+          echo "LDraw library defined at ${LDRAWDIR}."
       - name: Build LDView
         run: |
           qmake -v
