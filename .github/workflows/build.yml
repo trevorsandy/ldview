@@ -1,6 +1,6 @@
 # Build, check and LDView
 # Trevor SANDY <trevor.sandy@gmail.com>
-# Last Update: May 19, 2022
+# Last Update: May 20, 2022
 # Copyright (C) 2022 by Trevor SANDY
 #
 name: Build LDView
@@ -18,8 +18,8 @@ jobs:
         run: |
           echo "LDRAWDIR=${HOME}/ldraw" >> ${GITHUB_ENV}
           echo "LDV_DIST_DIR=lpub3d_linux_3rdparty" >> ${GITHUB_ENV}
-          if [ ! -d "../${LDV_DIST_DIR}" ]; then mkdir -p "../${LDV_DIST_DIR}"; fi
-      - name: Install developement packages
+          if [ ! -d "${HOME}/work/ldview/${LDV_DIST_DIR}" ]; then mkdir -p "${HOME}/work/ldview/${LDV_DIST_DIR}"; fi
+      - name: Development Packages
         run: |
           echo "Install development packages..."
           chmod a+x QT/docker/install-devel-packages.sh && sudo ./QT/docker/install-devel-packages.sh
@@ -29,7 +29,7 @@ jobs:
         with:
           path: ${{ env.LDRAWDIR }}
           key: ldraw-lib
-      - name: Download LDraw Lib
+      - name: LDraw Library
         run: |
           if [ ! -d ${LDRAWDIR}/parts ]; then
             echo "LDraw library not found at ${LDRAWDIR}. Downloading library..."
@@ -39,6 +39,10 @@ jobs:
           else
             echo "LDraw library defined at ${LDRAWDIR}."
           fi
+      - name: Stdlib Patch
+        run: |
+            echo "Apply stdlib error patch to LDViewGlobal.pri..."
+            sed s/'    # detect system libraries paths'/'    # Suppress fatal error: stdlib.h: No such file or directory\n    QMAKE_CFLAGS_ISYSTEM = -I\n\n    # detect system libraries paths'/ -i LDViewGlobal.pri
       - name: Build LDView
         run: |
           qmake -v; $(cd QT ; sed -i 's/kdelibs5-dev//g' debian/control)
@@ -81,8 +85,8 @@ jobs:
         run: |
           echo "LDRAWDIR=${HOME}/Library/ldraw" >> ${GITHUB_ENV}
           echo "LDV_DIST_DIR=lpub3d_macos_3rdparty" >> ${GITHUB_ENV}
-          if [ ! -d "../${LDV_DIST_DIR}" ]; then mkdir -p "../${LDV_DIST_DIR}"; fi
-      - name: Install Dev Packages
+          if [ ! -d "${HOME}/work/ldview/${LDV_DIST_DIR}" ]; then mkdir -p "${HOME}/work/ldview/${LDV_DIST_DIR}"; fi
+      - name: Development Packages
         run: |
           echo "/usr/local/opt/ccache/libexec" >> ${GITHUB_PATH}
           echo "Install development packages..."
@@ -95,7 +99,7 @@ jobs:
         with:
           path: ${{ env.LDRAWDIR }}
           key: ldraw-lib
-      - name: Download LDraw Lib
+      - name: LDraw Library
         run: |
           if [ ! -d ${LDRAWDIR}/parts ]; then
             echo "LDraw library not found at ${LDRAWDIR}. Downloading library..."
