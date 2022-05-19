@@ -19,3 +19,4 @@ Makefile
 8464.TestResult.*
 .vs
 tests
+.DS_Store
