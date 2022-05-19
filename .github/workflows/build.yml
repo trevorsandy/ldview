@@ -20,8 +20,7 @@ jobs:
           echo "LDV_DIST_DIR=lpub3d_linux_3rdparty" >> ${GITHUB_ENV}
       - name: Install developement packages
         run: |
-          echo "Working directory: $PWD" && ls -al
-          sudo ./QT/docker/install-devel-packages.sh
+          echo "Installing dev packages..." && $(cd QT/docker ; ./install-devel-packages.sh)
       - name: Cache LDraw
         id: cache-ldraw
         uses: actions/cache@v2
@@ -30,13 +29,13 @@ jobs:
           key: ldraw-lib
       - name: Download LDraw Lib
         run: |
-          if [ ! -d ${{ env.LDRAWDIR }}/parts ]; then
-            echo "LDraw library not found at ${{ env.LDRAWDIR }}. Downloading library..."
+          if [ ! -d ${LDRAWDIR}/parts ]; then
+            echo "LDraw library not found at ${LDRAWDIR}. Downloading library..."
             curl -s -O http://www.ldraw.org/library/updates/complete.zip
             unzip -d ~/ -q complete.zip; rm complete.zip
-            if test -d ${{ env.LDRAWDIR }}; then echo "LDraw library extracted, LDRAWDIR defined."; fi
+            if test -d ${LDRAWDIR}; then echo "LDraw library extracted, LDRAWDIR defined."; fi
           else
-            echo "LDraw library defined at ${{ env.LDRAWDIR }}."
+            echo "LDraw library defined at ${LDRAWDIR}."
           fi
       - name: Build LDView
         run: |
@@ -67,9 +66,7 @@ jobs:
         shell: powershell
       - name: Build LDView
         shell: cmd
-        run: |
-          IF EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" CALL "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          .\build.cmd -all -chk
+        run: .\build.cmd -all -chk
 
   build-macos:
     runs-on: macos-10.15
@@ -101,7 +98,7 @@ jobs:
           else
             echo "LDraw library defined at ${LDRAWDIR}."
           fi
-          echo "set LDRAWDIR in environment.plist..." && ./set-ldrawdir.command
+          echo "set LDRAWDIR in environment.plist..." && (cd QT ; ./set-ldrawdir.command)
           grep -A1 -e 'LDRAWDIR' ~/.MacOSX/environment.plist
           echo "set LDRAWDIR Completed: ${LDRAWDIR}"
       - name: Build LDView
