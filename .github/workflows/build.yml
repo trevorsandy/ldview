@@ -1,0 +1,104 @@
+# Build, check and LDView
+# Trevor SANDY <trevor.sandy@gmail.com>
+# Last Update: May 19, 2022
+# Copyright (C) 2022 by Trevor SANDY
+#
+name: Build LDView
+on:
+  push:
+    branches:
+      - qmake-build
+jobs:
+  build-ubuntu:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Work Paths
+        run: |
+          echo "LDRAWDIR=${HOME}/ldraw" >> ${GITHUB_ENV}
+          echo "LDV_DIST_DIR=lpub3d_linux_3rdparty" >> ${GITHUB_ENV}
+      - name: Install developement packages
+        run:  sudo ./QT/docker/install-devel-packages.sh
+      - name: Cache LDraw
+        id: cache-ldraw
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.LDRAWDIR }}
+          key: key: ldraw-lib
+      - name: Download LDraw Lib
+        run: |
+          if [ ! -d ${{ env.LDRAWDIR }}/parts ]; then
+            echo "LDraw library not found at ${{ env.LDRAWDIR }}. Downloading library..."
+            curl -s -O http://www.ldraw.org/library/updates/complete.zip
+            unzip -d ~/ -q complete.zip; rm complete.zip
+            if test -d ${{ env.LDRAWDIR }}; then echo "LDraw library extracted, LDRAWDIR defined."; fi
+          else
+            echo "LDraw library defined at ${{ env.LDRAWDIR }}."
+          fi
+      - name: Build LDView
+        run: |
+          qmake -v; $(cd QT ; sed -i 's/kdelibs5-dev//g' debian/control)
+          qmake CONFIG+=3RD_PARTY_INSTALL=../${LDV_DIST_DIR} CONFIG+=release CONFIG+=BUILD_CUI_ONLY CONFIG+=USE_SYSTEM_LIBS CONFIG+=BUILD_CHECK
+          make && make install
+
+  build-windows:
+    runs-on: windows-2019
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Work Paths
+        run: |
+          Echo "LP3D_DIST_DIR_PATH=$(Join-Path (resolve-path ..\) 'lpub3d_windows_3rdparty')" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          Echo "LP3D_LDRAW_DIR_PATH=$(Join-Path (resolve-path ..\) 'ldraw')" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          Echo "LP3D_3RD_PARTY_PATH=$(resolve-path ..\)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Cache LDraw
+        id: cache-ldraw
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.LP3D_LDRAW_DIR_PATH }}
+          key: ldraw-lib
+      - name: Build LDView
+        shell: cmd
+        run: |
+          IF EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" CALL "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          .\build.cmd -all -chk
+
+  build-macos:
+    runs-on: macos-10.15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Work Paths
+        run: |
+          echo "LDRAWDIR=${HOME}/Library/ldraw" >> ${GITHUB_ENV}
+          echo "LDV_DIST_DIR=lpub3d_macos_3rdparty" >> ${GITHUB_ENV}       
+      - name: Install Dev Packages
+        run: |
+          echo "/usr/local/opt/ccache/libexec" >> ${GITHUB_PATH}
+          brew grep install ccache tinyxml gl2ps libjpeg minizip qt5
+          brew link --force qt5;
+      - name: Cache LDraw
+        id: cache-ldraw
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.LDRAWDIR }}
+          key: key: ldraw-lib
+      - name: Download LDraw Lib
+        run: |
+          if [ ! -d ${LDRAWDIR}/parts ]; then
+            echo "LDraw library not found at ${LDRAWDIR}. Downloading library..."
+            curl -s -O http://www.ldraw.org/library/updates/complete.zip
+            unzip -d ~/Library -q complete.zip; rm complete.zip
+            if test -d ${LDRAWDIR}; then echo "LDraw library extracted, LDRAWDIR defined."; fi
+          else
+            echo "LDraw library defined at ${LDRAWDIR}."
+          fi
+          echo "set LDRAWDIR in environment.plist..." && ./set-ldrawdir.command
+          grep -A1 -e 'LDRAWDIR' ~/.MacOSX/environment.plist
+          echo "set LDRAWDIR Completed: ${LDRAWDIR}"
+      - name: Build LDView
+        run: |
+          qmake -v
+          qmake CONFIG+=3RD_PARTY_INSTALL=../${LDV_DIST_DIR} CONFIG+=release CONFIG+=BUILD_CUI_ONLY CONFIG+=USE_SYSTEM_LIBS CONFIG+=BUILD_CHECK
+          make && make install
