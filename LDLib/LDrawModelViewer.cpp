@@ -714,7 +714,7 @@ void LDrawModelViewer::setPovCameraAspect(bool value, bool saveSetting)
 
 void LDrawModelViewer::setModelSize(const TCFloat value)
 {
-	if (value)
+	if (value != 0)
 	{
 		flags.overrideModelSize = true;
 		size = value;
@@ -1757,7 +1757,7 @@ void LDrawModelViewer::setupFont(const char *fontFilename)
 	if (scaleFactor >= 1.5 && fontImage2x != NULL)
 	{
 		fontImage = fontImage2x;
-		fontScale = scaleFactor / 2.0;
+		fontScale = scaleFactor / 2.0f;
 	}
 	if (fontImage != NULL)
 	{
@@ -1797,16 +1797,16 @@ void LDrawModelViewer::setupFont(const char *fontFilename)
 					tx = cx + wx;
 					ty = 1.0f - cy - hy;
 					treGlTexCoord2f(tx, ty);			// Bottom Right
-					glVertex2i(fontCharWidth * fontScale, 0);
+					glVertex2i((GLint)(fontCharWidth * fontScale), 0);
 					tx = cx + wx;
 					ty = 1 - cy;
 					treGlTexCoord2f(tx, ty);			// Top Right
-					glVertex2i(fontCharWidth * fontScale,
-						fontCharHeight * fontScale);
+					glVertex2i((GLint)(fontCharWidth * fontScale),
+                        (GLint)(fontCharHeight * fontScale));
 					tx = cx;
 					ty = 1 - cy;
 					treGlTexCoord2f(tx , ty);			// Top Left
-					glVertex2i(0, fontCharHeight * fontScale);
+					glVertex2i(0, (GLint)(fontCharHeight * fontScale));
 				glEnd();
 				glTranslated((1.0 + fontCharWidth) * fontScale, 0, 0);
 			glEndList();
@@ -2028,7 +2028,7 @@ void LDrawModelViewer::setLightVector(const TCVector &value)
 	TCFloat length = value.length();
 	bool oldForce = forceOneLight();
 
-	if (length)
+	if (length != 0)
 	{
 		lightVector = value / length;
 	}
@@ -2669,7 +2669,7 @@ void LDrawModelViewer::updateCameraPosition(void)
 #ifdef USE_STD_CHRONO
 	std::chrono::duration<double> diff = std::chrono::steady_clock::now() -
 		frameTime;
-	float factor = diff.count();
+	float factor = (float)diff.count();
 #else
 	float factor;
 #ifdef WIN32
@@ -2687,7 +2687,7 @@ void LDrawModelViewer::updateCameraPosition(void)
 	}
 #endif // WIN32
 #ifdef _QT
-	factor = qtime.elapsed() /1000.0f;
+	factor = qtime.elapsed() / 1000.0f;
 #endif
 #ifdef COCOA
 	if (FRAME_TIME != nil)
@@ -3976,7 +3976,7 @@ void LDrawModelViewer::unpause(void)
 void LDrawModelViewer::setRotationSpeed(TCFloat value)
 {
 	rotationSpeed = value;
-	if (value)
+	if (value != 0)
 	{
 		flags.paused = false;
 	}
@@ -3985,7 +3985,7 @@ void LDrawModelViewer::setRotationSpeed(TCFloat value)
 void LDrawModelViewer::setZoomSpeed(TCFloat value)
 {
 	zoomSpeed = value;
-	if (value)
+	if (value != 0)
 	{
 		flags.paused = false;
 	}

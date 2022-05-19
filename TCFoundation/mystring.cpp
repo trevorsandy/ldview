@@ -1376,7 +1376,7 @@ void indentPrintf(int indent, const char *format, ...)
 	va_end(argPtr);
 }
 
-void consoleVPrintf(const char *format, va_list argPtr)
+static void consoleVPrintf(const char *format, va_list argPtr)
 {
 #ifdef WIN32
 	if (g_haveConsole)
@@ -1423,7 +1423,7 @@ void consoleVPrintf(const char *format, va_list argPtr)
 #endif
 }
 
-void consoleVPrintf(const wchar_t *format, va_list argPtr)
+static void consoleVPrintf(const wchar_t *format, va_list argPtr)
 {
 #ifdef WIN32
 	if (g_haveConsole)
