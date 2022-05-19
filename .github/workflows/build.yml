@@ -20,7 +20,7 @@ jobs:
           echo "LDV_DIST_DIR=lpub3d_linux_3rdparty" >> ${GITHUB_ENV}
       - name: Install developement packages
         run: |
-          echo "Installing dev packages..." && $(cd QT/docker ; ./install-devel-packages.sh)
+          echo "Installing dev packages..." && $(cd QT/docker ; sudo ./install-devel-packages.sh)
       - name: Cache LDraw
         id: cache-ldraw
         uses: actions/cache@v2
@@ -98,7 +98,7 @@ jobs:
           else
             echo "LDraw library defined at ${LDRAWDIR}."
           fi
-          echo "set LDRAWDIR in environment.plist..." && (cd QT ; ./set-ldrawdir.command)
+          echo "set LDRAWDIR in environment.plist..." && (cd QT ; sudo ./set-ldrawdir.command)
           grep -A1 -e 'LDRAWDIR' ~/.MacOSX/environment.plist
           echo "set LDRAWDIR Completed: ${LDRAWDIR}"
       - name: Build LDView
