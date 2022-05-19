@@ -306,6 +306,13 @@ else
         lrelease LDView.pro
 fi
 %else
+%if 0%{?qt6}
+if which lrelease-pro >/dev/null 2>/dev/null ; then
+	lrelease-pro LDView.pro
+else
+	lrelease-qt6 LDView.pro
+fi
+%else
 if which lrelease-qt4 >/dev/null 2>/dev/null ; then
 	lrelease-qt4 LDView.pro
 else
