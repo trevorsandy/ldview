@@ -25,7 +25,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ env.LDRAWDIR }}
-          key: key: ldraw-lib
+          key: ldraw-lib
       - name: Download LDraw Lib
         run: |
           if [ ! -d ${{ env.LDRAWDIR }}/parts ]; then
@@ -83,7 +83,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ env.LDRAWDIR }}
-          key: key: ldraw-lib
+          key: ldraw-lib
       - name: Download LDraw Lib
         run: |
           if [ ! -d ${LDRAWDIR}/parts ]; then
