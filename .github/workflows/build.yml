@@ -19,7 +19,9 @@ jobs:
           echo "LDRAWDIR=${HOME}/ldraw" >> ${GITHUB_ENV}
           echo "LDV_DIST_DIR=lpub3d_linux_3rdparty" >> ${GITHUB_ENV}
       - name: Install developement packages
-        run:  sudo ./QT/docker/install-devel-packages.sh
+        run: |
+          echo "Working directory: $PWD" && ls -al
+          sudo ./QT/docker/install-devel-packages.sh
       - name: Cache LDraw
         id: cache-ldraw
         uses: actions/cache@v2
@@ -58,6 +60,11 @@ jobs:
         with:
           path: ${{ env.LP3D_LDRAW_DIR_PATH }}
           key: ldraw-lib
+      - name: Windows 8.1 SDK
+        run: |
+          Invoke-WebRequest -Method Get -Uri https://go.microsoft.com/fwlink/p/?LinkId=323507 -OutFile sdksetup.exe -UseBasicParsing
+          Start-Process -Wait sdksetup.exe -ArgumentList "/q", "/norestart", "/features", "OptionId.WindowsDesktopSoftwareDevelopmentKit", "OptionId.NetFxSoftwareDevelopmentKit"
+        shell: powershell
       - name: Build LDView
         shell: cmd
         run: |
@@ -72,11 +79,11 @@ jobs:
       - name: Work Paths
         run: |
           echo "LDRAWDIR=${HOME}/Library/ldraw" >> ${GITHUB_ENV}
-          echo "LDV_DIST_DIR=lpub3d_macos_3rdparty" >> ${GITHUB_ENV}       
+          echo "LDV_DIST_DIR=lpub3d_macos_3rdparty" >> ${GITHUB_ENV}
       - name: Install Dev Packages
         run: |
           echo "/usr/local/opt/ccache/libexec" >> ${GITHUB_PATH}
-          brew grep install ccache tinyxml gl2ps libjpeg minizip qt5
+          brew install grep ccache tinyxml gl2ps libjpeg minizip qt5
           brew link --force qt5;
       - name: Cache LDraw
         id: cache-ldraw
