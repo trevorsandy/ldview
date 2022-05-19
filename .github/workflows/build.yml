@@ -9,7 +9,7 @@ on:
     branches:
       - qmake-build
 jobs:
-  build-ubuntu:
+  build-linux:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
@@ -18,10 +18,11 @@ jobs:
         run: |
           echo "LDRAWDIR=${HOME}/ldraw" >> ${GITHUB_ENV}
           echo "LDV_DIST_DIR=lpub3d_linux_3rdparty" >> ${GITHUB_ENV}
+          if [ ! -d "../${LDV_DIST_DIR}" ]; then mkdir -p "../${LDV_DIST_DIR}"; fi
       - name: Install developement packages
         run: |
-          echo "Installing dev packages..."
-          $(cd QT/docker ; chmod a+x install-devel-packages.sh && sudo ./install-devel-packages.sh)
+          echo "Install development packages..."
+          chmod a+x QT/docker/install-devel-packages.sh && sudo ./QT/docker/install-devel-packages.sh
       - name: Cache LDraw
         id: cache-ldraw
         uses: actions/cache@v2
@@ -55,6 +56,7 @@ jobs:
           Echo "LP3D_DIST_DIR_PATH=$(Join-Path (resolve-path ..\) 'lpub3d_windows_3rdparty')" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           Echo "LP3D_LDRAW_DIR_PATH=$(Join-Path (resolve-path ..\) 'ldraw')" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           Echo "LP3D_3RD_PARTY_PATH=$(resolve-path ..\)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          If ( -Not (Test-Path -Path $Env:LP3D_DIST_DIR_PATH) ) { New-Item -ItemType directory -Path $Env:LP3D_DIST_DIR_PATH }
       - name: Cache LDraw
         id: cache-ldraw
         uses: actions/cache@v2
@@ -79,11 +81,14 @@ jobs:
         run: |
           echo "LDRAWDIR=${HOME}/Library/ldraw" >> ${GITHUB_ENV}
           echo "LDV_DIST_DIR=lpub3d_macos_3rdparty" >> ${GITHUB_ENV}
+          if [ ! -d "../${LDV_DIST_DIR}" ]; then mkdir -p "../${LDV_DIST_DIR}"; fi
       - name: Install Dev Packages
         run: |
           echo "/usr/local/opt/ccache/libexec" >> ${GITHUB_PATH}
+          echo "Install development packages..."
           brew install grep ccache tinyxml gl2ps minizip qt5
           brew link --force qt5;
+          if [[ -d /usr/X11/lib && /usr/X11/include ]]; then echo "Good to go - X11 found."; else brew install --cask xquartz; fi
       - name: Cache LDraw
         id: cache-ldraw
         uses: actions/cache@v2
