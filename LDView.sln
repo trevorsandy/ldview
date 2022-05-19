@@ -1,4 +1,3 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31321.278
@@ -21,6 +20,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UnMirrorStuds", "UnMirrorSt
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LDViewThumbs", "LDViewThumbs\LDViewThumbs.vcxproj", "{39981559-7DDE-4F6C-A3E3-AB5F7D8FA99F}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LGEOTables", "LGEOTables\LGEOTables.vcxproj", "{19CB2D6F-16D4-4386-BC93-129193674375}"
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Launcher", "Launcher\Launcher.vcxproj", "{BF98540E-AF21-49EA-9C6D-2A9ABA97E933}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LDExporter", "LDExporter\LDExporter.vcxproj", "{0CCC9E72-1FE6-41C4-B06E-7E35E0C19EE1}"
@@ -30,8 +31,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tinyxmlSTL", "3rdParty\tinyxml\tinyxml.vcxproj", "{A3A84737-5017-4577-B8A2-79429A25B8B6}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gl2ps", "3rdParty\gl2ps\gl2ps.vcxproj", "{0964B5FE-C040-42A6-9370-FC6708197185}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LGEOTables", "LGEOTables\LGEOTables.vcxproj", "{19CB2D6F-16D4-4386-BC93-129193674375}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -97,6 +96,10 @@ Global
 		{39981559-7DDE-4F6C-A3E3-AB5F7D8FA99F}.Debug|x64.ActiveCfg = Debug|x64
 		{39981559-7DDE-4F6C-A3E3-AB5F7D8FA99F}.Release|Win32.ActiveCfg = Release|Win32
 		{39981559-7DDE-4F6C-A3E3-AB5F7D8FA99F}.Release|x64.ActiveCfg = Release|x64
+		{19CB2D6F-16D4-4386-BC93-129193674375}.Debug|Win32.ActiveCfg = Debug|Win32
+		{19CB2D6F-16D4-4386-BC93-129193674375}.Debug|x64.ActiveCfg = Debug|x64
+		{19CB2D6F-16D4-4386-BC93-129193674375}.Release|Win32.ActiveCfg = Release|Win32
+		{19CB2D6F-16D4-4386-BC93-129193674375}.Release|x64.ActiveCfg = Release|x64
 		{BF98540E-AF21-49EA-9C6D-2A9ABA97E933}.Debug|Win32.ActiveCfg = Debug|Win32
 		{BF98540E-AF21-49EA-9C6D-2A9ABA97E933}.Debug|Win32.Build.0 = Debug|Win32
 		{BF98540E-AF21-49EA-9C6D-2A9ABA97E933}.Debug|x64.ActiveCfg = Debug|x64
