@@ -58,7 +58,7 @@ jobs:
       - name: Work Paths
         run: |
           Echo "LP3D_DIST_DIR_PATH=$(Join-Path (resolve-path ..\) 'lpub3d_windows_3rdparty')" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
-          Echo "LP3D_LDRAW_DIR_PATH=$(Join-Path (resolve-path ..\) 'ldraw')" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          Echo "LP3D_LDRAW_DIR_PATH=$(resolve-path $Env:USERPROFILE\ldraw)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           Echo "LP3D_3RD_PARTY_PATH=$(resolve-path ..\)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           If ( -Not (Test-Path -Path $(Join-Path (resolve-path ..\) 'lpub3d_windows_3rdparty') ) ) { New-Item -ItemType directory -Path $(Join-Path (resolve-path ..\) 'lpub3d_windows_3rdparty') }
       - name: Cache LDraw
