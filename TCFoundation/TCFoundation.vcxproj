@@ -150,7 +150,7 @@
       <AdditionalIncludeDirectories>../;../boost/include;../3rdParty/libjpeg;../3rdParty/libjpeg/Windows;../3rdParty/libpng;../3rdParty/libpng/Windows;../include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>USE_CPP11;NDEBUG;WIN32;_LIB;_BUILDING_TCFOUNDATION_LIB;_WINSOCK_DEPRECATED_NO_WARNINGS;_NO_BOOST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <WarningLevel>Level4</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -180,7 +180,7 @@
       <AdditionalIncludeDirectories>../3rdParty/libpng;../3rdParty/libpng/Windows;../;../include/;../boost/include;../3rdParty/libjpeg;../3rdParty/libjpeg/Windows;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>USE_CPP11;NDEBUG;WIN32;_LIB;_BUILDING_TCFOUNDATION_LIB;_WINSOCK_DEPRECATED_NO_WARNINGS;_NO_BOOST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <WarningLevel>Level4</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
