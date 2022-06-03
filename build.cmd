@@ -8,7 +8,7 @@ rem LDView distributions and package the build contents (exe, doc and
 rem resources ) as LPub3D 3rd Party components.
 rem --
 rem  Trevor SANDY <trevor.sandy@gmail.com>
-rem  Last Update: July 02, 2021
+rem  Last Update: Jun 03, 2022
 rem  Copyright (c) 2020 - 2022 by Trevor SANDY
 rem --
 rem This script is distributed in the hope that it will be useful,
@@ -20,17 +20,16 @@ CALL :ELAPSED_BUILD_TIME Start
 SET PWD=%CD%
 
 rem Variables
+IF "%LP3D_VSVERSION%" == "" SET LP3D_VSVERSION=2019
+
 rem Static defaults
 IF "%GITHUB%" EQU "True" (
   IF [%LP3D_DIST_DIR_PATH%] == [] (
     ECHO.
     ECHO  -ERROR: Distribution directory path not defined.
-    ECHO  -%~nx0 terminated!
     GOTO :ERROR_END
   )
-  IF "%GITHUB_RUNNER_IMAGE%" == "Visual Studio 2019" (
-    SET LP3D_VSVERSION=2019
-  )
+  SET GITHUB_RUNNER_IMAGE=Visual Studio %LP3D_VSVERSION%
   SET DIST_DIR=%LP3D_DIST_DIR_PATH%
   SET LDRAW_DOWNLOAD_DIR=%LP3D_3RD_PARTY_PATH%
   SET LDRAW_DIR=%LP3D_LDRAW_DIR_PATH%
@@ -40,12 +39,9 @@ IF "%APPVEYOR%" EQU "True" (
   IF [%LP3D_DIST_DIR_PATH%] == [] (
     ECHO.
     ECHO  -ERROR: Distribution directory path not defined.
-    ECHO  -%~nx0 terminated!
     GOTO :ERROR_END
   )
-  IF "%APPVEYOR_BUILD_WORKER_IMAGE%" == "Visual Studio 2019" (
-    SET LP3D_VSVERSION=2019
-  )
+  SET APPVEYOR_BUILD_WORKER_IMAGE=Visual Studio %LP3D_VSVERSION%
   SET DIST_DIR=%LP3D_DIST_DIR_PATH%
   SET LDRAW_DOWNLOAD_DIR=%APPVEYOR_BUILD_FOLDER%
   SET LDRAW_DIR=%APPVEYOR_BUILD_FOLDER%\LDraw
@@ -53,26 +49,24 @@ IF "%APPVEYOR%" EQU "True" (
 
 IF "%GITHUB%" NEQ "True" (
   IF "%APPVEYOR%" NEQ "True" (
-    SET LP3D_VSVERSION=2019
     SET LDRAW_DOWNLOAD_DIR=%USERPROFILE%
     SET LDRAW_DIR=%USERPROFILE%\LDraw
     SET DIST_DIR=..\lpub3d_windows_3rdparty
   )
 )
 
-IF EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build" (
-  SET LP3D_VCVARSALL=C:\Program Files ^(x86^)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build
+IF EXIST "C:\Program Files (x86)\Microsoft Visual Studio\%LP3D_VSVERSION%\Community\VC\Auxiliary\Build" (
+  SET LP3D_VCVARSALL=C:\Program Files ^(x86^)\Microsoft Visual Studio\%LP3D_VSVERSION%\Community\VC\Auxiliary\Build
 )
-IF EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build" (
-  SET LP3D_VCVARSALL=C:\Program Files ^(x86^)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build
+IF EXIST "C:\Program Files (x86)\Microsoft Visual Studio\%LP3D_VSVERSION%\BuildTools\VC\Auxiliary\Build" (
+  SET LP3D_VCVARSALL=C:\Program Files ^(x86^)\Microsoft Visual Studio\%LP3D_VSVERSION%\BuildTools\VC\Auxiliary\Build
 )
-IF EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build" (
-  SET LP3D_VCVARSALL=C:\Program Files ^(x86^)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build
+IF EXIST "C:\Program Files (x86)\Microsoft Visual Studio\%LP3D_VSVERSION%\Enterprise\VC\Auxiliary\Build" (
+  SET LP3D_VCVARSALL=C:\Program Files ^(x86^)\Microsoft Visual Studio\%LP3D_VSVERSION%\Enterprise\VC\Auxiliary\Build
 )
 IF "%LP3D_VCVARSALL%" == "" (
   ECHO.
   ECHO  -ERROR: Microsoft Visual Studio C++ environment not defined.
-  ECHO  -%~nx0 terminated!
   GOTO :ERROR_END
 )
 
@@ -81,9 +75,9 @@ rem Visual C++ 2013 -vcvars_ver=12.0
 rem Visual C++ 2015 -vcvars_ver=14.0
 rem Visual C++ 2017 -vcvars_ver=14.1
 rem Visual C++ 2019 -vcvars_ver=14.2
-SET LP3D_VCVARSALL_VER=-vcvars_ver=14.0
-SET LP3D_VCVERSION=8.1
-SET LP3D_VCTOOLSET=v140
+IF "%LP3D_VCVARSALL_VER%" == "" SET LP3D_VCVARSALL_VER=-vcvars_ver=14.0
+IF "%LP3D_VCVERSION%" == "" SET LP3D_VCVERSION=8.1
+IF "%LP3D_VCTOOLSET%" == "" SET LP3D_VCTOOLSET=v140
 
 SET INI_POV_FILE=%PWD%\OSMesa\ldviewPOV.ini
 SET zipWin64=C:\program files\7-zip
@@ -251,7 +245,7 @@ IF %PLATFORM_ARCH%==Win32 (SET EXE=Build\%CONFIGURATION%\%PACKAGE%.exe)
 IF %PLATFORM_ARCH%==x64 (SET EXE=Build\%CONFIGURATION%64\%PACKAGE%64.exe)
 IF NOT EXIST "%EXE%" (
   ECHO.
-  ECHO "-ERROR - %EXE% was not successfully built - %~nx0 will trminate."
+  ECHO "-ERROR - %EXE% was not successfully built."
   GOTO :ERROR_END
 )
 rem Perform build check if specified
@@ -284,7 +278,7 @@ FOR %%P IN ( Win32, x64 ) DO (
   IF %%P==x64 (SET EXE=Build\%CONFIGURATION%64\%PACKAGE%64.exe)
   IF NOT EXIST "!EXE!" (
     ECHO.
-    ECHO "-ERROR - !EXE! was not successfully built - %~nx0 will trminate."
+    ECHO "-ERROR - !EXE! was not successfully built."
     GOTO :ERROR_END
   )
   ENDLOCAL
@@ -328,7 +322,6 @@ IF "%PATH_PREPENDED%" NEQ "True" (
       CALL "%LP3D_VCVARSALL%\vcvars32.bat" %LP3D_VCVARSALL_VER%
     ) ELSE (
       ECHO -ERROR: vcvars32.bat not found.
-      ECHO -%~nx0 terminated!
       GOTO :ERROR_END
     )
   ) ELSE (
@@ -337,7 +330,6 @@ IF "%PATH_PREPENDED%" NEQ "True" (
       CALL "%LP3D_VCVARSALL%\vcvars64.bat" %LP3D_VCVARSALL_VER%
     ) ELSE (
       ECHO -ERROR: vcvars64.bat not found.
-      ECHO -%~nx0 terminated!
       GOTO :ERROR_END
     )
   )
@@ -810,11 +802,12 @@ IF %secs% lss 0 SET /a mins = %mins% - 1 & SET /a secs = 60%secs%
 IF %mins% lss 0 SET /a hours = %hours% - 1 & SET /a mins = 60%mins%
 IF %hours% lss 0 SET /a hours = 24%hours%
 IF 1%ms% lss 100 SET ms=0%ms%
-ECHO -Elapsed build time %hours%:%mins%:%secs%.%ms%
+ECHO  Elapsed build time %hours%:%mins%:%secs%.%ms%
 ENDLOCAL
 EXIT /b
 
 :ERROR_END
+ECHO -%~nx0 will terminate!
 CALL :ELAPSED_BUILD_TIME
 EXIT /b 3
 
