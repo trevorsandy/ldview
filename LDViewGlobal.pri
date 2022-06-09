@@ -5,6 +5,7 @@
 # CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_macos_3rdparty
 # CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_windows_3rdparty
 # CONFIG+=USE_3RD_PARTY_LIBS
+# CONFIG+=USE_3RD_PARTY_PREBUILT_3DS  # override USE_3RD_PARTY_3DS to use static pre-built lib3ds.a
 # CONFIG+=USE_SYSTEM_LIBS
 # CONFIG+=BUILD_PNG
 # CONFIG+=BUILD_GL2PS
@@ -64,8 +65,8 @@ if (contains(HOST, Ubuntu):contains(HOST, 14.04.5):USE_SYSTEM_LIBS|BUILD_PNG) {
     USE_3RD_PARTY_PNG = YES
 }
 
-# system lib3ds does not appear to have lib3ds.h - so always use 3rd party version
-USE_3RD_PARTY_3DS = YES
+# system lib3ds does not appear to have lib3ds.h - so always use 3rd party version pre or demand built
+!USE_3RD_PARTY_PREBUILT_3DS: USE_3RD_PARTY_3DS = YES
 
 # GUI/CUI switch
 contains(DEFINES, _QT):     CONFIG += _QT_GUI
@@ -161,7 +162,7 @@ unix {
     } else {
         # pre-compiled libraries location
         equals(ARCH, 64): LIBDIR_ = $$_PRO_FILE_PWD_/../lib/Linux/x86_64
-        else:             LIBDIR_ = $$_PRO_FILE_PWD_/../lib/Linux/i386
+        else:             LIBDIR_ = $$_PRO_FILE_PWD_/../lib/Linux
 
         # dynamic library extension
         EXT_D        = so
@@ -171,9 +172,9 @@ unix {
     # Windows MinGW stuff...
     SYSTEM_PREFIX_  = C:/Program Files
     # dynamic library extensions
-    EXT_D            = dll
+    EXT_D           = dll
     # static library extensions
-    EXT_S          = a
+    EXT_S           = a
 
     # base names
     LIB_PNG       = png16
@@ -259,8 +260,10 @@ USE_3RD_PARTY_LIBS {
     TINYXML_INC     = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/tinyxml
     TINYXML_LIBDIR  = -L$${3RD_PARTY_PREFIX_}/tinyxml/$$DESTDIR
 
-    3DS_INC         = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/lib3ds
-    3DS_LIBDIR      = -L$${3RD_PARTY_PREFIX_}/lib3ds/$$DESTDIR
+    contains(USE_3RD_PARTY_3DS, YES) {
+        3DS_INC     = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/lib3ds
+        3DS_LIBDIR  = -L$${3RD_PARTY_PREFIX_}/lib3ds/$$DESTDIR
+    }
 
     JPEG_INC        = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/libjpeg
     JPEG_LIBDIR     = -L$${3RD_PARTY_PREFIX_}/libjpeg/$$DESTDIR
@@ -461,7 +464,7 @@ unix {
                 OSMESA_LDLIBS   = -l$${LIB_OSMESA} \
                                   -l$${LIB_GLU} \
                                   -l$${LIB_GL}
-                
+
             }
         }
 
@@ -521,6 +524,15 @@ unix {
             3DS_LDLIBS      = $${3RD_PARTY_PREFIX_}/lib3ds/$$DESTDIR/lib$${LIB_3DS}.$${EXT_S}
             # update libs path
             LIBS_INC       += $${3DS_INC}
+        } else {
+            # remove lib reference
+            LIBS_PRI       -= -l$${LIB_3DS}
+            # reset individual library entry
+            3DS_INC         = $${LIBINC_}
+            3DS_LIBDIR      = -L$${LIBDIR_}
+            3DS_LDLIBS      = $${LIBDIR_}/lib$${LIB_3DS}.$${EXT_S}
+            # update libs path
+            !contains(LIBS_INC, $${3DS_INC}): LIBS_INC += $${3DS_INC}
         }
     }
 }

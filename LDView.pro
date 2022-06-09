@@ -58,7 +58,7 @@ CONFIG+=ordered # This tells Qt to compile the following SUBDIRS in order
 #        |     |--- 3rdParty_minizip.pro   3rdParty library project file - consumes 3rdParty.pri
 #        |
 #        `--- /lib3ds
-#        |     |--- 3rdParty_3ds.pro       3rdParty library project file - consumes 3rdParty.pri
+#        |     |--- 3rdParty_3ds.pro       3rdParty library project file - consumes 3rdParty.pri (override with USE_3RD_PARTY_PREBUILT_3DS)
 #        |
 #        `--- /libpng
 #        |     |--- 3rdParty_png.pro       3rdParty library project file - consumes 3rdParty.pri
@@ -78,6 +78,7 @@ isEmpty(HOST):HOST = UNKNOWN HOST
 # CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_macos_3rdparty
 # CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_windows_3rdparty
 # CONFIG+=USE_3RD_PARTY_LIBS
+# CONFIG+=USE_3RD_PARTY_PREBUILT_3DS  # override USE_3RD_PARTY_3DS to use static pre-built lib3ds.a
 # CONFIG+=USE_SYSTEM_LIBS
 # CONFIG+=USE_OSMESA_STATIC
 # CONFIG+=BUILD_PNG
@@ -105,14 +106,17 @@ CONFIG 	+= ordered
 
 MAKEFILE_3RDPARTY = Makefile.ldview
 
+# system lib3ds does not appear to have lib3ds.h - so always use 3rd party version pre or demand built
+!USE_3RD_PARTY_PREBUILT_3DS: USE_3RD_PARTY_3DS = YES
+
 # Build 3rdParty Libraries'
 USE_3RD_PARTY_LIBS {
 
     SUBDIRS = 3rdParty_zlib
-    3rdParty_zlib.file        = $$PWD/3rdParty/zlib/3rdParty_zlib.pro
-    3rdParty_zlib.makefile    = $${MAKEFILE_3RDPARTY}
-    3rdParty_zlib.target      = sub-3rdParty_zlib
-    3rdParty_zlib.depends     =
+    3rdParty_zlib.file       = $$PWD/3rdParty/zlib/3rdParty_zlib.pro
+    3rdParty_zlib.makefile   = $${MAKEFILE_3RDPARTY}
+    3rdParty_zlib.target     = sub-3rdParty_zlib
+    3rdParty_zlib.depends    =
 
     SUBDIRS += 3rdParty_png
     3rdParty_png.file        = $$PWD/3rdParty/libpng/3rdParty_png.pro
@@ -132,11 +136,13 @@ USE_3RD_PARTY_LIBS {
     3rdParty_tinyxml.target   = sub-3rdParty_tinyxml
     3rdParty_tinyxml.depends  =
 
-    SUBDIRS += 3rdParty_3ds
-    3rdParty_3ds.file        = $$PWD/3rdParty/lib3ds/3rdParty_3ds.pro
-    3rdParty_3ds.makefile    = $${MAKEFILE_3RDPARTY}
-    3rdParty_3ds.target      = sub-3rdParty_3ds
-    3rdParty_3ds.depends     =
+    contains(USE_3RD_PARTY_3DS, YES) {
+        SUBDIRS += 3rdParty_3ds
+        3rdParty_3ds.file     = $$PWD/3rdParty/lib3ds/3rdParty_3ds.pro
+        3rdParty_3ds.makefile = $${MAKEFILE_3RDPARTY}
+        3rdParty_3ds.target   = sub-3rdParty_3ds
+        3rdParty_3ds.depends  =
+    }
 
     SUBDIRS += 3rdParty_minizip
     3rdParty_minizip.file     = $$PWD/3rdParty/minizip/3rdParty_minizip.pro
@@ -165,25 +171,22 @@ if (contains(HOST, Ubuntu):contains(HOST, 14.04.5):USE_SYSTEM_LIBS|BUILD_GL2PS|B
     USE_3RD_PARTY_PNG = YES
 }
 
-# system lib3ds dpoes not appear to have lib3ds.h - so always use 3rd party version
-USE_3RD_PARTY_3DS = YES
-
 USE_SYSTEM_LIBS {
     # always built...
     contains(USE_3RD_PARTY_3DS, YES) {
         SUBDIRS = 3rdParty_3ds
-        3rdParty_3ds.file        = $$PWD/3rdParty/lib3ds/3rdParty_3ds.pro
-        3rdParty_3ds.makefile    = $${MAKEFILE_3RDPARTY}
-        3rdParty_3ds.target      = sub-3rdParty_3ds
-        3rdParty_3ds.depends     =
+        3rdParty_3ds.file         = $$PWD/3rdParty/lib3ds/3rdParty_3ds.pro
+        3rdParty_3ds.makefile     = $${MAKEFILE_3RDPARTY}
+        3rdParty_3ds.target       = sub-3rdParty_3ds
+        3rdParty_3ds.depends      =
     }
     # built for Ubuntu Trusty and for libgl2ps for OBS build-from-source requirements
     contains(USE_3RD_PARTY_PNG, YES) {
         SUBDIRS += 3rdParty_png
-        3rdParty_png.file        = $$PWD/3rdParty/libpng/3rdParty_png.pro
-        3rdParty_png.makefile    = $${MAKEFILE_3RDPARTY}
-        3rdParty_png.target      = sub-3rdParty_png
-        3rdParty_png.depends     =
+        3rdParty_png.file         = $$PWD/3rdParty/libpng/3rdParty_png.pro
+        3rdParty_png.makefile     = $${MAKEFILE_3RDPARTY}
+        3rdParty_png.target       = sub-3rdParty_png
+        3rdParty_png.depends      =
     }
     # Open Build Service build-from-source requirements
     contains(USE_3RD_PARTY_TINYXML, YES) {
@@ -251,8 +254,8 @@ contains(BUILD_GUI, YES) {
     LDView_GUI_Qt.depends  += TCFoundation_GUI_Qt
     LDView_GUI_Qt.depends  += LDLoader_GUI_Qt
     LDView_GUI_Qt.depends  += LDExporter_GUI_Qt
-    USE_3RD_PARTY_PNG:LDView_GUI_Qt.depends += 3rdParty_png
-    USE_3RD_PARTY_3DS:LDView_GUI_Qt.depends += 3rdParty_3ds
+    contains(USE_3RD_PARTY_PNG, YES):LDView_GUI_Qt.depends += 3rdParty_png
+    contains(USE_3RD_PARTY_3DS, YES):LDView_GUI_Qt.depends += 3rdParty_3ds
     USE_3RD_PARTY_LIBS: LDView_GUI_Qt.depends += 3rdParty_minizip
     if (USE_3RD_PARTY_LIBS|BUILD_GL2PS) {
         LDView_GUI_Qt.depends += 3rdParty_gl2ps
@@ -327,8 +330,8 @@ contains(BUILD_CUI, YES) {
     LDView_CUI_OSMesa.depends  += LDLoader_CUI_OSMesa
     LDView_CUI_OSMesa.depends  += LDExporter_CUI_OSMesa
     LDView_CUI_OSMesa.depends  += Headerize_CUI_OSMesa
-    USE_3RD_PARTY_PNG:LDView_CUI_OSMesa.depends += 3rdParty_png
-    USE_3RD_PARTY_3DS:LDView_CUI_OSMesa.depends += 3rdParty_3ds
+    contains(USE_3RD_PARTY_PNG, YES):LDView_CUI_OSMesa.depends += 3rdParty_png
+    contains(USE_3RD_PARTY_3DS, YES):LDView_CUI_OSMesa.depends += 3rdParty_3ds
     if (USE_3RD_PARTY_LIBS|BUILD_TINYXML) {
         LDView_CUI_OSMesa.depends += 3rdParty_tinyxml
     }
