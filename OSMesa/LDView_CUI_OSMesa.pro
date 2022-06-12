@@ -101,18 +101,51 @@ unix {
                                   ../TRE/$$DESTDIR/libTRE$${POSTFIX}.a \
                                   ../LDLib/$$DESTDIR/libLDraw$${POSTFIX}.a \
                                   ../LDExporter/$$DESTDIR/libLDExporter$${POSTFIX}.a
-    exists($$OUT_PWD/$${PNG_LDLIBS}): \
-    libraries.files            += $${PNG_LDLIBS}
-    exists($$OUT_PWD/$${JPEG_LDLIBS}): \
-    libraries.files            += $${JPEG_LDLIBS}
-    exists($$OUT_PWD/$${3DS_LDLIBS}): \
-    libraries.files            += $${3DS_LDLIBS}
-    exists($$OUT_PWD/$${GL2PS_LDLIBS}): \
-    libraries.files            += $${GL2PS_LDLIBS}
-    exists($$OUT_PWD/$${TINYXML_LDLIBS}): \
-    libraries.files            += $${TINYXML_LDLIBS}
-    exists($$OUT_PWD/$${ZLIB_LDLIBS}): \
-    libraries.files            += $${ZLIB_LDLIBS}
+
+    contains(USE_3RD_PARTY_3DS, YES) {
+        exists($$OUT_PWD/$${3DS_LDLIBS}): 3DS_LIB_FOUND = YES
+        else: message("~~~ 3DS Library not found at $$OUT_PWD/$${3DS_LDLIBS} ~~~")
+    } else {
+        # pre-built 3ds path is already abs so use without $$OUT_PWD
+        exists($${3DS_LDLIBS}): 3DS_LIB_FOUND = YES
+        else: message("~~~ 3DS Library not found at $${3DS_LDLIBS} ~~~")
+    }
+    contains(3DS_LIB_FOUND, YES) {
+        # Treat Mageia 'error adding symbols: Archive has no index...'
+        contains(HOST,Mageia) {
+            message("~~~ COPY lib$${LIB_3DS}.$${EXT_S} TO $${3RD_BINDIR}/ ~~~")
+            3RD_3DS_COPY_CMD    = if ! test -e $${3RD_BINDIR}; then mkdir -p $${3RD_BINDIR}; fi; \
+                                  cp -f $${3DS_LDLIBS} $${3RD_BINDIR}/
+            system( $${3RD_3DS_COPY_CMD} )
+        } else {
+            libraries.files    += $${3DS_LDLIBS}
+        }
+    }
+    contains(USE_3RD_PARTY_PNG, YES) {
+        exists($$OUT_PWD/$${PNG_LDLIBS}): \
+        libraries.files += $${PNG_LDLIBS}
+        else: message("~~~ PNG Library not found at $$OUT_PWD/$${PNG_LDLIBS} ~~~")
+    }
+    contains(USE_3RD_PARTY_JPEG, YES) {
+        exists($$OUT_PWD/$${JPEG_LDLIBS}): \
+        libraries.files         += $${JPEG_LDLIBS}
+        else: message("~~~ JPEG Library not found at $$OUT_PWD/$${JPEG_LDLIBS} ~~~")
+    }
+    contains(USE_3RD_PARTY_GL2PS, YES) {
+        exists($$OUT_PWD/$${GL2PS_LDLIBS}): \
+        libraries.files         += $${GL2PS_LDLIBS}
+        else: message("~~~ GL2PS Library not found at $$OUT_PWD/$${GL2PS_LDLIBS} ~~~")
+    }
+    contains(USE_3RD_PARTY_TINYXML, YES) {
+        exists($$OUT_PWD/$${TINYXML_LDLIBS}): \
+        libraries.files         += $${TINYXML_LDLIBS}
+        else: message("~~~ TINYXML Library not found at $$OUT_PWD/$${TINYXML_LDLIBS} ~~~")
+    }
+    !contains(USE_SYSTEM_Z_LIB, YES) {
+        exists($$OUT_PWD/$${ZLIB_LDLIBS}): \
+        libraries.files         += $${ZLIB_LDLIBS}
+        else: message("~~~ Z Library not found at $$OUT_PWD/$${ZLIB_LDLIBS} ~~~")
+    }
 
     INSTALLS += target documentation resources resources_config libraries
 

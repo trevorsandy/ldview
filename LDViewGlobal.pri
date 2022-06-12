@@ -162,7 +162,7 @@ unix {
     } else {
         # pre-compiled libraries location
         equals(ARCH, 64): LIBDIR_ = $$_PRO_FILE_PWD_/../lib/Linux/x86_64
-        else:             LIBDIR_ = $$_PRO_FILE_PWD_/../lib/Linux
+        else:             LIBDIR_ = $$_PRO_FILE_PWD_/../lib
 
         # dynamic library extension
         EXT_D        = so
@@ -468,7 +468,7 @@ unix {
             }
         }
 
-        # override system libraries with 3rd party/pre-defined library paths as specified
+        # override system libraries with 3rd party pre/demand built library paths as specified
         contains(USE_3RD_PARTY_TINYXML, YES) {
             # remove lib reference
             LIBS_PRI           -= -l$${LIB_TINYXML}
@@ -538,6 +538,7 @@ unix {
 }
 
 message("~~~ USING $${WHICH_LIBS} LIBS ~~~")
+isEmpty(USE_3RD_PARTY_3DS):message("~~~ USING STATIC PRE-BUILT 3DS LIB ~~~")
 
 DEPENDPATH  += .
 INCLUDEPATH += . ..
