@@ -2151,6 +2151,8 @@ void ModelViewerWidget::windowActivationChange(bool oldActive)
 	unlock();
 #if QT_VERSION < 0x50000
 	QGLWidget::windowActivationChange(oldActive);
+#else
+	Q_UNUSED(oldActive)
 #endif
 }
 
