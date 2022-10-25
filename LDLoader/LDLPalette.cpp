@@ -27,6 +27,9 @@ static const TCByte transA = 110;
 #define TC_RGB_EPSILON (0.5f / 255.0f)
 #define TC_RGB_TO_DEC(v) (v / 255.0f)
 
+#define LPUB3D_COLOUR_HIGHLIGHT_PREFIX "110"
+#define LPUB3D_COLOUR_NAME_PREFIX      "LPub3D_"
+
 LDLColor LDLPalette::sm_studCylinderColor{ 27,42,52,255 };
 LDLColor LDLPalette::sm_partEdgeColor{ 0,0,0,255 };
 LDLColor LDLPalette::sm_blackEdgeColor{ 255,255,255,255 };
@@ -537,6 +540,15 @@ void LDLPalette::initStudStyleSettings()
 int LDLPalette::getStudStyleOrAutoEdgeColor(int colorNumber)
 {
 	LDLColorInfo colorInfo = getAnyColorInfo(colorNumber);
+
+	char colorNumberStr[32];
+	snprintf(colorNumberStr, sizeof(colorNumberStr), "%d", colorNumber);
+	bool isLPubHighlightColor = strncmp(LPUB3D_COLOUR_HIGHLIGHT_PREFIX, colorNumberStr, 3) == 0;
+	isLPubHighlightColor &= strncmp(LPUB3D_COLOUR_NAME_PREFIX, colorInfo.name, 7) == 0;
+
+	if (isLPubHighlightColor)
+		return getEdgeColorNumber(colorNumber, isLPubHighlightColor);
+
 	TCVector value(TC_RGB_TO_DEC((int)colorInfo.color.r), TC_RGB_TO_DEC((int)colorInfo.color.g), TC_RGB_TO_DEC((int)colorInfo.color.b));
 
 	const float valueLuminescence = TC_LUM_FROM_SRGB(value[0], value[1], value[2]);
@@ -580,10 +592,10 @@ int LDLPalette::getStudStyleOrAutoEdgeColor(int colorNumber)
 	return 0;
 }
 
-int LDLPalette::getEdgeColorNumber(int colorNumber)
+int LDLPalette::getEdgeColorNumber(int colorNumber, bool isHighlightColor)
 {
 
-	if (sm_studStyle > 5 || sm_automateEdgeColor)
+	if (!isHighlightColor && sm_studStyle > 5 || sm_automateEdgeColor)
 	{
 		return getStudStyleOrAutoEdgeColor(colorNumber);
 	}

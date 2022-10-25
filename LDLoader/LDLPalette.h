@@ -39,7 +39,9 @@ public:
 	bool hasSpecular(int colorNumber);
 	bool hasShininess(int colorNumber);
 	bool hasLuminance(int colorNumber);
-	int getEdgeColorNumber(int colorNumber);
+	// LPub3D Mod - stud style
+	int getEdgeColorNumber(int colorNumber, bool = false);
+	// LPub3D Mod End
 	bool isColorComment(const char *comment);
 	bool parseColorComment(const char *comment);
 	LDLColorInfo getAnyColorInfo(int colorNumber);
