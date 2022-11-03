@@ -110,7 +110,16 @@ void LDExporterSetting::reset(bool commit /*= false*/)
 		setValue(TCUserDefaults::defaultFloatForKey(m_key.c_str()), commit);
 		break;
 	case TString:
-		setValue(TCUserDefaults::defaultStringForKeyUC(m_key.c_str()), commit);
+		// LPub3D Mod - lights
+		{
+			ucstring povLights;
+			mbstoucstring(povLights, TCObject::ls("PovLights"));
+			if (getName() == povLights)
+				setValue(mbstoucstring(TCUserDefaults::defaultStringForKey(m_key.c_str())), commit);
+			else
+			    setValue(TCUserDefaults::defaultStringForKeyUC(m_key.c_str()), commit);
+		}
+		// LPub3D Mod End
 		break;
 	default:
 		break;

@@ -8,10 +8,11 @@
 #include <TCFoundation/TCVector.h>
 
 // LPub3D Mod - default lights
-// Elements: shadow, longitude, latitude, intensity, size, grid
-#define POV_LIGHT_01 "0 60.0 -80.0 0.7 200 5" // 0
-#define POV_LIGHT_02 "0 80.0  60.0 0.3 200 3" // 1
-#define EXPORT_POV_LIGHTS_DEFAULT POV_LIGHT_01 ";" POV_LIGHT_02
+// Elements: shadowless, latitude, longitude, intensity, size, grid
+#define POV_LIGHT_01 "0 45.0 0.0 1.0 200 4"
+#define POV_LIGHT_02 "0 30.0 120.0 0.0 0 0"
+#define POV_LIGHT_03 "0 60.0 -120.0 1.0 80 3"
+#define EXPORT_POV_LIGHTS_DEFAULT POV_LIGHT_01 ";" POV_LIGHT_02 ";" POV_LIGHT_03
 // LPub3D Mod End
 
 class LDLModel;
@@ -110,8 +111,8 @@ protected:
 	struct Light
 	{
 		bool  shadowless;
-		float longitude;
 		float latitude;
+		float longitude;
 		float intensity;
 		int   size;
 		int   grid;

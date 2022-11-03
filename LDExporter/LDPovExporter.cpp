@@ -532,7 +532,7 @@ void LDPovExporter::initSettings(void) const
 	}
 	const std::string lightString = getLightsString();
 	addSetting(pGroup, LDExporterSetting(ls(_UC("PovLights")),
-		lightString.c_str(), udKey("Lights").c_str()));
+		lightString.c_str(), udKey("PovLights").c_str()));
 	m_settings.back().setTooltip("PovLightsTT");
     // LPub3D Mod End
 
