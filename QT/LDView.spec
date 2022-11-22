@@ -94,7 +94,7 @@ BuildRequires: git
 %if 0%{?rhel_version} == 700
 BuildRequires: kdelibs-devel
 %else
-%if 0%{?centos_version} != 800
+%if 0%{?centos_version} != 800 && 0%{?oraclelinux} < 7 && 0%{?almalinux_ver} == 0
 BuildRequires: kdebase-devel
 %endif
 %endif
@@ -105,8 +105,8 @@ BuildRequires: libjpeg-turbo-devel, kf5-kio-devel, extra-cmake-modules, kf5-kdel
 BuildRequires: gcc-c++, libpng-devel, make
 %endif
 
-%if 0%{?fedora} || 0%{?centos_version} || 0%{?scientificlinux_version}
-%if 0%{?centos_version} != 800
+%if 0%{?fedora} || 0%{?centos_version} || 0%{?scientificlinux_version} || 0%{?oraclelinux} || 0%{?openeuler_version} || 0%{?almalinux}
+%if 0%{?centos_version} != 800 && 0%{?oraclelinux} < 7
 BuildRequires: mesa-libOSMesa-devel
 %endif
 BuildRequires: mesa-libGLU-devel
@@ -250,6 +250,12 @@ echo "SLES:               %{sles_version}"
 %endif
 %if 0%{?centos_ver}
 echo "CentOS:             %{centos_ver}"
+%endif
+%if 0%{?almalinux_ver}
+echo "AlmaLinux:          %{almalinux_ver}"
+%endif
+%if 0%{?oraclelinux}
+echo "OracleLinux:        0%{?oraclelinux}"
 %endif
 %if 0%{?fedora}
 echo "Fedora:             %{fedora}"
