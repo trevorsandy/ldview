@@ -69,7 +69,7 @@ LDRAWINI_BEGIN_STDC
 
 /* External references:
 calloc fclose ferror fopen free getc getenv malloc memcpy memmove realloc
-sprintf stat strcat strchr strcmp strcpy strdup strlen strncmp strncpy ungetc
+snprintf stat strcat strchr strcmp strcpy strdup strlen strncmp strncpy ungetc
 */
 
 /* Preprocessor flags:
@@ -248,7 +248,7 @@ struct LDrawIniS *LDrawIniGet(const char *LDrawDir,
          }
          while (pd->nSymbolicSearchDirs <= 99)
          {
-            sprintf(Key, "LDRAWSEARCH%02d", pd->nSymbolicSearchDirs + 1);
+            snprintf(Key, sizeof(Key), "LDRAWSEARCH%02d", pd->nSymbolicSearchDirs + 1);
             e = getenv(Key);
             if (!e)
                break;
@@ -305,7 +305,7 @@ struct LDrawIniS *LDrawIniGet(const char *LDrawDir,
                   free(LDrawIni);
                   return NULL;  /* No more memory, just give up              */
                }
-               sprintf(Key, "%d", pd->nSymbolicSearchDirs + 1);
+               snprintf(Key, sizeof(Key), "%d", pd->nSymbolicSearchDirs + 1);
                /* Be sure to read all from same ini file */
                if (!LDrawIniReadIniFile(IniFile, "LDrawSearch", Key,
                                         Str, sizeof(Str)))
