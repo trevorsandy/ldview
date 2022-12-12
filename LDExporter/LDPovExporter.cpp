@@ -437,7 +437,7 @@ void LDPovExporter::initSettings(void) const
 		setting.addOption(7, ls(_UC("PovCustom")));
 		try
 		{
-			setting.selectOption(m_selectedAspectRatio + 1);
+			setting.selectOption((size_t)m_selectedAspectRatio + 1);
 		}
 		catch (...)
 		{
@@ -1383,7 +1383,7 @@ std::string LDPovExporter::getModelFilename(const LDLModel *pModel)
 		buf = temp;
 		delete[] temp;
 	}
-	else
+	else if (modelFilename != NULL)
 	{
 		buf = modelFilename;
 	}

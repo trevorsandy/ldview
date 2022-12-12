@@ -67,6 +67,10 @@ Handle quotes in symbolic searchdirs
 
 LDRAWINI_BEGIN_STDC
 
+#ifdef WIN32
+#pragma warning(disable: 6308 6001)
+#endif // WIN32
+
 /* External references:
 calloc fclose ferror fopen free getc getenv malloc memcpy memmove realloc
 snprintf stat strcat strchr strcmp strcpy strdup strlen strncmp strncpy ungetc
@@ -246,7 +250,7 @@ struct LDrawIniS *LDrawIniGet(const char *LDrawDir,
             free(LDrawIni);
             return NULL;        /* No more memory, just give up              */
          }
-         while (pd->nSymbolicSearchDirs <= 99)
+         while (pd->nSymbolicSearchDirs < 99)
          {
             snprintf(Key, sizeof(Key), "LDRAWSEARCH%02d", pd->nSymbolicSearchDirs + 1);
             e = getenv(Key);
@@ -450,6 +454,7 @@ static int SplitLDrawSearch(const char *LDrawSearchString, int *nDirs, char ***D
    const char    *t;
    char          *Dir;
    int            n;
+   int            i;
    size_t         Len;
 
    /* Count number of dir separators '|' */
@@ -458,7 +463,7 @@ static int SplitLDrawSearch(const char *LDrawSearchString, int *nDirs, char ***D
    *Dirs = (char **) malloc(n * sizeof(char *));
    if (!*Dirs)
       return 0;
-   for (n = 0, s = LDrawSearchString; *s;)
+   for (i = 0, s = LDrawSearchString; *s && i < n;)
    {
       t = s;
       while (*t && *t != '|')
@@ -469,8 +474,8 @@ static int SplitLDrawSearch(const char *LDrawSearchString, int *nDirs, char ***D
          return 0;
       memcpy(Dir, s, Len);
       Dir[Len] = '\0';
-      (*Dirs)[n] = Dir;
-      if (!(*Dirs)[n++])
+      (*Dirs)[i] = Dir;
+      if (!(*Dirs)[i++])
          return 0;
       s = *t ? t + 1 : t;
    }
@@ -774,6 +779,7 @@ int LDrawIniComputeRealDirs(struct LDrawIniS * LDrawIni,
    int            Res;
    struct LDrawSearchDirS SearchDir;
 
+   memset(&SearchDir, 0, sizeof(SearchDir));
    if (!LDrawIni)
       return 0;
    if (!LDrawIni->LDrawDir)
@@ -814,7 +820,7 @@ c:\car.ldr   c:
          ModelPath = ".";
          i = 1;
       }
-      LDrawIni->ModelDir = (char *) malloc(i + 1);
+      LDrawIni->ModelDir = (char *) malloc((size_t)i + 1);
       if (!LDrawIni->ModelDir)
          return 0;
       memcpy(LDrawIni->ModelDir, ModelPath, i);
@@ -1081,6 +1087,10 @@ static int L3IsDirHelper(char *Path)
    if (pathBufSize > 0)
    {
       LPWSTR WPath = malloc(pathBufSize * sizeof(WCHAR));
+      if (WPath == NULL)
+      {
+          return 0;
+      }
       MultiByteToWideChar(CP_UTF8, 0, Path, -1, WPath, pathBufSize);
       if (PathIsDirectoryW(WPath))
       {
