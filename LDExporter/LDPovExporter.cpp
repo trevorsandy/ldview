@@ -1527,8 +1527,8 @@ bool LDPovExporter::scanModelColors(LDLModel *pModel, bool inPart)
 	m_processedModels[declareName] = true;
 	if (fileLines)
 	{
-		int i;
-		int count = pModel->getActiveLineCount();
+		size_t i;
+		size_t count = pModel->getActiveLineCount();
 
 		for (i = 0; i < count; i++)
 		{
@@ -1708,9 +1708,9 @@ bool LDPovExporter::writeModel(
 	{
 		if (fileLines)
 		{
-			int count = pModel->getActiveLineCount();
+			size_t count = pModel->getActiveLineCount();
 
-			for (int i = 0; i < count; i++)
+			for (size_t i = 0; i < count; i++)
 			{
 				LDLFileLine *pFileLine = (*fileLines)[i];
 
@@ -2228,7 +2228,7 @@ bool LDPovExporter::findModelGeometry(
 	int colorNumber /*= 16*/)
 {
 	LDLFileLineArray *fileLines = pModel->getFileLines();
-	int count = pModel->getActiveLineCount();
+	size_t count = pModel->getActiveLineCount();
 	bool retValue = false;
 	bool skipping = false;
 	const char *modelName = pModel->getName();
@@ -2246,7 +2246,7 @@ bool LDPovExporter::findModelGeometry(
 		}
 		m_primSubCheck = true;
 	}
-	for (int i = 0; i < count; i++)
+	for (size_t i = 0; i < count; i++)
 	{
 		LDLFileLine *pFileLine = (*fileLines)[i];
 
@@ -2346,8 +2346,8 @@ bool LDPovExporter::writeModelObject(
 	{
 		std::string modelFilename = getModelFilename(pModel);
 		LDLFileLineArray *fileLines = pModel->getFileLines();
-		int i;
-		int count = pModel->getActiveLineCount();
+		size_t i;
+		size_t count = pModel->getActiveLineCount();
 		std::string declareName = getDeclareName(pModel, mirrored, inPart);
 		IntShapeListMap colorGeometryMap;
 
