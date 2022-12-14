@@ -967,7 +967,7 @@ bool LDSnapshotTaker::saveImage(
 		{
 			numSteps = 1;
 		}
-		for (int step = 1; step <= numSteps && retValue; step++)
+		for (unsigned int step = 1; step <= numSteps && retValue; step++)
 		{
 			std::string stepFilename;
 
@@ -1851,7 +1851,7 @@ LDConsoleAlertHandler* LDSnapshotTaker::getConsoleAlertHandler(void)
 		if (unhandledArgs != NULL)
 		{
 			size_t count = unhandledArgs->getCount();
-			for (int i = 0; i < count; ++i)
+			for (unsigned int i = 0; i < count; ++i)
 			{
 				char *arg = unhandledArgs->stringAtIndex(i);
 				if (strcasecmp(arg, "-q") == 0)
@@ -1926,7 +1926,7 @@ bool LDSnapshotTaker::doCommandLine(
 					std::string commandLinesListArg = "-";
 					commandLinesListArg += COMMAND_LINES_LIST_KEY;
 					commandLinesListArg += "=";
-					for (int i = 0; i < count; ++i)
+					for (unsigned int i = 0; i < count; ++i)
 					{
 						const char *arg = (*origCommandLine)[i];
 						if (!stringHasCaseInsensitivePrefix(arg,

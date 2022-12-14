@@ -1401,7 +1401,7 @@ void LDLModel::extractData()
 {
 	std::string base64Text;
 	size_t lineCount = m_fileLines->getCount();
-	for (int i = 0; i < lineCount; ++i)
+	for (unsigned int i = 0; i < lineCount; ++i)
 	{
 		LDLFileLine *fileLine = (*m_fileLines)[i];
 		if (fileLine->getLineType() == LDLLineTypeComment)
@@ -2432,7 +2432,7 @@ void LDLModel::scanPoints(
 		int curStep = 0;
 		bool emptyStep = true;
 
-		for (int i = 0; i < m_activeLineCount; i++)
+		for (unsigned int i = 0; i < m_activeLineCount; i++)
 		{
 			LDLFileLine *fileLine = (*m_fileLines)[i];
 			if (fileLine->getLineNumber() == 0)
@@ -2551,7 +2551,7 @@ void LDLModel::calcBoundingBox(void) const
 		{
 			int i;
 
-			for (i = 0; i < m_fileLines->getCount(); i++)
+			for (unsigned i = 0; i < m_fileLines->getCount(); i++)
 			{
 				LDLFileLine *fileLine = (*m_fileLines)[i];
 
