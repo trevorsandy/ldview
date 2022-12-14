@@ -5488,7 +5488,7 @@ void LDrawModelViewer::parseHighlightPath(
 	const std::string &prePath,
 	int pathNum)
 {
-	int lineNum = atoi(&path[1]) - 1;
+	unsigned int lineNum = atoi(&path[1]) - 1;
 	const LDLFileLineArray *srcFileLines = srcModel->getFileLines();
 
 	if (lineNum < srcFileLines->getCount())
@@ -5637,7 +5637,7 @@ std::string LDrawModelViewer::adjustHighlightPath(
 
 	while (curModel != mpdChild && path.size() > 0)
 	{
-		int lineNum = atoi(&path[1]) - 1;
+		unsigned int lineNum = atoi(&path[1]) - 1;
 		const LDLFileLineArray *fileLines = curModel->getFileLines();
 
 		if (lineNum < fileLines->getCount())
