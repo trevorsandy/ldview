@@ -105,12 +105,12 @@ LDViewMainWindow::LDViewMainWindow(QApplication *a)
 	QAction *item;
     for ( cnt = i = 0; ; i++)
     {
-        item = fileMenu->actions()[i];
-        if (item->isSeparator())
-        {
-            if (++cnt == 2)
+		item = fileMenu->actions()[i];
+		if (item->isSeparator())
+		{
+			if (++cnt == 2)
 				break;
-        }
+		}
     }
     fileSeparatorIndex = i;
 #ifdef __APPLE__
@@ -127,8 +127,8 @@ LDViewMainWindow::LDViewMainWindow(QApplication *a)
 #endif // __APPLE__
     if (!recentFiles)
     {
-        recentFiles = new TCStringArray(10);
-        populateRecentFiles();
+		recentFiles = new TCStringArray(10);
+		populateRecentFiles();
     }
     populateRecentFileMenuItems();
 	setupStandardSizes();
@@ -227,11 +227,11 @@ void LDViewMainWindow::standardSizeSelected()
     text = action->text();
     if (! text.isNull())
     {
-        int w,h;
-        bool ok;
-        w = text.section(sep,0,0).toInt(&ok);
-        h = text.section(sep,2,2).toInt(&ok);
-        resize(w + size().width() -
+		int w,h;
+		bool ok;
+		w = text.section(sep,0,0).toInt(&ok);
+		h = text.section(sep,2,2).toInt(&ok);
+		resize(w + size().width() -
 							   modelViewer->getModelViewer()->getWidth(),
 						   h + size().height() -
 							   modelViewer->getModelViewer()->getHeight());
@@ -254,9 +254,9 @@ void LDViewMainWindow::setupStandardSizes()
     standardSizesPopupMenu->clear();
     for (size_t i = 0; i < standardSizes.size(); i++)
     {
-        QString qs;
-        ucstringtoqstring(qs, standardSizes[i].name);
-        QAction *act = standardSizesPopupMenu->addAction(qs);
+		QString qs;
+		ucstringtoqstring(qs, standardSizes[i].name);
+		QAction *act = standardSizesPopupMenu->addAction(qs);
 		connect( act, SIGNAL( triggered() ), this, SLOT(standardSizeSelected()) );
     }
 }
@@ -266,15 +266,15 @@ void LDViewMainWindow::pollChanged(QAction *action)
 	LDVPollMode newMode = LDVPollNone;
     if (action == promptPollingAction)
     {
-        newMode = LDVPollPrompt;
+		newMode = LDVPollPrompt;
     }
     else if (action == autoPollingAction)
     {
-        newMode = LDVPollAuto;
+		newMode = LDVPollAuto;
     }
     else if (action == backgroundPollingAction)
     {
-        newMode = LDVPollBackground;
+		newMode = LDVPollBackground;
     }
 	modelViewer->doPollChanged(newMode);
 }
@@ -285,17 +285,17 @@ void LDViewMainWindow::setPollAction(LDVPollMode mode)
     switch (mode)
     {
     case LDVPollPrompt:
-        pollAction = promptPollingAction;
-        break;
+		pollAction = promptPollingAction;
+		break;
     case LDVPollAuto:
-        pollAction = autoPollingAction;
-        break;
+		pollAction = autoPollingAction;
+		break;
     case LDVPollBackground:
-        pollAction = backgroundPollingAction;
-        break;
+		pollAction = backgroundPollingAction;
+		break;
     default:
 		pollAction = noPollingAction;
-        break;
+		break;
     }
     pollAction->setChecked(true);
 
@@ -308,7 +308,7 @@ void LDViewMainWindow::setMenuItemsEnabled(QMenu *menu, bool enabled)
 
     for (i = 0; i < count; i++)
     {
-        menu->actions()[i]->setEnabled(enabled);
+		menu->actions()[i]->setEnabled(enabled);
     }
 }
 
@@ -316,21 +316,21 @@ void LDViewMainWindow::doFileMenuAboutToShow(void)
 {
     if (modelViewer->isLoading())
     {
-        setMenuItemsEnabled(fileMenu, false);
-        fileCancelLoadAction->setEnabled(true);
+		setMenuItemsEnabled(fileMenu, false);
+		fileCancelLoadAction->setEnabled(true);
     }
     else
     {
-        setMenuItemsEnabled(fileMenu, true);
-        fileCancelLoadAction->setEnabled(false);
-        if (!modelViewer->getModelViewer() || !modelViewer->getModelViewer()->getMainTREModel())
-        {
-            fileReloadAction->setEnabled(false);
+		setMenuItemsEnabled(fileMenu, true);
+		fileCancelLoadAction->setEnabled(false);
+		if (!modelViewer->getModelViewer() || !modelViewer->getModelViewer()->getMainTREModel())
+		{
+			fileReloadAction->setEnabled(false);
 			fileSaveAction->setEnabled(false);
 			fileExportAction->setEnabled(false);
 			filePrintAction->setEnabled(false);
 			fileCancelLoadAction->setEnabled(false);
-        }
+		}
     }
 }
 
@@ -338,11 +338,11 @@ void LDViewMainWindow::doEditMenuAboutToShow(void)
 {
     if (modelViewer->isLoading())
     {
-        setMenuItemsEnabled(editMenu, false);
+		setMenuItemsEnabled(editMenu, false);
     }
     else
     {
-        setMenuItemsEnabled(editMenu, true);
+		setMenuItemsEnabled(editMenu, true);
     }
 }
 
@@ -350,22 +350,22 @@ void LDViewMainWindow::doViewMenuAboutToShow(void)
 {
     if (modelViewer->isLoading())
     {
-        setMenuItemsEnabled(viewMenu, false);
+		setMenuItemsEnabled(viewMenu, false);
     }
     else
     {
-        if (!modelViewer->getModelViewer() || !modelViewer->getModelViewer()->getMainTREModel())
-        {
-            setMenuItemsEnabled(viewMenu, false);
-            viewToolBarAction->setEnabled(true);
+		if (!modelViewer->getModelViewer() || !modelViewer->getModelViewer()->getMainTREModel())
+		{
+			setMenuItemsEnabled(viewMenu, false);
+			viewToolBarAction->setEnabled(true);
 			viewStatusBarAction->setEnabled(true);
-        }
-        else
-        {
-            setMenuItemsEnabled(viewMenu, true);
+		}
+		else
+		{
+			setMenuItemsEnabled(viewMenu, true);
 			viewLatitudeRotationAction->setEnabled( modelViewer->getViewMode() == LDInputHandler::VMExamine);
 			viewKeepRightSideUpAction->setEnabled( modelViewer->getViewMode() == LDInputHandler::VMFlyThrough);
-        }
+		}
     }
 	//setupStandardSizes();
 }
@@ -374,16 +374,16 @@ void LDViewMainWindow::doToolsMenuAboutToShow(void)
 {
     if (modelViewer->isLoading())
     {
-        setMenuItemsEnabled(toolsMenu, false);
+		setMenuItemsEnabled(toolsMenu, false);
     }
     else
     {
-        if (!modelViewer->getModelViewer() || !modelViewer->getModelViewer()->getMainTREModel())
-        {
-            setMenuItemsEnabled(toolsMenu, false);
-        }
-        else
-            setMenuItemsEnabled(toolsMenu, true);
+		if (!modelViewer->getModelViewer() || !modelViewer->getModelViewer()->getMainTREModel())
+		{
+			setMenuItemsEnabled(toolsMenu, false);
+		}
+		else
+			setMenuItemsEnabled(toolsMenu, true);
     }
 }
 
@@ -396,25 +396,25 @@ char *LDViewMainWindow::truncateFilename(const char *filename)
 {
     if (filename)
     {
-        int len = strlen(filename);
+		int len = strlen(filename);
 
-        if (len > 40)
-        {
-            char *retValue = new char[44];
+		if (len > 40)
+		{
+			char *retValue = new char[44];
 
-            strncpy(retValue, filename, 10);
-            strcpy(retValue + 10, "...");
-            strcat(retValue, filename + len - 30);
-            return retValue;
-        }
-        else
-        {
-            return copyString(filename);
-        }
+			strncpy(retValue, filename, 10);
+			strcpy(retValue + 10, "...");
+			strcat(retValue, filename + len - 30);
+			return retValue;
+		}
+		else
+		{
+			return copyString(filename);
+		}
     }
     else
     {
-        return NULL;
+		return NULL;
     }
 }
 
@@ -424,7 +424,7 @@ void LDViewMainWindow::clearRecentFileMenuItems(void)
 #ifdef __APPLE__
     if (openRecentMenu)
     {
-        openRecentMenu->clear();
+		openRecentMenu->clear();
     }
 #else // __APPLE__
     QAction *item;
@@ -434,8 +434,8 @@ void LDViewMainWindow::clearRecentFileMenuItems(void)
 
     for (i = index; i < count - 1; i++)
     {
-        item = fileMenu->actions()[index];
-        fileMenu->removeAction(item);
+		item = fileMenu->actions()[index];
+		fileMenu->removeAction(item);
     }
 #endif // __APPLE__
 }
@@ -448,17 +448,17 @@ void LDViewMainWindow::populateRecentFiles(void)
     recentFiles->removeAll();
     for (i = 1; i <= maxRecentFiles; i++)
     {
-        char *filename = Preferences::getRecentFile(i);
+		char *filename = Preferences::getRecentFile(i);
 
-        if (filename)
-        {
-            recentFiles->addString(filename);
-            delete filename;
-        }
-        else
-        {
-            recentFiles->addString(NULL);
-        }
+		if (filename)
+		{
+			recentFiles->addString(filename);
+			delete filename;
+		}
+		else
+		{
+			recentFiles->addString(NULL);
+		}
     }
 }
 
@@ -467,22 +467,22 @@ void LDViewMainWindow::populateRecentFileMenuItems(void)
 #ifdef __APPLE__
     if (!openRecentMenu)
     {
-        return;
+		return;
     }
 #endif // __APPLE__
     clearRecentFileMenuItems();
 
     if (recentFiles->stringAtIndex(0))
     {
-        int i;
-        long maxRecentFiles = Preferences::getMaxRecentFiles();
+		int i;
+		long maxRecentFiles = Preferences::getMaxRecentFiles();
 
-        for (i = 0; i < maxRecentFiles; i++)
-        {
-            char *filename = truncateFilename(recentFiles->stringAtIndex(i));
+		for (i = 0; i < maxRecentFiles; i++)
+		{
+			char *filename = truncateFilename(recentFiles->stringAtIndex(i));
 
-            if (filename)
-            {
+			if (filename)
+			{
 #ifdef __APPLE__
 				QMenu *menu = openRecentMenu;
 #else // __APPLE__
@@ -495,10 +495,10 @@ void LDViewMainWindow::populateRecentFileMenuItems(void)
 								   act);
 				connect( act, SIGNAL( triggered() ), this, SLOT(doRecentFile()) );
 				delete filename;
-            }
-        }
+			}
+		}
 #ifndef __APPLE__
-        fileMenu->insertSeparator(fileMenu->actions()[fileMenu->actions().count() - 1]);
+		fileMenu->insertSeparator(fileMenu->actions()[fileMenu->actions().count() - 1]);
 #endif // __APPLE__
     }
 }
@@ -510,9 +510,9 @@ void LDViewMainWindow::recordRecentFiles(void)
 
     for (i = 1; i <= maxRecentFiles; i++)
     {
-        char *filename = recentFiles->stringAtIndex(i - 1);
+		char *filename = recentFiles->stringAtIndex(i - 1);
 
-        Preferences::setRecentFile(i, filename);
+		Preferences::setRecentFile(i, filename);
     }
 }
 
