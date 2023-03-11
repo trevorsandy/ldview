@@ -1328,7 +1328,7 @@ BEGIN
             VALUE "FileDescription", "LDView - LPub3D Edition"
             VALUE "FileVersion", "4.4.2 Build 1"
             VALUE "InternalName", "LDView"
-            VALUE "LegalCopyright", "Copyright © 2022 Travis Cobbs & Peter Bartfai"
+            VALUE "LegalCopyright", "Copyright © 2023 Travis Cobbs & Peter Bartfai"
             VALUE "OriginalFilename", "LDView.exe"
             VALUE "ProductName", "LDView - LPub3D Edition"
             VALUE "ProductVersion", "4.4.2 Build 1"
