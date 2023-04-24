@@ -13,7 +13,7 @@ char LDViewVersion[] = "Version " VERSION_INFO " (" ARCH ")      ";
 char LDViewVersion[] = "Version " VERSION_INFO "      ";
 #endif
 #else
-char LDViewVersion[] = "Version 4.4.0      ";
+char LDViewVersion[] = "Version 4.5.0      ";
 #endif
 
 #include <TCFoundation/TCUserDefaults.h>

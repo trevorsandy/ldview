@@ -1,6 +1,6 @@
 # Build and check LPub3D x86 and x86_64 architectures unsing Qt/MinGW/VS2017 platforms
 # Trevor SANDY <trevor.sandy@gmail.com>
-# Last Update: June 09, 2021
+# Last Update: April 25, 2023
 # Copyright (c) 2017 - 2023 by Trevor SANDY
 #
 
@@ -10,7 +10,7 @@
 # LDV_SKIP_APPVEYOR_VAR     ; skip AppVeyor build
 
 # Build and check LDView x86 and x86_64 architectures unsing MSBuild
-version: LDView-AV-4.4.0.{build}
+version: LDView-AV-4.5.0.{build}
 
 clone_folder: c:\projects\ldview
 
