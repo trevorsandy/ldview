@@ -7,7 +7,7 @@ name: Build LDView
 on:
   push:
     branches:
-      - qmake-build
+      - lpub3d-build
 jobs:
   build-linux:
     runs-on: ubuntu-20.04

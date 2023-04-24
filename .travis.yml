@@ -20,7 +20,7 @@ git:
 
 branches:
   only:
-  - qmake-build
+  - lpub3d-build
 
 addons:
   apt:
@@ -137,7 +137,7 @@ deploy:
   edge: true  # opt in to dpl v2
   on:
     repo: trevorsandy/ldview
-    branch: qmake-build
+    branch: lpub3d-build
     condition: $LDV_DEPLOY_PKG = yes
 
 notifications:

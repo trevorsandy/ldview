@@ -21,7 +21,7 @@ shallow_clone: true
 
 branches:
   only:
-   - qmake-build
+   - lpub3d-build
 
 image: Visual Studio 2019
 
@@ -91,5 +91,5 @@ deploy:
    prerelease: true
    force_update: true
    on:
-    branch: qmake-build
+    branch: lpub3d-build
     ldv_deploy_pkg: true
