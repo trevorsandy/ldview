@@ -33,7 +33,7 @@ jobs:
         run: |
           if [ ! -d ${LDRAWDIR}/parts ]; then
             echo "LDraw library not found at ${LDRAWDIR}. Downloading library..."
-            curl -s -O http://www.ldraw.org/library/updates/complete.zip
+            curl -s -O https://library.ldraw.org/library/updates/complete.zip
             unzip -d ~/ -q complete.zip; rm complete.zip
             if test -d ${LDRAWDIR}; then echo "LDraw library extracted, LDRAWDIR defined."; fi
           else
@@ -104,7 +104,7 @@ jobs:
         run: |
           if [ ! -d ${LDRAWDIR}/parts ]; then
             echo "LDraw library not found at ${LDRAWDIR}. Downloading library..."
-            curl -s -O http://www.ldraw.org/library/updates/complete.zip
+            curl -s -O https://library.ldraw.org/library/updates/complete.zip
             unzip -d ~/Library -q complete.zip; rm complete.zip
             if test -d ${LDRAWDIR}; then echo "LDraw library extracted, LDRAWDIR defined."; fi
           fi
