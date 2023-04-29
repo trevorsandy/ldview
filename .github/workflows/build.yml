@@ -86,7 +86,7 @@ jobs:
         run: |
           echo "LDRAWDIR=${HOME}/Library/ldraw" >> ${GITHUB_ENV}
           echo "LDV_DIST_DIR=lpub3d_macos_3rdparty" >> ${GITHUB_ENV}
-          echo "LDV_DIST_DIR_CREATE=${HOME}/work/ldview/ldview/lpub3d_linux_3rdparty" >> ${GITHUB_ENV}
+          echo "LDV_DIST_DIR_CREATE=${HOME}/work/ldview/ldview/lpub3d_macos_3rdparty" >> ${GITHUB_ENV}
       - name: Development Packages
         run: |
           echo "/usr/local/opt/ccache/libexec" >> ${GITHUB_PATH}
