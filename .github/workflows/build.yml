@@ -40,6 +40,10 @@ jobs:
           else
             echo "LDraw library defined at ${LDRAWDIR}."
           fi
+      - name: Stdlib Patch
+        run: |
+            echo "Apply stdlib error patch to LDViewGlobal.pri..."
+            sed s/'    # detect system libraries paths'/'    # Suppress fatal error: stdlib.h: No such file or directory\n    QMAKE_CFLAGS_ISYSTEM = -I\n\n    # detect system libraries paths'/ -i LDViewGlobal.pri
       - name: Build LDView
         run: |
           if [ ! -d "${LDV_DIST_DIR_CREATE}" ]; then mkdir -p "${LDV_DIST_DIR_CREATE}" && echo "${LDV_DIST_DIR_CREATE} created."; fi
@@ -48,7 +52,7 @@ jobs:
           make && make install
 
   build-windows:
-    if: ${{ false }} # uncomment to disable
+    # if: ${{ false }} # uncomment to disable
     runs-on: windows-2019
     steps:
       - name: Checkout
@@ -75,7 +79,7 @@ jobs:
         run: .\build.cmd -all -chk
 
   build-macos:
-    if: ${{ false }} # uncomment to disable
+    # if: ${{ false }} # uncomment to disable
     runs-on: macos-11
     steps:
       - name: Checkout
