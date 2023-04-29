@@ -1,6 +1,6 @@
 # Build, check and LDView
 # Trevor SANDY <trevor.sandy@gmail.com>
-# Last Update: April 25, 2023
+# Last Update: April 29, 2023
 # Copyright (C) 2022 - 2023 by Trevor SANDY
 #
 name: Build LDView
@@ -18,7 +18,7 @@ jobs:
         run: |
           echo "LDRAWDIR=${HOME}/ldraw" >> ${GITHUB_ENV}
           echo "LDV_DIST_DIR=lpub3d_linux_3rdparty" >> ${GITHUB_ENV}
-          if [ ! -d "${HOME}/work/ldview/ldview/${LDV_DIST_DIR}" ]; then mkdir -p "${HOME}/work/ldview/ldview/${LDV_DIST_DIR}"; fi
+          echo "LDV_DIST_DIR_PATH=${HOME}/work/ldview/ldview/${LDV_DIST_DIR}" >> ${GITHUB_ENV}
       - name: Development Packages
         run: |
           echo "Install development packages..."
@@ -45,6 +45,7 @@ jobs:
             sed s/'    # detect system libraries paths'/'    # Suppress fatal error: stdlib.h: No such file or directory\n    QMAKE_CFLAGS_ISYSTEM = -I\n\n    # detect system libraries paths'/ -i LDViewGlobal.pri
       - name: Build LDView
         run: |
+          if [ ! -d "${LDV_DIST_DIR_PATH}" ]; then mkdir -p "${LDV_DIST_DIR_PATH}" && echo "${LDV_DIST_DIR_PATH} created."; fi
           qmake -v; $(cd QT ; sed -i 's/kdelibs5-dev//g' debian/control)
           qmake CONFIG+=3RD_PARTY_INSTALL=../${LDV_DIST_DIR} CONFIG+=release CONFIG+=BUILD_CUI_ONLY CONFIG+=USE_SYSTEM_LIBS CONFIG+=BUILD_CHECK
           make && make install
@@ -85,7 +86,7 @@ jobs:
         run: |
           echo "LDRAWDIR=${HOME}/Library/ldraw" >> ${GITHUB_ENV}
           echo "LDV_DIST_DIR=lpub3d_macos_3rdparty" >> ${GITHUB_ENV}
-          if [ ! -d "${HOME}/work/ldview/ldview/${LDV_DIST_DIR}" ]; then mkdir -p "${HOME}/work/ldview/ldview/${LDV_DIST_DIR}"; fi
+          echo "LDV_DIST_DIR_PATH=${HOME}/work/ldview/ldview/${LDV_DIST_DIR}" >> ${GITHUB_ENV}
       - name: Development Packages
         run: |
           echo "/usr/local/opt/ccache/libexec" >> ${GITHUB_PATH}
@@ -113,6 +114,7 @@ jobs:
           echo "LDraw library defined at ${LDRAWDIR}."
       - name: Build LDView
         run: |
+          if [ ! -d "${LDV_DIST_DIR_PATH}" ]; then mkdir -p "${LDV_DIST_DIR_PATH}" && echo "${LDV_DIST_DIR_PATH} created."; fi
           qmake -v
           qmake CONFIG+=3RD_PARTY_INSTALL=../${LDV_DIST_DIR} CONFIG+=release CONFIG+=BUILD_CUI_ONLY CONFIG+=USE_SYSTEM_LIBS CONFIG+=BUILD_CHECK
           make && make install
