@@ -23,18 +23,6 @@
 #endif // _DEBUG
 #endif // WIN32
 
-// LPub3D Mod - Information header
-#ifdef VERSION_INFO
-#ifdef ARCH
-char LDView_Version[] = VERSION_INFO " (" ARCH ")";
-#else
-char LDView_Version[] = VERSION_INFO;
-#endif
-#else
-char LDView_Version[] = "4.5";
-#endif
-// LPub3D Mod End
-
 using namespace TREGLExtensionsNS;
 
 #define FBO_SIZE 1024
@@ -1474,7 +1462,7 @@ bool LDSnapshotTaker::writeImage(
 	// LPub3D Mod - Information header
 	if (TCUserDefaults::boolForKey("Info"))
 	{
-		printf("\nLDView%s - LPub3D Edition Image Output\n", LDView_Version);
+		printf("\nLDView 4.5 - LPub3D Edition Image Output\n");
 		printf("=========================================\n");
 		printf("Write %s image %s\n\n", formatName, filename);
 	}
