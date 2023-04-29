@@ -23,6 +23,18 @@
 #endif // _DEBUG
 #endif // WIN32
 
+// LPub3D Mod - Information header
+#ifdef VERSION_INFO
+#ifdef ARCH
+char LDViewVersion[] = VERSION_INFO " (" ARCH ")";
+#else
+char LDViewVersion[] = VERSION_INFO;
+#endif
+#else
+char LDViewVersion[] = "4.5";
+#endif
+// LPub3D Mod End
+
 using namespace TREGLExtensionsNS;
 
 #define FBO_SIZE 1024
@@ -429,11 +441,11 @@ bool LDSnapshotTaker::exportFiles(bool *tried /*= nullptr*/)
 		for (i = 0; i < count && (exportFiles || !retValue); ++i)
 		{
 			std::string arg = unhandledArgs->stringAtIndex(i);
-			
+
 			if (arg[0] != '-' && arg[0] != 0)
 			{
 				std::string exportFilename;
-				
+
 				if (isFileUri(arg))
 				{
 					m_fileUri = arg;
@@ -771,7 +783,7 @@ bool LDSnapshotTaker::saveImage(bool *tried /*= nullptr*/)
 		for (i = 0; i < count && (saveSnapshots || !retValue); i++)
 		{
 			std::string arg = unhandledArgs->stringAtIndex(i);
-			
+
 			if (arg[0] != '-' && arg[0] != 0)
 			{
 				std::string imageFilename;
@@ -1284,7 +1296,7 @@ static void testZMap(const char *filename)
 {
 	FILE *zMapFile = ucfopen(filename, "rb");
 	TCImage *image = new TCImage;
-	
+
 	if (testZMap2(zMapFile, image))
 	{
 		std::string pngFilename = filename;
@@ -1459,14 +1471,14 @@ bool LDSnapshotTaker::writeImage(
 	m_croppedHeight = image->getHeight();
 	retValue = image->saveFile(filename, staticImageProgressCallback, this);
 
-    // LPub3D Mod - Information header
-    if (TCUserDefaults::boolForKey("Info"))
-    {
-        printf("\nLDView - LPub3D Edition Image Output\n");
-        printf("======================================\n");
-        printf("Write %s image %s\n\n", formatName, filename);
-    }
-    // LPub3D Mod End
+	// LPub3D Mod - Information header
+	if (TCUserDefaults::boolForKey("Info"))
+	{
+		printf("\nLDView%s - LPub3D Edition Image Output\n", LDViewVersion);
+		printf("=========================================\n");
+		printf("Write %s image %s\n\n", formatName, filename);
+	}
+	// LPub3D Mod End
 
 	debugPrintf("Saved image: %s\n", filename);
 	image->release();
@@ -1847,7 +1859,7 @@ LDConsoleAlertHandler* LDSnapshotTaker::getConsoleAlertHandler(void)
 		int verbosity = 1;
 		TCStringArray *unhandledArgs =
 			TCUserDefaults::getUnhandledCommandLineArgs();
-		
+
 		if (unhandledArgs != NULL)
 		{
 			size_t count = unhandledArgs->getCount();
@@ -2109,7 +2121,7 @@ std::string LDSnapshotTaker::extensionForType(
 	if (includeDot)
 	{
 		std::string retValue(".");
-		
+
 		retValue += extensionForType(type, false);
 		return retValue;
 	}

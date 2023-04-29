@@ -8,12 +8,12 @@
 
 #ifdef VERSION_INFO
 #ifdef ARCH
-char LDViewVersion[] = "Version " VERSION_INFO " (" ARCH ")      ";
+char LDViewVersion[] = VERSION_INFO " (" ARCH ")      ";
 #else
-char LDViewVersion[] = "Version " VERSION_INFO "      ";
+char LDViewVersion[] = VERSION_INFO "      ";
 #endif
 #else
-char LDViewVersion[] = "Version 4.5.0      ";
+char LDViewVersion[] = "4.5.0      ";
 #endif
 
 #include <TCFoundation/TCUserDefaults.h>
@@ -79,17 +79,17 @@ protected:
 std::string iniFileStatus(const char *iniPath )
 {
 #ifdef __USE_GNU
-        errno = 0;
+		errno = 0;
 #endif
   FILE *iniFile = ucfopen(iniPath, "r+b");
 
   if (!iniFile)
   {
 #ifdef __USE_GNU
-    return formatString("%s: Could not open file %s; %s",
-                          program_invocation_short_name, iniPath, strerror(errno));
+	return formatString("%s: Could not open file %s; %s",
+						  program_invocation_short_name, iniPath, strerror(errno));
 #else
-    return formatString("LDView: Cound not open file %s", iniPath);
+	return formatString("LDView: Cound not open file %s", iniPath);
 #endif
   }
   // we should never get here, but if we do ...
@@ -98,77 +98,77 @@ std::string iniFileStatus(const char *iniPath )
 
 int setupDefaults(char *argv[])
 {
-    int retVal = 0;
-    TCUserDefaults::setCommandLine(argv);
-    // IniFile can be specified on the command line; if so, don't load a
-    // different one.
-    if (!TCUserDefaults::isIniFileSet())
-    {
-        // Check if IniFile specified on command line ...
-        std::string iniFile = TCUserDefaults::commandLineStringForKey("IniFile");
-        if (iniFile.size() > 0 )
-        {
-            std::string fileMsg = iniFileStatus(iniFile.c_str());
-            printf("Could not set command line INI file. Returned message:\n"
-                   " - %s\n - ldview: Checking for user INI files...\n", fileMsg.c_str());
-        }
+	int retVal = 0;
+	TCUserDefaults::setCommandLine(argv);
+	// IniFile can be specified on the command line; if so, don't load a
+	// different one.
+	if (!TCUserDefaults::isIniFileSet())
+	{
+		// Check if IniFile specified on command line ...
+		std::string iniFile = TCUserDefaults::commandLineStringForKey("IniFile");
+		if (iniFile.size() > 0 )
+		{
+			std::string fileMsg = iniFileStatus(iniFile.c_str());
+			printf("Could not set command line INI file. Returned message:\n"
+				   " - %s\n - ldview: Checking for user INI files...\n", fileMsg.c_str());
+		}
 
-        char *homeDir = getenv("HOME");
+		char *homeDir = getenv("HOME");
 
-        if (homeDir)
-        {
-            bool iniFileSet = false;
+		if (homeDir)
+		{
+			bool iniFileSet = false;
 
-            char *rcFile = copyString(homeDir, 128);
-            std::string file1Msg;
+			char *rcFile = copyString(homeDir, 128);
+			std::string file1Msg;
 
-            strcat(rcFile, "/.ldviewrc");
+			strcat(rcFile, "/.ldviewrc");
 
-            if (!TCUserDefaults::setIniFile(rcFile))
-            {
-                file1Msg = iniFileStatus(rcFile);
-            }
-            else
-            {
-                iniFileSet = true;
-            }
+			if (!TCUserDefaults::setIniFile(rcFile))
+			{
+				file1Msg = iniFileStatus(rcFile);
+			}
+			else
+			{
+				iniFileSet = true;
+			}
 
-            char *rcFile2 = NULL;
-            std::string file2Msg;
+			char *rcFile2 = NULL;
+			std::string file2Msg;
 
-            if (!iniFileSet)
-            {
-                rcFile2 = copyString(homeDir, 128);
-                strcat(rcFile2, "/.config/LDView/ldviewrc");
+			if (!iniFileSet)
+			{
+				rcFile2 = copyString(homeDir, 128);
+				strcat(rcFile2, "/.config/LDView/ldviewrc");
 
-                if (!TCUserDefaults::setIniFile(rcFile2))
-                {
-                    file2Msg = iniFileStatus(rcFile2);
-                }
-                else
-                {
-                    iniFileSet = true;
-                }
-            }
+				if (!TCUserDefaults::setIniFile(rcFile2))
+				{
+					file2Msg = iniFileStatus(rcFile2);
+				}
+				else
+				{
+					iniFileSet = true;
+				}
+			}
 
-            if (!iniFileSet)
-            {
-                printf("Could not set user INI file Returned messages:\n"
-                       " - %s\n - %s\n", file1Msg.c_str(), file2Msg.c_str());
-                retVal = 1;
-            }
-            delete rcFile;
-            delete rcFile2;
-        }
-        else
-        {
-            printf("HOME environment variable not defined: cannot use "
-                "~/.ldviewrc.\n");
-            retVal = 1;
-        }
-    }
-    setDebugLevel(TCUserDefaults::longForKey("DebugLevel", 0, false));
-    return retVal;
+			if (!iniFileSet)
+			{
+				printf("Could not set user INI file Returned messages:\n"
+					   " - %s\n - %s\n", file1Msg.c_str(), file2Msg.c_str());
+				retVal = 1;
+			}
+			delete rcFile;
+			delete rcFile2;
+		}
+		else
+		{
+			printf("HOME environment variable not defined: cannot use "
+				"~/.ldviewrc.\n");
+			retVal = 1;
+		}
+	}
+	setDebugLevel(TCUserDefaults::longForKey("DebugLevel", 0, false));
+	return retVal;
 }
 
 void *setupContext(OSMesaContext &ctx)
@@ -336,69 +336,69 @@ bool fileCaseCallback(char *filename)
 
 int main(int argc, char *argv[])
 {
-    printf("\nLDView - LPub3D Edition CUI (Offscreen Renderer) %s\n", LDViewVersion);
-    printf("==========================\n");
+	printf("\nLDView - LPub3D Edition CUI (Offscreen Renderer) Version %s\n", LDViewVersion);
+	printf("=========================================\n");
 
-    void *buffer;
-    OSMesaContext ctx;
-    int stringTableSize = sizeof(LDViewMessages_bytes);
-    char *stringTable = new char[sizeof(LDViewMessages_bytes) + 1];
-    bool defaultsKO = false;
+	void *buffer;
+	OSMesaContext ctx;
+	int stringTableSize = sizeof(LDViewMessages_bytes);
+	char *stringTable = new char[sizeof(LDViewMessages_bytes) + 1];
+	bool defaultsKO = false;
 
-    memcpy(stringTable, LDViewMessages_bytes, stringTableSize);
-    stringTable[stringTableSize] = 0;
-    TCLocalStrings::setStringTable(stringTable);
+	memcpy(stringTable, LDViewMessages_bytes, stringTableSize);
+	stringTable[stringTableSize] = 0;
+	TCLocalStrings::setStringTable(stringTable);
 
-    if (setupDefaults(argv) != 0)
-    {
-        if (TCUserDefaults::boolForKey("Info"))
-        {
-            defaultsKO = true;
-        }
-        else
-        {
-            return 1;
-        }
-    }
+	if (setupDefaults(argv) != 0)
+	{
+		if (TCUserDefaults::boolForKey("Info"))
+		{
+			defaultsKO = true;
+		}
+		else
+		{
+			return 1;
+		}
+	}
 
-    if ((buffer = setupContext(ctx)) != NULL)
-    {
-        //ProgressHandler *progressHandler = new ProgressHandler;
+	if ((buffer = setupContext(ctx)) != NULL)
+	{
+		//ProgressHandler *progressHandler = new ProgressHandler;
 
-        if (TCUserDefaults::boolForKey("Info"))
-        {
-            printf("Arguments = ");
-            int cnt;
-            int ppl = 3;
-            for (int i = 0; i < argc; i++)
-            {
-                cnt = i+1;
-                printf("%s ", argv[i]);
-                if (cnt % ppl == 0 )
-                    printf("\n");
-            }
-            if (cnt <= ppl)
-                printf("\n");
-            printf("\n");
+		if (TCUserDefaults::boolForKey("Info"))
+		{
+			printf("Arguments = ");
+			int cnt;
+			int ppl = 3;
+			for (int i = 0; i < argc; i++)
+			{
+				cnt = i+1;
+				printf("%s ", argv[i]);
+				if (cnt % ppl == 0 )
+					printf("\n");
+			}
+			if (cnt <= ppl)
+				printf("\n");
+			printf("\n");
 
-            //get OpenGL info
-            glInfo glinfo;
-            glinfo.getInfo();
-            glinfo.printSelf();
-        }
-        if (defaultsKO)
-        {
-            return 1;
-        }
-        TREMainModel::setStudTextureData(StudLogo_bytes,
-            sizeof(StudLogo_bytes));
-        LDLModel::setFileCaseCallback(fileCaseCallback);
-        LDSnapshotTaker::doCommandLine();
-        OSMesaDestroyContext(ctx);
-        free(buffer);
+			//get OpenGL info
+			glInfo glinfo;
+			glinfo.getInfo();
+			glinfo.printSelf();
+		}
+		if (defaultsKO)
+		{
+			return 1;
+		}
+		TREMainModel::setStudTextureData(StudLogo_bytes,
+			sizeof(StudLogo_bytes));
+		LDLModel::setFileCaseCallback(fileCaseCallback);
+		LDSnapshotTaker::doCommandLine();
+		OSMesaDestroyContext(ctx);
+		free(buffer);
 
-        //TCObject::release(progressHandler);
-    }
-    TCAutoreleasePool::processReleases();
-    return 0;
+		//TCObject::release(progressHandler);
+	}
+	TCAutoreleasePool::processReleases();
+	return 0;
 }
