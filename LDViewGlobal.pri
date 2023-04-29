@@ -32,7 +32,13 @@ isEmpty(HOST):HOST = UNKNOWN HOST
 !isEmpty(3RD_ARG): CONFIG -= $$3RD_ARG
 CONFIG += $$section(3RD_ARG, =, 0, 0)
 isEmpty(3RD_PREFIX): 3RD_PREFIX = $$_PRO_FILE_PWD_/$$section(3RD_ARG, =, 1, 1)
-!exists($${3RD_PREFIX}): !BUILD_FLATPAK: message("~~~ ERROR - 3rd party repository path not found ~~~")
+!exists($${3RD_PREFIX}): !BUILD_FLATPAK {
+    message("~~~ ERROR - 3rd party repository path was not found ~~~")
+    message("~~~  DEBUG - 3rd Path: $${3RD_PREFIX} ~~~")
+    message("~~~  DEBUG - Pro Path: $$_PRO_FILE_PWD_ ~~~")
+    message("~~~  DEBUG - Out Path: $$OUT_PWD ~~~")
+    message("~~~  DEBUG - PWD Path: $$PWD ~~~")
+}
 
 # same more funky stuff to get the local library prefix - all this just to build on OBS' RHEL
 OSMESA_ARG = $$find(CONFIG, USE_OSMESA_LOCAL.*)
@@ -554,7 +560,7 @@ contains(USE_CPP11,NO) {
 }
 
 contains(QT_VERSION, ^5\\..*) {
-  unix:!macx {  
+  unix:!macx {
     GCC_VERSION = $$system(g++ -dumpversion)
     greaterThan(GCC_VERSION, 4.8) {
       QMAKE_CXXFLAGS += -std=c++11
@@ -570,24 +576,24 @@ contains(QT_VERSION, ^6\\..*) {
   }
   macx {
     QMAKE_CXXFLAGS+= -std=c++17
-  }  
+  }
   unix:!macx {
     GCC_VERSION = $$system(g++ -dumpversion)
     greaterThan(GCC_VERSION, 5) {
-      QMAKE_CXXFLAGS += -std=c++17 
+      QMAKE_CXXFLAGS += -std=c++17
     } else {
       QMAKE_CXXFLAGS += -std=c++0x
     }
-  }  
+  }
 }
 
 
 # Boost
 !contains(CONFIG, USE_BOOST): {
-    DEFINES		+= _NO_BOOST
+    DEFINES     += _NO_BOOST
 } else {
     INCLUDEPATH         += $$_PRO_FILE_PWD_/../boost/include
-    LIBS 		+= -L$$_PRO_FILE_PWD_/../boost/lib
+    LIBS        += -L$$_PRO_FILE_PWD_/../boost/lib
 }
 
 # dirs
@@ -613,7 +619,7 @@ unix {
     contains(OSTYPE, pair.com) {
         LIBS_INC    +=  /usr/local/include
         OSMESA_INC  += $$_PRO_FILE_PWD_/../../Mesa-7.11/include
-        DEFINES	+= _GL_POPCOLOR_BROKEN
+        DEFINES += _GL_POPCOLOR_BROKEN
     }
 
     exists (/usr/include/qt3) {
