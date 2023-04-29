@@ -1,2 +1,2 @@
-lib*.a
-*.ldview
+*.a
+.obj
