@@ -548,43 +548,46 @@ isEmpty(USE_3RD_PARTY_3DS):message("~~~ USING STATIC PRE-BUILT 3DS LIB ~~~")
 
 DEPENDPATH  += .
 INCLUDEPATH += . ..
+USE_3RD_PARTY_LIBS | BUILD_GL2PS {
+INCLUDEPATH += $${3RD_PARTY_PREFIX_}/gl2ps
+}
 
 # USE GNU_SOURCE
 unix:!macx: DEFINES += _GNU_SOURCE
 
 # USE CPP 11
 contains(USE_CPP11,NO) {
-  message("NO CPP11")
+    message("NO CPP11")
 } else {
-  DEFINES += USE_CPP11
+    DEFINES += USE_CPP11
 }
 
 contains(QT_VERSION, ^5\\..*) {
-  unix:!macx {
-    GCC_VERSION = $$system(g++ -dumpversion)
-    greaterThan(GCC_VERSION, 4.8) {
-      QMAKE_CXXFLAGS += -std=c++11
-    } else {
-      QMAKE_CXXFLAGS += -std=c++0x
+    unix:!macx {
+        GCC_VERSION = $$system(g++ -dumpversion)
+        greaterThan(GCC_VERSION, 4.8) {
+            QMAKE_CXXFLAGS += -std=c++11
+        } else {
+            QMAKE_CXXFLAGS += -std=c++0x
+        }
     }
-  }
 }
 
 contains(QT_VERSION, ^6\\..*) {
-  win32-msvc* {
-    QMAKE_CXXFLAGS += /std:c++17
-  }
-  macx {
-    QMAKE_CXXFLAGS+= -std=c++17
-  }
-  unix:!macx {
-    GCC_VERSION = $$system(g++ -dumpversion)
-    greaterThan(GCC_VERSION, 5) {
-      QMAKE_CXXFLAGS += -std=c++17
-    } else {
-      QMAKE_CXXFLAGS += -std=c++0x
+    win32-msvc* {
+        QMAKE_CXXFLAGS += /std:c++17
     }
-  }
+    macx {
+        QMAKE_CXXFLAGS+= -std=c++17
+    }
+    unix:!macx {
+        GCC_VERSION = $$system(g++ -dumpversion)
+        greaterThan(GCC_VERSION, 5) {
+            QMAKE_CXXFLAGS += -std=c++17
+        } else {
+            QMAKE_CXXFLAGS += -std=c++0x
+        }
+    }
 }
 
 
@@ -592,7 +595,7 @@ contains(QT_VERSION, ^6\\..*) {
 !contains(CONFIG, USE_BOOST): {
     DEFINES     += _NO_BOOST
 } else {
-    INCLUDEPATH         += $$_PRO_FILE_PWD_/../boost/include
+    INCLUDEPATH += $$_PRO_FILE_PWD_/../boost/include
     LIBS        += -L$$_PRO_FILE_PWD_/../boost/lib
 }
 
