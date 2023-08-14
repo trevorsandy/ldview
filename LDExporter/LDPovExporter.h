@@ -8,10 +8,27 @@
 #include <TCFoundation/TCVector.h>
 
 // LPub3D Mod - default lights
-// Elements: shadowless, latitude, longitude, intensity, size, grid
-#define POV_LIGHT_01 "0 45.0 0.0 1.0 200 4"
-#define POV_LIGHT_02 "0 30.0 120.0 0.0 0 0"
-#define POV_LIGHT_03 "0 60.0 -120.0 1.0 80 3"
+/*
+Elements         Light
+00 type          All
+01 shadowless    All
+02 latitude      All
+03 longitude     All
+04 target        All
+05 color         All
+06 intensity     All
+07 spotRadius    Spot
+08 spotFalloff   Spot
+09 spotTightness Spot
+10 circle        Area
+11 areaWidth     Area
+12 areaHeight    Area
+13 areaRows      Area
+14 areaColumns   Area
+*/
+#define POV_LIGHT_01 "1 0 45 0 <0,0,0> <0.8,0.8,0.8> 1 0 0 0 0 200 200 4 4"  // Area Light
+#define POV_LIGHT_02 "0 0 30 120 <0,0,0> <0.8,0.8,0.8> 0 0 0 0 0 0 0 0 0"    // Point Light
+#define POV_LIGHT_03 "1 0 60 -120 <0,0,0> <0.8,0.8,0.8> 1 0 0 0 0 80 80 3 3" // Area Light
 #define EXPORT_POV_LIGHTS_DEFAULT POV_LIGHT_01 ";" POV_LIGHT_02 ";" POV_LIGHT_03
 // LPub3D Mod End
 
@@ -134,12 +151,21 @@ protected:
 	// LPub3D Mod - lights
 	struct Light
 	{
-		bool  shadowless;
+		int   type;
+		int   shadowless;
 		float latitude;
 		float longitude;
+		std::string target;
+		std::string color;
 		float intensity;
-		int   size;
-		int   grid;
+		float radius;
+		float falloff;
+		float tightness;
+		int   circle;
+		int   width;
+		int   height;
+		int   rows;
+		int   columns;
 	};
 
 	typedef std::list<Light> LightList;
@@ -171,10 +197,6 @@ protected:
 	bool writeModel(LDLModel *pModel, const TCFloat *matrix, bool inPart);
 	bool writeCamera(void);
 	bool writeLights(void);
-    // LPub3D Mod - lights
-	void writeLight(int num, TCFloat lat, TCFloat lon, int shadow,
-		TCFloat intsy = 0.0, int size = 0, int grid = 0);
-    // LPub3D Mod End
 	bool writeModelObject(LDLModel *pModel, bool mirrored,
 		const TCFloat *matrix, bool inPart);
 	void writeGeometry(IntShapeListMap &colorGeometryMap);

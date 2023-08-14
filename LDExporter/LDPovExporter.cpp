@@ -630,12 +630,29 @@ void LDPovExporter::loadLights(const char* povLights)
 				}
 				povLights += strlen(povLights);
 			}
-			int     shadow, size, grid;
-			TCFloat lat, lon, intsy;
-			if (value && sscanf(value, "%d %f %f %f %d %d",
-				&shadow, &lat, &lon, &intsy, &size, &grid) == 6)
+
+			int type;
+			int shadowless;
+			TCFloat latitude;
+			TCFloat longitude;
+			char target[100];
+			char color[100];
+			TCFloat intensity;
+			TCFloat radius;
+			TCFloat falloff;
+			TCFloat tightness;
+			int circle;
+			int width;
+			int height;
+			int rows;
+			int columns;
+			int attributes = sscanf(value, "%d %d %f %f %s %s %f %f %f %f %d %d %d %d %d",
+				                           &type, &shadowless, &latitude, &longitude, target, color, &intensity,
+				                           &radius, &falloff, &tightness, &circle, &width, &height, &rows, &columns);
+			if (value && attributes == 15)
 			{
-				Light light { (bool)shadow, lat, lon, intsy, size, grid };
+				Light light { type, shadowless, latitude, longitude, target, color, intensity,
+							  radius, falloff, tightness, circle, width, height, rows, columns };
 				m_povLightList.push_back(light);
 			}
 		}
@@ -645,23 +662,32 @@ void LDPovExporter::loadLights(const char* povLights)
 std::string LDPovExporter::getLightsString(void) const
 {
 	int index = 0;
-	char output[200] = "";
+	char output[512] = "";
 	for (LightList::const_iterator it = m_povLightList.begin(); it != m_povLightList.end(); ++it)
 	{
 		bool lastItem = (index + 1) >= m_povLightList.size();
 		index++;
 		const Light& light = *it;
-		char buffer[100];
+		char buffer[512];
 		snprintf(
 			buffer, 
 			sizeof(buffer),
-			"%d %g %g %g %d %d%s", 
-			light.shadowless ? 1 : 0,
+			"%i %i %g %g %s %s %g %g %g %g %i %i %i %i %i%s", 
+			light.type,
+			light.shadowless,
 			light.latitude,
 			light.longitude,
+			light.target.c_str(),
+			light.color.c_str(),
 			light.intensity,
-			light.size,
-			light.grid,
+			light.radius,
+			light.falloff,
+			light.tightness,
+			light.circle,
+			light.width,
+			light.height,
+			light.rows,
+			light.columns,
 			lastItem ? "" : ";");
 		strcat(output, buffer);
 	}
@@ -1236,7 +1262,7 @@ bool LDPovExporter::writeHeader(void)
 		const Light& light = *it;
 		if (!areaLight)
 		{
-			areaLight = light.size;
+			areaLight = light.type == 1;
 			if (areaLight)
 			{
 				floorR = 1.0f;
@@ -1244,6 +1270,7 @@ bool LDPovExporter::writeHeader(void)
 				floorB = 1.0f;
 				floorAmb = 0.0f;
 				floorDif = 0.9f;
+				break;
 			}
 		}
 	}
@@ -1877,67 +1904,53 @@ void LDPovExporter::writeLightSourceMacro(void)
 	writeDeclare("LDXCameraTheta", "0.5235979");
 
 	fprintf(m_pPovFile,"\n");
-
+	// insert 
 	fprintf(m_pPovFile,
-		"// Light %s: degrees\n"
-		"// Light %s: 0~1 float\n"
-		"// Light %s: 0=false, 1=true\n"
-		"// Light %s: int\n"
-		"// Light %s: int\n", 
-		(const char*)ls("PovLatLon"), 
-		(const char*)ls("PovLightPower"),
-		(const char*)ls("PovLightShadow"),
-		(const char*)ls("PovLightSize"),
-		(const char*)ls("PovLightGrid"));
-	fprintf(m_pPovFile,
-		"#macro WriteLight(Lat, Lon, LightPower, Shadowless, LightSize, LightGrid)\n"
-		"#local latRad = radians(Lat);\n"
-		"#local lonRad = radians(-Lon) - LDXCameraTheta;\n"
-		"#local sinLat = sin(latRad);\n"
-		"#local cosLat = cos(latRad);\n"
-		"#local sinLon = sin(lonRad);\n"
-		"#local cosLon = cos(lonRad);\n"
-		"#local lightVectorSize = 2*LDXRadius;\n"
-		"#local AreaLight = LightSize;\n"
-		"#local AreaLightWidth = LightSize;\n"
-		"#local AreaLightHeight = LightSize;\n"
-		"#local AreaLightRows = LightGrid;\n"
-		"#local AreaLightColumns = LightGrid;\n"
-		"light_source {\n"
-		"	<lightVectorSize*((-sinLon)*cosLat),lightVectorSize*(-sinLat),lightVectorSize*(-cosLon)*cosLat> + LDXCenter\n"
-		"	color rgb <1,1,1>*LightPower\n"
-		"	#if (Shadowless = 0)\n"
-		"	    #if (AreaLight > 0)\n"
-		"	        area_light AreaLightWidth, AreaLightHeight, AreaLightRows, AreaLightColumns\n"
-		"	        adaptive 1\n"
-		"	        jitter\n"
-		"	        circular\n"
-		"	        orient\n"
-		"	    #end\n"
-		"	#else\n"
-		"		shadowless\n"
-		"	#end\n"
-		"}\n"
+		"#ifndef (SkipWriteLightMacro)\n"
+		"#macro WriteLight(Type, Shadowless, Latitude, Longitude, Target, Color, Intensity, SpotRadius, SpotFalloff, SpotTightness, AreaCircle, AreaWidth, AreaHeight, AreaRows, AreaColumns)\n"
+		"  #local PointLight = 0;\n"
+		"  #local AreaLight = 1;\n"
+		"  #local SunLight = 2;\n"
+		"  #local Spotlight = 3;\n"
+		"  #local latRad = radians(Latitude);\n"
+		"  #local lonRad = radians(-Longitude) - LDXCameraTheta;\n"
+		"  #local sinLat = sin(latRad);\n"
+		"  #local cosLat = cos(latRad);\n"
+		"  #local sinLon = sin(lonRad);\n"
+		"  #local cosLon = cos(lonRad);\n"
+		"  #local lightVectorSize = 2*LDXRadius;\n"
+		"  light_source {\n"
+		"    <lightVectorSize*((-sinLon)*cosLat),lightVectorSize*(-sinLat),lightVectorSize*(-cosLon)*cosLat> + LDXCenter\n"
+		"    color rgb Color*Intensity\n"
+		"    #if (Shadowless > 0)\n"
+		"      shadowless\n"
+		"    #end\n"
+		"    #if (Type = Spotlight)\n"
+		"      spotlight\n"
+		"      radius SpotRadius\n"
+		"      falloff SpotFalloff\n"
+		"      tightness SpotTightness\n"
+		"      point_at Target\n"
+		"    #elseif (Type = SunLight)\n"
+		"      parallel\n"
+		"      point_at Target\n"
+		"    #elseif (Type = AreaLight)\n"
+		"      area_light AreaWidth, AreaHeight, AreaRows, AreaColumns\n"
+		"      jitter\n"
+		"      #if (AreaCircle > 0 & AreaWidth > 2 & AreaHeight > 2 & AreaRows > 1 & AreaColumns > 1 )\n"
+		"        circular \n"
+		"        #if (AreaWidth = AreaHeight & AreaRows = AreaColumns)\n"
+		"          orient\n"
+		"        #end\n"
+		"      #end\n"
+		"    #end\n"
+		"  }\n"
+		"#end\n"
 		"#end\n\n");
 }
 // LPub3D Mod End
 
 // LPub3D Mod - lights
-void LDPovExporter::writeLight(int num, TCFloat lat, TCFloat lon,
-	int shadowless, TCFloat intsy, int size, int grid)
-{
-	fprintf(m_pPovFile,
-		"#ifndef (LDXSkipLight%d)\n"
-		"WriteLight(%s, %s, %s, %d, %d, %d)\t// %s: %s, %s: %s, %s: %s, %s: %d, %s: %d, %s: %d\n"
-		"#end\n\n", num, ftostr(lat).c_str(), ftostr(lon).c_str(), ftostr(intsy).c_str(), shadowless, size, grid,
-		(const char*)ls("PovLightLat"), ftostr(lat).c_str(), 
-		(const char*)ls("PovLightLon"), ftostr(lon).c_str(),
-		(const char*)ls("PovLightPower"), ftostr(intsy).c_str(),
-		(const char*)ls("PovLightShadow"), shadowless,
-		(const char*)ls("PovLightSize"), size,
-		(const char*)ls("PovLightGrid"), grid);
-}
-
 bool LDPovExporter::writeLights(void)
 {
 	fprintf(m_pPovFile, "// Lights\n");
@@ -1946,7 +1959,82 @@ bool LDPovExporter::writeLights(void)
 	{
 		num++;
 		const Light& light = *it;
-		writeLight(num, light.latitude, light.longitude, light.shadowless, light.intensity, light.size, light.grid);
+
+		char type[32];
+		switch (light.type)
+		{
+		case 3:
+			sprintf(type, "%s", (const char*)ls("PovLightPointlight"));
+			break;
+		case 2:
+			sprintf(type, "%s", (const char*)ls("PovLightArealight"));
+			break;
+		case 1:
+			sprintf(type, "%s", (const char*)ls("PovLightSunlight"));
+			break;
+		default:
+			sprintf(type, "%s", (const char*)ls("PovLightSpotlight"));
+			break;
+		}
+
+		if (num == 1)
+		{
+			fprintf(m_pPovFile, "\n");
+			fprintf(m_pPovFile,
+				"// Attributes\n"
+				"// Type %d : %s (all)\n"
+				"// Shadowless %d : %s (all)\n"
+				"// Latitude %s : %s (all)\n"
+				"// Longitude %s : %s (all)\n"
+				"// Target %s : %s (all)\n"
+				"// Color %s : %s (all)\n"
+				"// Intensity %s : %s (all)\n"
+				"// Radius %s : %s (spot)\n"
+				"// Falloff %s : %s (spot)\n"
+				"// Tightness %s : %s (spot)\n"
+				"// Circle %d : %s (area)\n"
+				"// Width %d : %s (area)\n"
+				"// Height %d : %s (area)\n"
+				"// Rows %d : %s (area)\n"
+				"// Columns %d : %s (area)\n\n",
+				light.type, (const char*)ls("PovLightType"),
+				light.shadowless, (const char*)ls("PovLightShadowless"),
+				ftostr(light.latitude).c_str(), (const char*)ls("PovLightLatitude"),
+				ftostr(light.longitude).c_str(), (const char*)ls("PovLightLongitude"),
+				light.target.c_str(), (const char*)ls("PovLightTarget"),
+				light.color.c_str(), (const char*)ls("PovLightColor"),
+				ftostr(light.intensity).c_str(), (const char*)ls("PovLightIntensity"),
+				ftostr(light.radius).c_str(), (const char*)ls("PovLightSpotRadius"),
+				ftostr(light.falloff).c_str(), (const char*)ls("PovLightSpotFalloff"),
+				ftostr(light.tightness).c_str(), (const char*)ls("PovLightSpotTightness"),
+				light.circle, (const char*)ls("PovLightAreaCircle"),
+				light.width, (const char*)ls("PovLightAreaWidth"),
+				light.height, (const char*)ls("PovLightAreaHeight"),
+				light.rows, (const char*)ls("PovLightAreaRows"),
+				light.columns, (const char*)ls("PovLightAreaColumns"));
+		}
+
+		fprintf(m_pPovFile,
+			"#ifndef (LDXSkip%s%d)\n"
+			"WriteLight(%d, %d, %s, %s, %s, %s, %s, %s, %s, %s, %d, %d, %d, %d, %d)\n"
+			"#end\n\n",
+			type,
+			num, 
+			light.type,
+			light.shadowless,
+			ftostr(light.latitude).c_str(),
+			ftostr(light.longitude).c_str(),
+			light.target.c_str(),
+			light.color.c_str(),
+			ftostr(light.intensity).c_str(),
+			ftostr(light.radius).c_str(),
+			ftostr(light.falloff).c_str(),
+			ftostr(light.tightness).c_str(),
+			light.circle,
+			light.width,
+			light.height,
+			light.rows,
+			light.columns);
 	}
     return true;
 }
