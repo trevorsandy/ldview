@@ -8,7 +8,7 @@ rem LDView distributions and package the build contents (exe, doc and
 rem resources ) as LPub3D 3rd Party components.
 rem --
 rem  Trevor SANDY <trevor.sandy@gmail.com>
-rem  Last Update: April 25, 2023
+rem  Last Update: August 29, 2023
 rem  Copyright (c) 2020 - 2023 by Trevor SANDY
 rem --
 rem This script is distributed in the hope that it will be useful,
@@ -19,17 +19,35 @@ CALL :ELAPSED_BUILD_TIME Start
 
 SET PWD=%CD%
 
-rem Variables
-IF "%LP3D_VSVERSION%" == "" SET LP3D_VSVERSION=2019
+IF "%LP3D_VSVERSION%" == "" SET "LP3D_VSVERSION=2019"
 
-rem Static defaults
 IF "%GITHUB%" EQU "True" (
+  SET "BUILD_WORKER=True"
+  SET "BUILD_WORKER_JOB=%GITHUB_JOB%"
+  SET "BUILD_WORKER_REF=%GITHUB_REF%"
+  SET "BUILD_WORKER_OS=%RUNNER_OS%"
+  SET "BUILD_WORKER_REPO=%GITHUB_REPOSITORY%"
+  SET "BUILD_WORKER_IMAGE=Visual Studio %LP3D_VSVERSION%"
+  SET "BUILD_WORKER_HOST=GITHUB CONTINUOUS INTEGRATION SERVICE"
+  SET "BUILD_WORKSPACE=%GITHUB_WORKSPACE%"
+)
+
+IF "%LP3D_CONDA_BUILD%" EQU "True" (
+  SET "BUILD_WORKER=True"
+  SET "BUILD_WORKER_JOB=%LP3D_CONDA_JOB%"
+  SET "BUILD_WORKER_OS=%LP3D_CONDA_RUNNER_OS%"
+  SET "BUILD_WORKER_REPO=%LP3D_CONDA_REPOSITORY%"
+  SET "BUILD_WORKER_IMAGE=%CMAKE_GENERATOR%"
+  SET "BUILD_WORKER_HOST=CONDA BUILD INTEGRATION SERVICE"
+  SET "BUILD_WORKSPACE=%LP3D_CONDA_WORKSPACE%"
+)
+
+IF "%BUILD_WORKER%" EQU "True" (
   IF [%LP3D_DIST_DIR_PATH%] == [] (
     ECHO.
     ECHO  -ERROR: Distribution directory path not defined.
     GOTO :ERROR_END
   )
-  SET GITHUB_RUNNER_IMAGE=Visual Studio %LP3D_VSVERSION%
   SET DIST_DIR=%LP3D_DIST_DIR_PATH%
   SET LDRAW_DOWNLOAD_DIR=%LP3D_3RD_PARTY_PATH%
   SET LDRAW_DIR=%LP3D_LDRAW_DIR_PATH%
@@ -47,7 +65,7 @@ IF "%APPVEYOR%" EQU "True" (
   SET LDRAW_DIR=%APPVEYOR_BUILD_FOLDER%\LDraw
 )
 
-IF "%GITHUB%" NEQ "True" (
+IF "%BUILD_WORKER%" NEQ "True" (
   IF "%APPVEYOR%" NEQ "True" (
     SET LDRAW_DOWNLOAD_DIR=%USERPROFILE%
     SET LDRAW_DIR=%USERPROFILE%\LDraw
@@ -55,32 +73,41 @@ IF "%GITHUB%" NEQ "True" (
   )
 )
 
-IF EXIST "C:\Program Files (x86)\Microsoft Visual Studio\%LP3D_VSVERSION%\Community\VC\Auxiliary\Build" (
-  SET LP3D_VCVARSALL=C:\Program Files ^(x86^)\Microsoft Visual Studio\%LP3D_VSVERSION%\Community\VC\Auxiliary\Build
+IF "%LP3D_CONDA_BUILD%" NEQ "True" (
+  IF EXIST "C:\Program Files (x86)\Microsoft Visual Studio\%LP3D_VSVERSION%\Professional\VC\Auxiliary\Build" (
+    SET LP3D_VCVARSALL_DIR=C:\Program Files ^(x86^)\Microsoft Visual Studio\%LP3D_VSVERSION%\Professional\VC\Auxiliary\Build
+  )  
+  IF EXIST "C:\Program Files (x86)\Microsoft Visual Studio\%LP3D_VSVERSION%\Community\VC\Auxiliary\Build" (
+    SET LP3D_VCVARSALL_DIR=C:\Program Files ^(x86^)\Microsoft Visual Studio\%LP3D_VSVERSION%\Community\VC\Auxiliary\Build
+  )
+  IF EXIST "C:\Program Files (x86)\Microsoft Visual Studio\%LP3D_VSVERSION%\BuildTools\VC\Auxiliary\Build" (
+    SET LP3D_VCVARSALL_DIR=C:\Program Files ^(x86^)\Microsoft Visual Studio\%LP3D_VSVERSION%\BuildTools\VC\Auxiliary\Build
+  )
+  IF EXIST "C:\Program Files (x86)\Microsoft Visual Studio\%LP3D_VSVERSION%\Enterprise\VC\Auxiliary\Build" (
+    SET LP3D_VCVARSALL_DIR=C:\Program Files ^(x86^)\Microsoft Visual Studio\%LP3D_VSVERSION%\Enterprise\VC\Auxiliary\Build
+  )
 )
-IF EXIST "C:\Program Files (x86)\Microsoft Visual Studio\%LP3D_VSVERSION%\BuildTools\VC\Auxiliary\Build" (
-  SET LP3D_VCVARSALL=C:\Program Files ^(x86^)\Microsoft Visual Studio\%LP3D_VSVERSION%\BuildTools\VC\Auxiliary\Build
-)
-IF EXIST "C:\Program Files (x86)\Microsoft Visual Studio\%LP3D_VSVERSION%\Enterprise\VC\Auxiliary\Build" (
-  SET LP3D_VCVARSALL=C:\Program Files ^(x86^)\Microsoft Visual Studio\%LP3D_VSVERSION%\Enterprise\VC\Auxiliary\Build
-)
-IF "%LP3D_VCVARSALL%" == "" (
+IF NOT EXIST "%LP3D_VCVARSALL_DIR%" (
   ECHO.
-  ECHO  -ERROR: Microsoft Visual Studio C++ environment not defined.
+  ECHO  -ERROR - Microsoft Visual Studio C++ environment not defined.
   GOTO :ERROR_END
 )
 
-rem Visual C++ 2012 -vcvars_ver=11.0
-rem Visual C++ 2013 -vcvars_ver=12.0
-rem Visual C++ 2015 -vcvars_ver=14.0
-rem Visual C++ 2017 -vcvars_ver=14.1
-rem Visual C++ 2019 -vcvars_ver=14.2
-IF "%LP3D_VCVARSALL_VER%" == "" SET LP3D_VCVARSALL_VER=-vcvars_ver=14.0
-IF "%LP3D_VCVERSION%" == "" SET LP3D_VCVERSION=8.1
+rem Visual C++ 2012 -vcvars_ver=11.0 version 11.0  _MSC_VER 1700
+rem Visual C++ 2013 -vcvars_ver=12.0 version 12.0  _MSC_VER 1800
+rem Visual C++ 2015 -vcvars_ver=14.0 version 14.0  _MSC_VER 1900
+rem Visual C++ 2017 -vcvars_ver=14.1 version 15.9  _MSC_VER 1916
+rem Visual C++ 2019 -vcvars_ver=14.2 version 16.11 _MSC_VER 1929
+rem Visual C++ 2022 -vcvars_ver=14.2 version 17.3  _MSC_VER 1933
+IF "%LP3D_MSC_VER%" == "" SET LP3D_MSC_VER=1929
+IF "%LP3D_VCSDKVER%" == "" SET LP3D_VCSDKVER=8.1
 IF "%LP3D_VCTOOLSET%" == "" SET LP3D_VCTOOLSET=v140
+IF "%LP3D_VCVARSALL_VER%" == "" SET LP3D_VCVARSALL_VER=-vcvars_ver=14.0
+
+IF "%LP3D_VALID_7ZIP%" =="" SET LP3D_VALID_7ZIP=0
+IF "%LP3D_7ZIP_WIN64%" == "" SET "LP3D_7ZIP_WIN64=%ProgramFiles%\7-zip\7z.exe"
 
 SET INI_POV_FILE=%PWD%\OSMesa\ldviewPOV.ini
-SET zipWin64=C:\program files\7-zip
 SET OfficialCONTENT=complete.zip
 
 SET PACKAGE=LDView
@@ -173,13 +200,13 @@ IF /I "%2"=="-chk" (
 :BUILD
 rem Display build settings
 ECHO.
-IF "%GITHUB%" EQU "True" (
-  ECHO   BUILD_HOST.............[GITHUB CONTINUOUS INTEGRATION SERVICE]
-  ECHO   BUILD_WORKER_IMAGE.....[%GITHUB_RUNNER_IMAGE%]
-  ECHO   BUILD_JOB..............[%GITHUB_JOB%]
-  ECHO   GITHUB_REF.............[%GITHUB_REF%]
-  ECHO   GITHUB_RUNNER_OS.......[%RUNNER_OS%]
-  ECHO   PROJECT REPOSITORY.....[%GITHUB_REPOSITORY%]
+IF "%BUILD_WORKER%" EQU "True" (
+  ECHO   BUILD_HOST.............[%BUILD_WORKER_HOST%]
+  ECHO   BUILD_WORKER_IMAGE.....[%BUILD_WORKER_IMAGE%]
+  ECHO   BUILD_WORKER_JOB.......[%BUILD_WORKER_JOB%]
+  ECHO   BUILD_WORKER_REF.......[%BUILD_WORKER_REF%]
+  ECHO   BUILD_WORKER_OS........[%BUILD_WORKER_OS%]
+  ECHO   PROJECT REPOSITORY.....[%BUILD_WORKER_REPO%]
 )
 IF "%APPVEYOR%" EQU "True" (
   ECHO   BUILD_HOST.............[APPVEYOR CONTINUOUS INTEGRATION SERVICE]
@@ -236,7 +263,7 @@ CALL :CONFIGURE_VCTOOLS %PLATFORM_ARCH%
 rem Initialize the Visual Studio command line development environment
 CALL :CONFIGURE_BUILD_ENV
 rem Assemble command line
-SET COMMAND_LINE=msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%PLATFORM_ARCH% /p:WindowsTargetPlatformVersion=%LP3D_VCVERSION% /p:PlatformToolset=%LP3D_VCTOOLSET% %PROJECT% %LOGGING_FLAGS%
+SET COMMAND_LINE=msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%PLATFORM_ARCH% /p:WindowsTargetPlatformVersion=%LP3D_VCSDKVER% /p:PlatformToolset=%LP3D_VCTOOLSET% %PROJECT% %LOGGING_FLAGS%
 ECHO -Build Command: %COMMAND_LINE%
 rem Launch msbuild
 %COMMAND_LINE%
@@ -271,7 +298,7 @@ FOR %%P IN ( Win32, x64 ) DO (
   CALL :CONFIGURE_VCTOOLS %%P
   CALL :CONFIGURE_BUILD_ENV
   SETLOCAL ENABLEDELAYEDEXPANSION
-  SET COMMAND_LINE=msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%%P /p:WindowsTargetPlatformVersion=!LP3D_VCVERSION! /p:PlatformToolset=!LP3D_VCTOOLSET! %PROJECT% %LOGGING_FLAGS%
+  SET COMMAND_LINE=msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%%P /p:WindowsTargetPlatformVersion=!LP3D_VCSDKVER! /p:PlatformToolset=!LP3D_VCTOOLSET! %PROJECT% %LOGGING_FLAGS%
   ECHO -Build Command: !COMMAND_LINE!
   !COMMAND_LINE!
   IF %%P==Win32 (SET EXE=Build\%CONFIGURATION%\%PACKAGE%.exe)
@@ -296,19 +323,24 @@ GOTO :END
 ECHO.
 ECHO -Set MSBuild platform toolset...
 IF %1==x64 (
-  SET LP3D_VCVERSION=10.0
-  SET LP3D_VCTOOLSET=v142
-  SET LP3D_VCVARSALL_VER=-vcvars_ver=14.2
+  IF "%LP3D_CONDA_BUILD%" NEQ "True" (
+    SET LP3D_MSC_VER=1929
+    SET LP3D_VCSDKVER=10.0
+    SET LP3D_VCTOOLSET=v142
+    SET LP3D_VCVARSALL_VER=-vcvars_ver=14.2
+  )
 ) ELSE (
-  SET LP3D_VCVERSION=8.1
+  SET LP3D_VCSDKVER=8.1
   SET LP3D_VCTOOLSET=v140
   SET LP3D_VCVARSALL_VER=-vcvars_ver=14.0
 )
 ECHO.
 ECHO   PLATFORM_ARCH..........[%1]
 ECHO   MSVS_VERSION...........[%LP3D_VSVERSION%]
-ECHO   MSVC_VERSION...........[%LP3D_VCVERSION%]
+ECHO   MSVC_SDK_VERSION.......[%LP3D_VCSDKVER%]
 ECHO   MSVC_TOOLSET...........[%LP3D_VCTOOLSET%]
+ECHO   MSVC_VCVARSALL_VER.....[%LP3D_VCVARSALL_VER%]
+ECHO   MSVC_VCVARSALL_DIR.....[%LP3D_VCVARSALL_DIR%]
 EXIT /b
 
 :CONFIGURE_BUILD_ENV
@@ -316,30 +348,40 @@ ECHO.
 ECHO -Configure %PACKAGE% %PLATFORM_ARCH% build environment...
 rem Set vcvars for AppVeyor or local build environments
 IF "%PATH_PREPENDED%" NEQ "True" (
-  IF %PLATFORM_ARCH% EQU Win32 (
-    ECHO.
-    IF EXIST "%LP3D_VCVARSALL%\vcvars32.bat" (
-      CALL "%LP3D_VCVARSALL%\vcvars32.bat" %LP3D_VCVARSALL_VER%
-    ) ELSE (
-      ECHO -ERROR: vcvars32.bat not found.
-      GOTO :ERROR_END
-    )
+  IF "%LP3D_CONDA_BUILD%" EQU "True" (
+    SET "PATH=%PATH%"
   ) ELSE (
-    ECHO.
-    IF EXIST "%LP3D_VCVARSALL%\vcvars64.bat" (
-      CALL "%LP3D_VCVARSALL%\vcvars64.bat" %LP3D_VCVARSALL_VER%
+    IF %PLATFORM_ARCH% EQU Win32 (
+      ECHO.
+      IF EXIST "%LP3D_VCVARSALL_DIR%\vcvars32.bat" (
+        CALL "%LP3D_VCVARSALL_DIR%\vcvars32.bat" %LP3D_VCVARSALL_VER%
+      ) ELSE (
+        ECHO -ERROR: vcvars32.bat not found.
+        GOTO :ERROR_END
+      )
     ) ELSE (
-      ECHO -ERROR: vcvars64.bat not found.
-      GOTO :ERROR_END
+      ECHO.
+      IF EXIST "%LP3D_VCVARSALL_DIR%\vcvars64.bat" (
+        CALL "%LP3D_VCVARSALL_DIR%\vcvars64.bat" %LP3D_VCVARSALL_VER%
+      ) ELSE (
+        ECHO -ERROR: vcvars64.bat not found.
+        GOTO :ERROR_END
+      )
     )
   )
   rem Display MSVC Compiler settings
-  echo _MSC_VER > %TEMP%\settings.c
-  cl -Bv -EP %TEMP%/settings.c > NUL
+  ECHO.
+  ECHO.%LP3D_MSC_VER% > %TEMP%\settings.c
+  cl.exe -Bv -EP %TEMP%\settings.c >NUL
   ECHO.
 ) ELSE (
   ECHO.
   ECHO -%PLATFORM_ARCH% build environment already configured...
+)
+ECHO.
+SETLOCAL ENABLEDELAYEDEXPANSION
+ECHO( -PATH......[!PATH!]
+  ENDLOCAL
 )
 EXIT /b
 
@@ -349,8 +391,9 @@ SET /a LineToReplace=51
 SET "Replacement=XmlMapPath=%LDRAW_DIR%\lgeo"
 ECHO.
 SETLOCAL ENABLEDELAYEDEXPANSION
-ECHO -Update %INI_POV_FILE% at line !LineToReplace! with !Replacement!
-ENDLOCAL
+ECHO( -Update %INI_POV_FILE% at line !LineToReplace! with !Replacement!
+  ENDLOCAL
+)
 (FOR /f "tokens=1*delims=:" %%a IN ('findstr /n "^" "%INI_POV_FILE%"') DO (
   SET "Line=%%b"
   IF %%a EQU %LineToReplace% SET "Line=%Replacement%"
@@ -567,6 +610,21 @@ EXIT /b
 :CHECK_LDRAW_DIR
 ECHO.
 ECHO -%PACKAGE% - Check for LDraw library...
+IF %LP3D_VALID_7ZIP% == 0 (
+  "%LP3D_7ZIP_WIN64%" > %TEMP%\output.tmp 2>&1
+  FOR /f "usebackq eol= delims=" %%a IN (%TEMP%\output.tmp) DO (
+    ECHO.%%a | findstr /C:"7-Zip">NUL && (
+      SET LP3D_VALID_7ZIP=1
+      ECHO.
+      ECHO -7zip exectutable found at "%LP3D_7ZIP_WIN64%"
+    ) || (
+      ECHO.
+      ECHO [WARNING] Could not find 7zip executable at %LP3D_7ZIP_WIN64%.
+    )
+    GOTO :END_7ZIP_LOOP
+  )
+)
+:END_7ZIP_LOOP
 IF NOT EXIST "%LDRAW_DIR%\parts" (
   REM SET CHECK=0
   IF NOT EXIST "%LDRAW_DOWNLOAD_DIR%\%OfficialCONTENT%" (
@@ -576,23 +634,19 @@ IF NOT EXIST "%LDRAW_DIR%\parts" (
     CALL :DOWNLOAD_LDRAW_LIBS
   )
   IF EXIST "%LDRAW_DOWNLOAD_DIR%\%OfficialCONTENT%" (
-    IF EXIST "%zipWin64%" (
-      ECHO.
-      ECHO -7zip exectutable found at "%zipWin64%"
+    IF %LP3D_VALID_7ZIP% == 1 (
       ECHO.
       ECHO -Extracting %OfficialCONTENT%...
       ECHO.
-      "%zipWin64%\7z.exe" x -o"%LDRAW_DOWNLOAD_DIR%\" "%LDRAW_DOWNLOAD_DIR%\%OfficialCONTENT%" | findstr /i /r /c:"^Extracting\>" /c:"^Everything\>"
+      "%LP3D_7ZIP_WIN64%" x -o"%LDRAW_DOWNLOAD_DIR%\" "%LDRAW_DOWNLOAD_DIR%\%OfficialCONTENT%" | findstr /i /r /c:"^Extracting\>" /c:"^Everything\>"
       IF EXIST "%LDRAW_DIR%\parts" (
         ECHO.
         ECHO -LDraw directory %LDRAW_DIR% extracted.
         ECHO.
         ECHO -Cleanup %OfficialCONTENT%...
-        DEL /Q "%LDRAW_DOWNLOAD_DIR%\%OfficialCONTENT%"
+        DEL /Q "%LDRAW_INSTALL_ROOT%\%OfficialCONTENT%"
+        ECHO.
       )
-    ) ELSE (
-      ECHO [WARNING] Could not find 7zip executable.
-      SET CHECK=0
     )
   ) ELSE (
     ECHO.
@@ -603,6 +657,7 @@ IF NOT EXIST "%LDRAW_DIR%\parts" (
   ECHO.
   ECHO -LDraw directory exist at %LDRAW_DIR%.
 )
+:END_7ZIP_LOOP
 EXIT /b
 
 :DOWNLOAD_LDRAW_LIBS
