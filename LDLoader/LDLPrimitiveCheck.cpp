@@ -44,6 +44,12 @@ void LDLPrimitiveCheck::dealloc(void)
 
 TCFloat LDLPrimitiveCheck::startingFraction(const char *filename)
 {
+	static std::string lastFilename;
+	static TCFloat lastStartingFraction = 0;
+	if (lastFilename == filename)
+	{
+		return lastStartingFraction;
+	}
 	size_t i;
 
 	if (stringHasCaseInsensitivePrefix(filename, "48/") ||
@@ -63,7 +69,9 @@ TCFloat LDLPrimitiveCheck::startingFraction(const char *filename)
 	{
 		m_filenameDenom = 1;
 	}
-	return (TCFloat)m_filenameNumerator / (TCFloat)m_filenameDenom;
+	lastFilename = filename;
+	lastStartingFraction = (TCFloat)m_filenameNumerator / (TCFloat)m_filenameDenom;
+	return lastStartingFraction;
 }
 
 size_t LDLPrimitiveCheck::getStartingFractionLength(const char *filename)
@@ -117,6 +125,16 @@ bool LDLPrimitiveCheck::isCyli(const char *filename, bool *is48)
 	return isPrimitive(filename, "cyli.dat", is48);
 }
 
+bool LDLPrimitiveCheck::isCylh(const char *filename, bool *is48)
+{
+	if (isPrimitive(filename, "cylh.dat", is48))
+	{
+		// cylh primitives past a quarter circle aren't defined
+		return startingFraction(filename) <= 0.25;
+	}
+	return false;
+}
+
 bool LDLPrimitiveCheck::isCyls(const char *filename, bool *is48)
 {
 	return isPrimitive(filename, "cyls.dat", is48);
@@ -160,6 +178,16 @@ bool LDLPrimitiveCheck::isTang(const char *filename, bool *is48)
 bool LDLPrimitiveCheck::isEdge(const char *filename, bool *is48)
 {
 	return isPrimitive(filename, "edge.dat", is48);
+}
+
+bool LDLPrimitiveCheck::isEdgh(const char *filename, bool *is48)
+{
+	if (isPrimitive(filename, "edgh.dat", is48))
+	{
+		// edgh primitives past a quarter circle aren't defined
+		return startingFraction(filename) <= 0.25;
+	}
+	return false;
 }
 
 bool LDLPrimitiveCheck::is1DigitCon(const char *filename, bool *is48)
@@ -640,6 +668,11 @@ bool LDLPrimitiveCheck::performPrimitiveSubstitution(
 			return substituteCylinder(startingFraction(m_modelName),
 				bfc, is48);
 		}
+		else if (isCylh(m_modelName, &is48))
+		{
+			return substituteHelicalCylinder(startingFraction(m_modelName),
+				bfc, is48);
+		}
 		else if (isCyls(m_modelName, &is48))
 		{
 			return substituteSlopedCylinder(startingFraction(m_modelName), bfc,
@@ -678,6 +711,10 @@ bool LDLPrimitiveCheck::performPrimitiveSubstitution(
 		else if (isEdge(m_modelName, &is48))
 		{
 			return substituteCircularEdge(startingFraction(m_modelName), is48);
+		}
+		else if (isEdgh(m_modelName, &is48))
+		{
+			return substituteCircularEdge(startingFraction(m_modelName), is48, true);
 		}
 		else if (isCon(m_modelName, &is48))
 		{
