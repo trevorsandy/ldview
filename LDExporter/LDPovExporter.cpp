@@ -1645,6 +1645,7 @@ bool LDPovExporter::writeEdges(void)
 	if (m_edgePoints.size() > 0)
 	{
 		fprintf(m_pPovFile,
+			"#if (LDXSkipEdges = 0)\n"
 			"#declare LDXEdges = union\n"
 			"{\n");
 		for (VectorList::const_iterator it = m_edgePoints.begin();
@@ -1664,7 +1665,9 @@ bool LDPovExporter::writeEdges(void)
 				fprintf(m_pPovFile, ",EdgeColor)\n");
 			}
 		}
-		fprintf(m_pPovFile, "}\n\n");
+		fprintf(m_pPovFile,
+			"}\n"
+			"#end\n\n");
 	}
 	if (m_condEdgePoints.size() > 0)
 	{
@@ -1676,6 +1679,7 @@ bool LDPovExporter::writeEdges(void)
 		treGlGetFloatv(GL_MODELVIEW_MATRIX, modelViewMatrix);
 		TCVector::multMatrix(projectionMatrix, modelViewMatrix, matrix);
 		fprintf(m_pPovFile,
+			"#if (LDXSkipEdges = 0)\n"
 			"#declare LDXConditionalEdges = union\n"
 			"{\n");
 		for (VectorList::const_iterator it = m_condEdgePoints.begin();
@@ -1711,7 +1715,9 @@ bool LDPovExporter::writeEdges(void)
 				}
 			}
 		}
-		fprintf(m_pPovFile, "}\n\n");
+		fprintf(m_pPovFile,
+			"}\n"
+			"#end\n\n");
 	}
 	return true;
 }
@@ -2507,12 +2513,13 @@ bool LDPovExporter::writeModelObject(
 				{
 					fprintf(m_pPovFile,
 						"#if (LDXSkipEdges = 0)\n"
-						"	object { LDXEdges }\n"
-						"#end\n");
+						"	object { LDXEdges }\n");
 					if (m_conditionalEdges)
 					{
-						fprintf(m_pPovFile, "	object { LDXConditionalEdges }\n");
+						fprintf(m_pPovFile,
+							"	object { LDXConditionalEdges }\n");
 					}
+					fprintf(m_pPovFile, "#end\n");
 				}
 				fprintf(m_pPovFile,
 					"#if (LDXRefls = 0)\n"
@@ -4161,7 +4168,6 @@ void LDPovExporter::writeQuadLineVertices(LDLQuadLine *pQuadLine, int &total)
 
 void LDPovExporter::writeEdgeColor(void)
 {
-	fprintf(m_pPovFile, "#end\n");
 	fprintf(m_pPovFile,
 		"#ifndef (EdgeColor)\n"
 		"#declare EdgeColor = material {\n"
