@@ -989,7 +989,7 @@ bool LDLModel::checkLDrawZipPath(const std::string& value)
 	unzFile testZip = TCUnzipStream::open(value.c_str());
 	if (testZip != NULL)
 	{
-		unzClose(testZip);
+		TCUnzipStream::close(testZip);
 		return true;
 	}
 	return false;
@@ -1004,12 +1004,12 @@ void LDLModel::closeZips(void)
 #ifdef HAVE_MINIZIP
 	if (sm_ldrawZip != NULL)
 	{
-		unzClose(sm_ldrawZip);
+		TCUnzipStream::close(sm_ldrawZip);
 		sm_ldrawZip = NULL;
 	}
 	if (sm_unoffZip != NULL)
 	{
-		unzClose(sm_unoffZip);
+		TCUnzipStream::close(sm_unoffZip);
 		sm_unoffZip = NULL;
 	}
 #endif // HAVE_MINIZIP
