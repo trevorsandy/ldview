@@ -1895,6 +1895,11 @@ bool ModelViewerWidget::verifyLDrawDir(char *value)
 			}
 		}
 		QDir::setCurrent(currentDir);
+		if (Preferences::getLDrawZipPath())
+		{
+			LDLModel::setLDrawDir(value);
+			return true;
+		}
 	}
 	return found;
 }
