@@ -1188,6 +1188,7 @@ void ModelViewerWidget::checkForLibraryUpdates(void)
 	{
 		libraryUpdater = new LDLibraryUpdater;
 		char *ldrawDir = getLDrawDir();
+		char *ldrawZip = Preferences::getLDrawZipPath();
 		wchar_t *updateCheckError = NULL;
 
 		libraryUpdateCanceled = false;
@@ -1195,6 +1196,7 @@ void ModelViewerWidget::checkForLibraryUpdates(void)
 		libraryUpdateFinished = false;
 		libraryUpdater->setLibraryUpdateKey(LAST_LIBRARY_UPDATE_KEY);
 		libraryUpdater->setLdrawDir(ldrawDir);
+		libraryUpdater->setLdrawZipPath(ldrawZip);
 		delete ldrawDir;
 		if (libraryUpdater->canCheckForUpdates(updateCheckError))
 		{
