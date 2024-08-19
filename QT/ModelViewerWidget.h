@@ -380,6 +380,7 @@ protected:
 	int lightingSelection;
 	LDPreferences::SaveOp curSaveOp;
 	bool commandLineSnapshotSave;
+	bool showLDrawZipMsg;
 // LPub3D Mod - address clang error: member initializer 'openRecentMenu' does not name a non-static data member or base class
 #ifdef __APPLE__
     QMenu *openRecentMenu;
