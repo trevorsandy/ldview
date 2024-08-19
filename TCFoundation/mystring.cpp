@@ -18,10 +18,7 @@
 // LPub3D Mod - stud style
 #include <fstream>
 // LPub3D Mod End
-
-#ifndef WIN32
 #include <sys/stat.h>
-#endif // !WIN32
 
 #ifdef WIN32
 #include <time.h>
@@ -1769,17 +1766,14 @@ void debugPrintf(int level, const char *format, ...)
 	va_end(argPtr);
 }
 
-#ifndef WIN32
-
-char *prettyLongLongString(long long num)
+std::string stringFromLongLong(long long num, bool commas)
 {
 	char backwards[256];
-	char *forwards;
 	ptrdiff_t i, j;
 
 	for (i = 0; num; i++)
 	{
-		if (!((i + 1) % 4))
+		if (!((i + 1) % 4) && commas)
 		{
 			backwards[i++] = ',';
 		}
@@ -1792,7 +1786,8 @@ char *prettyLongLongString(long long num)
 		i = 1;
 	}
 	backwards[i] = 0;
-	forwards = new char[(i + 1) * sizeof(char)];
+	std::string forwards;
+	forwards.resize(i);
 	for (j = 0, i--; i >= 0; i--, j++)
 	{
 		forwards[j] = backwards[i];
@@ -1834,8 +1829,6 @@ long long longLongFromString(char* string)
 	}
 	return val;
 }
-
-#endif // WIN32
 
 static const char *getEscapeString(char ch)
 {
@@ -2638,6 +2631,18 @@ bool haveConsole(void)
 	return g_haveConsole;
 }
 
+struct tm* gmtime_r(const time_t *clock, struct tm *result)
+{
+	if (gmtime_s(result, clock) != 0)
+	{
+		return NULL;
+	}
+	else
+	{
+		return result;
+	}
+}
+
 static void randomizeNameTemplate(char* nameTemplate, size_t firstX, size_t len)
 {
 	for (size_t i = firstX; i < len; ++i)
@@ -3161,6 +3166,24 @@ FILE *ucfopen(const char *filename, const char *mode)
 	}
 #endif // _MSC_VER
 	return fopen(filename, mode);
+}
+
+int ucstat(const char* filename, TCStat* statBuf)
+{
+#ifdef _MSC_VER
+	std::wstring wFilename;
+	if (utf8towstring(wFilename, filename))
+	{
+		return _wstat(wFilename.c_str(), statBuf);
+	}
+	else
+	{
+		return _stat(filename, statBuf);
+	}
+	return -1;
+#else // _MCS_VER
+	return stat(filename, statBuf);
+#endif // !_MCS_VER
 }
 
 bool skipUtf8BomIfPresent(std::istream &stream)
