@@ -220,6 +220,14 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = LDExporter_Prefix.pch;
+				HEADER_SEARCH_PATHS = (
+					../../3rdParty,
+					../../3rdParty/tinyxml,
+					../../3rdParty/lib3ds,
+					"$(HEADER_SEARCH_PATHS)",
+					../..,
+					../../include,
+				);
 				INSTALL_PATH = /usr/local/lib;
 				PRODUCT_NAME = LDExporter;
 				ZERO_LINK = YES;
@@ -236,6 +244,14 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = LDExporter_Prefix.pch;
+				HEADER_SEARCH_PATHS = (
+					../../3rdParty,
+					../../3rdParty/tinyxml,
+					../../3rdParty/lib3ds,
+					"$(HEADER_SEARCH_PATHS)",
+					../..,
+					../../include,
+				);
 				INSTALL_PATH = /usr/local/lib;
 				PRODUCT_NAME = LDExporter;
 			};

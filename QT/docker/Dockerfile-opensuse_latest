@@ -1,15 +1,10 @@
-FROM alpine:3.12
+FROM opensuse/leap:latest
 MAINTAINER Peter Bartfai pbartfai@stardust.hu
 
 ARG LDVIEW_BRANCH=master
 ADD install-devel-packages.sh /
 RUN ./install-devel-packages.sh
-
 VOLUME /mnt/lego
-
 CMD cd ldview/QT ; \
 	git pull; \
-	abuild-keygen -a -n ;\
-	abuild -F ; \
-	cp -f /root/packages/ldview/*/ldview*.apk /mnt/lego
-
+	./makerpm
