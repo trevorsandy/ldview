@@ -17,18 +17,20 @@ Elements         Light
 04 target        All
 05 color         All
 06 intensity     All
-07 spotRadius    Spot
-08 spotFalloff   Spot
-09 spotTightness Spot
-10 circle        Area
-11 areaWidth     Area
-12 areaHeight    Area
-13 areaRows      Area
-14 areaColumns   Area
+07 fadeDistance  All
+08 fadePower     All
+09 spotRadius    Spot
+00 spotFalloff   Spot
+01 spotTightness Spot
+12 circle        Area
+13 areaWidth     Area
+14 areaHeight    Area
+15 areaRows      Area
+16 areaColumns   Area
 */
-#define POV_LIGHT_01 "1 0 45 0 <0,0,0> <0.8,0.8,0.8> 1 0 0 0 0 200 200 4 4"  // Area Light
-#define POV_LIGHT_02 "0 0 30 120 <0,0,0> <0.8,0.8,0.8> 0 0 0 0 0 0 0 0 0"    // Point Light
-#define POV_LIGHT_03 "1 0 60 -120 <0,0,0> <0.8,0.8,0.8> 1 0 0 0 0 80 80 3 3" // Area Light
+#define POV_LIGHT_01 "1 0 45 0 <0,0,0> <0.8,0.8,0.8> 1 0 0 0 0 0 0 250 250 4 4"    // Area Light
+#define POV_LIGHT_02 "0 0 30 120 <0,0,0> <0.8,0.8,0.8> 0 0 0 0 0 0 0 0 0 0 0"      // Point Light
+#define POV_LIGHT_03 "1 0 60 -120 <0,0,0> <0.8,0.8,0.8> 1 0 0 0 0 0 0 250 250 3 3" // Area Light
 #define EXPORT_POV_LIGHTS_DEFAULT POV_LIGHT_01 ";" POV_LIGHT_02 ";" POV_LIGHT_03
 // LPub3D Mod End
 
@@ -158,6 +160,8 @@ protected:
 		std::string target;
 		std::string color;
 		float intensity;
+		float fadeDistance;
+		float fadePower;
 		float radius;
 		float falloff;
 		float tightness;

@@ -637,6 +637,8 @@ void LDPovExporter::loadLights(const char* povLights)
 			char target[100];
 			char color[100];
 			TCFloat intensity;
+			TCFloat fadeDistance;
+			TCFloat fadePower;
 			TCFloat radius;
 			TCFloat falloff;
 			TCFloat tightness;
@@ -645,13 +647,13 @@ void LDPovExporter::loadLights(const char* povLights)
 			int height;
 			int rows;
 			int columns;
-			int attributes = sscanf(value, "%d %d %f %f %s %s %f %f %f %f %d %d %d %d %d",
-				                           &type, &shadowless, &latitude, &longitude, target, color, &intensity,
-				                           &radius, &falloff, &tightness, &circle, &width, &height, &rows, &columns);
-			if (value && attributes == 15)
+			int attributes = sscanf(value, "%d %d %f %f %s %s %f %f %f %f %f %f %d %d %d %d %d",
+				                           &type, &shadowless, &latitude, &longitude, target, color, &intensity, &fadeDistance,
+				                           &fadePower, &radius, &falloff, &tightness, &circle, &width, &height, &rows, &columns);
+			if (value && attributes == 17)
 			{
-				Light light { type, shadowless, latitude, longitude, target, color, intensity,
-							  radius, falloff, tightness, circle, width, height, rows, columns };
+				Light light { type, shadowless, latitude, longitude, target, color, intensity, fadeDistance,
+							  fadePower, radius, falloff, tightness, circle, width, height, rows, columns };
 				m_povLightList.push_back(light);
 			}
 		}
@@ -671,7 +673,7 @@ std::string LDPovExporter::getLightsString(void) const
 		snprintf(
 			buffer, 
 			sizeof(buffer),
-			"%i %i %g %g %s %s %g %g %g %g %i %i %i %i %i%s", 
+			"%i %i %g %g %s %s %g %g %g %g %g %g %i %i %i %i %i%s", 
 			light.type,
 			light.shadowless,
 			light.latitude,
@@ -679,6 +681,8 @@ std::string LDPovExporter::getLightsString(void) const
 			light.target.c_str(),
 			light.color.c_str(),
 			light.intensity,
+			light.fadeDistance,
+			light.fadePower,
 			light.radius,
 			light.falloff,
 			light.tightness,
@@ -1912,7 +1916,7 @@ void LDPovExporter::writeLightSourceMacro(void)
 	// insert 
 	fprintf(m_pPovFile,
 		"#ifndef (SkipWriteLightMacro)\n"
-		"#macro WriteLight(Type, Shadowless, Latitude, Longitude, Target, Color, Intensity, SpotRadius, SpotFalloff, SpotTightness, AreaCircle, AreaWidth, AreaHeight, AreaRows, AreaColumns)\n"
+		"#macro WriteLight(Type, Shadowless, Latitude, Longitude, Target, Color, Intensity, FadeDistance, FadePower, SpotRadius, SpotFalloff, SpotTightness, AreaCircle, AreaWidth, AreaHeight, AreaRows, AreaColumns)\n"
 		"  #local PointLight = 0;\n"
 		"  #local AreaLight = 1;\n"
 		"  #local SunLight = 2;\n"
@@ -1924,11 +1928,19 @@ void LDPovExporter::writeLightSourceMacro(void)
 		"  #local sinLon = sin(lonRad);\n"
 		"  #local cosLon = cos(lonRad);\n"
 		"  #local lightVectorSize = 2*LDXRadius;\n"
+		"  #local AreaWidthVector = <1.0, 0.0, 0.0> * AreaWidth;\n"
+		"  #local AreaHeightVector = <0.0, 1.0, 0.0> * AreaHeight;\n"
 		"  light_source {\n"
 		"    <lightVectorSize*((-sinLon)*cosLat),lightVectorSize*(-sinLat),lightVectorSize*(-cosLon)*cosLat> + LDXCenter\n"
 		"    color rgb Color*Intensity\n"
 		"    #if (Shadowless > 0)\n"
 		"      shadowless\n"
+		"    #end\n"
+		"    #if (FadeDistance > 0)\n"
+		"      fade_distance FadeDistance\n"
+		"    #end\n"
+		"    #if (FadePower > 0)\n"
+		"      fade_power FadePower\n"
 		"    #end\n"
 		"    #if (Type = Spotlight)\n"
 		"      spotlight\n"
@@ -1940,7 +1952,7 @@ void LDPovExporter::writeLightSourceMacro(void)
 		"      parallel\n"
 		"      point_at Target\n"
 		"    #elseif (Type = AreaLight)\n"
-		"      area_light AreaWidth, AreaHeight, AreaRows, AreaColumns\n"
+		"      area_light AreaWidthVector, AreaHeightVector, AreaRows, AreaColumns\n"
 		"      jitter\n"
 		"      #if (AreaCircle > 0 & AreaWidth > 2 & AreaHeight > 2 & AreaRows > 1 & AreaColumns > 1 )\n"
 		"        circular \n"
@@ -1955,7 +1967,7 @@ void LDPovExporter::writeLightSourceMacro(void)
 }
 // LPub3D Mod End
 
-// LPub3D Mod - lights
+// LPub3D Mod - lights		
 bool LDPovExporter::writeLights(void)
 {
 	fprintf(m_pPovFile, "// Lights\n");
@@ -1994,6 +2006,8 @@ bool LDPovExporter::writeLights(void)
 				"// Target %s : %s (all)\n"
 				"// Color %s : %s (all)\n"
 				"// Intensity %s : %s (all)\n"
+				"// FadeDistance %s : %s (area)\n"
+				"// FadePower %s : %s (area)\n"
 				"// Radius %s : %s (spot)\n"
 				"// Falloff %s : %s (spot)\n"
 				"// Tightness %s : %s (spot)\n"
@@ -2009,6 +2023,8 @@ bool LDPovExporter::writeLights(void)
 				light.target.c_str(), (const char*)ls("PovLightTarget"),
 				light.color.c_str(), (const char*)ls("PovLightColor"),
 				ftostr(light.intensity).c_str(), (const char*)ls("PovLightIntensity"),
+				ftostr(light.fadeDistance).c_str(), (const char*)ls("PovFadeDistance"),
+				ftostr(light.fadePower).c_str(), (const char*)ls("PovFadePower"),
 				ftostr(light.radius).c_str(), (const char*)ls("PovLightSpotRadius"),
 				ftostr(light.falloff).c_str(), (const char*)ls("PovLightSpotFalloff"),
 				ftostr(light.tightness).c_str(), (const char*)ls("PovLightSpotTightness"),
@@ -2021,10 +2037,10 @@ bool LDPovExporter::writeLights(void)
 
 		fprintf(m_pPovFile,
 			"#ifndef (LDXSkip%s%d)\n"
-			"WriteLight(%d, %d, %s, %s, %s, %s, %s, %s, %s, %s, %d, %d, %d, %d, %d)\n"
+			"WriteLight(%d, %d, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %d, %d, %d, %d, %d)\n"
 			"#end\n\n",
 			type,
-			num, 
+			num,
 			light.type,
 			light.shadowless,
 			ftostr(light.latitude).c_str(),
@@ -2032,6 +2048,8 @@ bool LDPovExporter::writeLights(void)
 			light.target.c_str(),
 			light.color.c_str(),
 			ftostr(light.intensity).c_str(),
+			ftostr(light.fadeDistance).c_str(),
+			ftostr(light.fadePower).c_str(),
 			ftostr(light.radius).c_str(),
 			ftostr(light.falloff).c_str(),
 			ftostr(light.tightness).c_str(),
@@ -2041,7 +2059,7 @@ bool LDPovExporter::writeLights(void)
 			light.rows,
 			light.columns);
 	}
-    return true;
+	return true;
 }
 // LPub3D Mod End
 
