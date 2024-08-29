@@ -135,6 +135,12 @@ public:
 	{
 		return fileCaseCallback;
 	}
+	// LPub3D Mod - Enable LPub3d to use LDrawIni
+	static LDrawIniS *getlDrawIni(void)
+	{
+		return sm_lDrawIni;
+	}
+	// LPub3D Mod End
 	static bool openFile(std::string &filename, std::ifstream &modelStream,
 		TCUnzipStream *zipStream = NULL, bool loadingFoundFile = false);
 	static bool openStream(const char *filename, std::ifstream &stream);
