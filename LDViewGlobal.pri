@@ -5,19 +5,22 @@
 # CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_macos_3rdparty
 # CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_windows_3rdparty
 # CONFIG+=USE_3RD_PARTY_LIBS
-# CONFIG+=USE_3RD_PARTY_PREBUILT_3DS  # override USE_3RD_PARTY_3DS to use static pre-built lib3ds.a
+# CONFIG+=USE_3RD_PARTY_PREBUILT_3DS     # override USE_3RD_PARTY_3DS to use static pre-built lib3ds.a
+# CONFIG+=USE_3RD_PARTY_PREBUILT_MINIZIP # override USE_3RD_PARTY_MINIZIP to use static pre-built libminizip.a
 # CONFIG+=USE_SYSTEM_LIBS
-# CONFIG+=BUILD_PNG
-# CONFIG+=BUILD_GL2PS
-# CONFIG+=BUILD_TINYXML
+# CONFIG+=BUILD_PNG          # override USE_SYSTEM_LIBS for libpng
+# CONFIG+=BUILD_GL2P         # override USE_SYSTEM_LIBS for libgl2ps
+# CONFIG+=BUILD_TINYXML      # override USE_SYSTEM_LIBS for libtinyxml
+# CONFIG+=BUILD_MINIZIP      # override USE_SYSTEM_LIBS for libminizip
 # CONFIG+=BUILD_GUI_ONLY
 # CONFIG+=BUILD_CUI_ONLY
 # CONFIG+=USE_OSMESA_STATIC  # build static OSMesa libraray and use system LLVM library
 # CONFIG+=USE_OSMESA_LOCAL   # use local OSmesa and LLVM libraries - for OBS images w/o OSMesa stuff (e.g. RHEL)
-# CONFIG+=USE_SYSTEM_PNG     # override USE_3RD_PARTY_LIBS for libPng
-# CONFIG+=USE_SYSTEM_JPEG    # override USE_3RD_PARTY_LIBS for libJpeg
+# CONFIG+=USE_SYSTEM_PNG     # override USE_3RD_PARTY_LIBS for libpng
+# CONFIG+=USE_SYSTEM_JPEG    # override USE_3RD_PARTY_LIBS for libjpeg
 # CONFIG+=USE_SYSTEM_Z       # override USE_3RD_PARTY_LIBS for libz
 # CONFIG+=USE_SYSTEM_OSMESA  # override USE_3RD_PARTY_LIBS for OSMesa
+# CONFIG+=USE_SYSTEM_MINIZIP # override USE_3RD_PARTY_LIBS for libminizip
 
 # LDView global directives
 
@@ -64,6 +67,10 @@ BUILD_TINYXML {
 
 BUILD_GL2PS {
     USE_3RD_PARTY_GL2PS = YES
+}
+
+BUILD_MINIZIP {
+    USE_3RD_PARTY_MINIZIP = YES
 }
 
 # Ubuntu Trusty uses libpng12 which is too old
@@ -155,6 +162,7 @@ unix {
     LIB_Z          = z
     LIB_TINYXML    = tinyxml
     LIB_3DS        = 3ds
+    LIB_MINIZIP    = minizip
 
     macx {
         # pre-compiled libraries location
@@ -192,6 +200,7 @@ unix {
     LIB_Z         = z
     LIB_TINYXML   = tinyxml
     LIB_3DS       = 3ds
+    LIB_MINIZIP   = minizip
 }
 
 # pre-compiled libraries
@@ -218,6 +227,9 @@ TINYXML_LIBDIR      = -L$${LIBDIR_}
 3DS_INC             = $${LIBINC_}
 3DS_LIBDIR          = -L$${LIBDIR_}
 
+MINIZIP_INC         = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/minizip
+MINIZIP_LIBDIR      = -L$${LIBDIR_}
+
 ZLIB_INC            = $${LIBINC_}
 ZLIB_LIBDIR         = -L$${LIBDIR_}
 
@@ -226,23 +238,21 @@ OSMESA_LIBDIR       = -L$${LIBDIR_}
 OSMESA_LDLIBS       = $${LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_S} \
                       $${LIBDIR_}/lib$${LIB_GLU}.$${EXT_S}
 
-MINIZIP_INC         = $${LIBINC_}
-MINIZIP_LIBDIR      = -L$${LIBDIR_}
-
 # Update Libraries
 # ===============================
 
 LIBS_PRI            = -l$${LIB_PNG} \
                       -l$${LIB_JPEG} \
                       -l$${LIB_GL2PS} \
+                      -l$${LIB_MINIZIP} \
                       -l$${LIB_TINYXML} \
                       -l$${LIB_Z}
 
 unix: USE_OSMESA_STATIC: \
 USE_SYSTEM_LIBS {
-  OSMESA_LDFLAGS = $$system($${3RD_PREFIX}/mesa/$${PLATFORM}/osmesa-config --ldflags)
-  !isEmpty(OSMESA_LDFLAGS): LIBS_PRI += $${OSMESA_LDFLAGS}
-  else: message("~~~ OSMESA - ERROR OSMesa ldflags not defined ~~~")
+    OSMESA_LDFLAGS = $$system($${3RD_PREFIX}/mesa/$${PLATFORM}/osmesa-config --ldflags)
+    !isEmpty(OSMESA_LDFLAGS): LIBS_PRI += $${OSMESA_LDFLAGS}
+    else: message("~~~ OSMESA - ERROR OSMesa ldflags not defined ~~~")
 }
 
 # conditional libraries
@@ -266,10 +276,8 @@ USE_3RD_PARTY_LIBS {
     TINYXML_INC     = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/tinyxml
     TINYXML_LIBDIR  = -L$${3RD_PARTY_PREFIX_}/tinyxml/$$DESTDIR
 
-    contains(USE_3RD_PARTY_3DS, YES) {
-        3DS_INC     = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/lib3ds
-        3DS_LIBDIR  = -L$${3RD_PARTY_PREFIX_}/lib3ds/$$DESTDIR
-    }
+    3DS_INC         = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/lib3ds
+    3DS_LIBDIR      = -L$${3RD_PARTY_PREFIX_}/lib3ds/$$DESTDIR
 
     JPEG_INC        = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/libjpeg
     JPEG_LIBDIR     = -L$${3RD_PARTY_PREFIX_}/libjpeg/$$DESTDIR
@@ -329,7 +337,8 @@ unix {
         USE_SYSTEM_OSMESA: exists($${SYS_LIBDIR_}/lib$${_LIB_OSMESA}.$${EXT_D}): _OSM_CUI: USE_SYSTEM_OSMESA_LIB = YES
         USE_SYSTEM_PNG: !USE_3RD_PARTY_PNG: exists($${SYS_LIBDIR_}/lib$${_LIB_PNG}.$${EXT_D}): USE_SYSTEM_PNG_LIB = YES
         USE_SYSTEM_JPEG: exists($${SYS_LIBDIR_}/lib$${LIB_JPEG}.$${EXT_D}): USE_SYSTEM_JPEG_LIB = YES
-        USE_SYSTEM_Z: exists($${SYS_LIBDIR_}/libz.$${EXT_D}): USE_SYSTEM_Z_LIB = YES
+        USE_SYSTEM_MINIZIP: exists($${SYS_LIBDIR_}/lib$${LIB_MINIZIP}.$${EXT_D}): USE_SYSTEM_MINIZIP_LIB = YES
+        USE_SYSTEM_Z: exists($${SYS_LIBDIR_}/lib$${LIB_Z}.$${EXT_D}): USE_SYSTEM_Z_LIB = YES
 
         # override 3rd party library paths
         contains(USE_SYSTEM_OSMESA_LIB, YES): _OSM_CUI {
@@ -355,16 +364,19 @@ unix {
             }
         }
 
+        USE_3RD_PARTY_PREBUILT_3DS {
+            3DS_LIBDIR  = -L$${LIBDIR_}
+            3DS_LDLIBS  = $${LIBDIR_}/lib$${LIB_3DS}.$${EXT_S}
+        }
+
         contains(USE_SYSTEM_PNG_LIB, YES) {
             # remove lib reference
             LIBS_PRI     -= -l$${LIB_PNG}
             # use sytem lib name - only macos will trigger this logic
             LIB_PNG       = png
             # remove 3rdParty lib reference
-            USE_3RD_PARTY_LIBS {
-                LIBS_INC -= $${PNG_INC}
-                LIBS_DIR -= $${PNG_LIBDIR}
-            }
+            LIBS_INC     -= $${PNG_INC}
+            LIBS_DIR     -= $${PNG_LIBDIR}
             # reset individual library entry
             PNG_INC       = $${SYS_LIBINC_}
             PNG_LIBDIR    = -L$${SYS_LIBDIR_}
@@ -375,24 +387,41 @@ unix {
             # remove lib reference
             LIBS_PRI     -= -l$${LIB_JPEG}
             # remove 3rdParty lib reference
-            USE_3RD_PARTY_LIBS {
-                LIBS_INC -= $${JPEG_INC}
-                LIBS_DIR -= $${JPEG_LIBDIR}
-            }
+            LIBS_INC     -= $${JPEG_INC}
+            LIBS_DIR     -= $${JPEG_LIBDIR}
             # reset individual library entry
             JPEG_INC      = $${SYS_LIBINC_}
             JPEG_LIBDIR   = -L$${SYS_LIBDIR_}
             JPEG_LDLIBS   = $${SYS_LIBDIR_}/lib$${LIB_JPEG}.$${EXT_D}
         }
 
+        contains(USE_SYSTEM_MINIZIP_LIB, YES) {
+            # remove lib reference
+            LIBS_PRI       -= -l$${LIB_MINIZIP}
+            # remove 3rdParty lib reference
+            LIBS_INC       -= $${MINIZIP_INC}
+            LIBS_DIR       -= $${MINIZIP_LIBDIR}
+            # reset individual library entry
+            MINIZIP_INC     = $${SYS_LIBINC_}
+            MINIZIP_LIBDIR  = -L$${SYS_LIBDIR_}
+            MINIZIP_LDLIBS  = $${SYS_LIBDIR_}/lib$${LIB_MINIZIP}.$${EXT_D}
+            DEFINES        += HAVE_MINIZIP
+        } else:exists($${MINIZIP_INC}/unzip.h) {
+            USE_3RD_PARTY_PREBUILT_MINIZIP {
+                MINIZIP_LIBDIR  = -L$${LIBDIR_}
+                MINIZIP_LDLIBS  = $${LIBDIR_}/lib$${LIB_MINIZIP}.$${EXT_S}
+            }
+            # set HAVE_MINIZIP preprocessor directive
+            #message("~~~ 3rdParty Minizip header found ~~~")
+            DEFINES += HAVE_MINIZIP
+        }
+
         contains(USE_SYSTEM_Z_LIB, YES) {
             # remove lib reference
             LIBS_PRI     -= -l$${LIB_Z}
             # remove 3rdParty lib reference
-            USE_3RD_PARTY_LIBS {
-                LIBS_INC -= $${ZLIB_INC}
-                LIBS_DIR -= $${ZLIB_LIBDIR}
-            }
+            LIBS_INC     -= $${ZLIB_INC}
+            LIBS_DIR     -= $${ZLIB_LIBDIR}
             # reset individual library entry
             ZLIB_INC      = $${SYS_LIBINC_}
             ZLIB_LIBDIR   = -L$${SYS_LIBDIR_}
@@ -470,7 +499,6 @@ unix {
                 OSMESA_LDLIBS   = -l$${LIB_OSMESA} \
                                   -l$${LIB_GLU} \
                                   -l$${LIB_GL}
-
             }
         }
 
@@ -498,6 +526,28 @@ unix {
             GL2PS_LDLIBS      = $${3RD_PARTY_PREFIX_}/gl2ps/$$DESTDIR/lib$${LIB_GL2PS}.$${EXT_S}
             # update libs path
             LIBS_INC         += $${GL2PS_INC}
+        }
+        contains(USE_3RD_PARTY_MINIZIP, YES) {
+            # remove lib reference
+            LIBS_PRI         -= -l$${LIB_MINIZIP}
+            # update base name
+            LIB_MINIZIP       = minizip
+            # reset individual library entry
+            MINIZIP_INC       = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/minizip
+            USE_3RD_PARTY_PREBUILT_MINIZIP {
+                MINIZIP_LIBDIR  = -L$${LIBDIR_}
+                MINIZIP_LDLIBS  = $${LIBDIR_}/lib$${LIB_3DS}.$${EXT_S}
+            } else {
+                MINIZIP_LIBDIR  = -L$${3RD_PARTY_PREFIX_}/minizip/$$DESTDIR
+                MINIZIP_LDLIBS  = $${3RD_PARTY_PREFIX_}/minizip/$$DESTDIR/lib$${LIB_MINIZIP}.$${EXT_S}
+            }
+            # update libs path
+            LIBS_INC         += $${MINIZIP_INC}
+            DEFINES          += HAVE_MINIZIP
+        } else:exists(/usr/include/minizip/unzip.h)|exists(/usr/local/include/minizip/unzip.h) {
+            # set HAVE_MINIZIP preprocessor directive
+            #message("~~~ System Minizip header found ~~~")
+            DEFINES += HAVE_MINIZIP
         }
         contains(USE_3RD_PARTY_PNG, YES) {
             # remove lib reference
@@ -557,7 +607,7 @@ unix:!macx: DEFINES += _GNU_SOURCE
 
 # USE CPP 11
 contains(USE_CPP11,NO) {
-    message("NO CPP11")
+    message("~~~ DO NOT USE CPP11 SPECIFIED ~~~")
 } else {
     DEFINES += USE_CPP11
 }

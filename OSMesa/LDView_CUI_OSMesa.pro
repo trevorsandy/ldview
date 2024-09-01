@@ -70,7 +70,7 @@ unix {
     MAKE_HDR_DIRS_CMD = if test -e $$3RD_HEADERS; then rm -rf $$3RD_HEADERS; fi; \
                         mkdir -p $$3RD_HEADERS/LDExporter $$3RD_HEADERS/LDLib \
                         $$3RD_HEADERS/LDLoader $$3RD_HEADERS/TRE $$3RD_HEADERS/TCFoundation \
-                        $$3RD_HEADERS/3rdParty $$3RD_HEADERS/GL
+                        $$3RD_HEADERS/3rdParty/minizip $$3RD_HEADERS/GL
 
     system( $$MAKE_HDR_DIRS_CMD )
     system( $$COPY_CMD ../LDLib/*.h $${3RD_HEADERS}/LDLib/ )
@@ -79,6 +79,7 @@ unix {
     system( $$COPY_CMD ../TRE/*.h $${3RD_HEADERS}/TRE/ )
     system( $$COPY_CMD ../TCFoundation/*.h $${3RD_HEADERS}/TCFoundation/ )
     system( $$COPY_CMD ../include/*.h $${3RD_HEADERS}/3rdParty/ )
+    system( $$COPY_CMD ../3rdParty/minizip/*.h $${3RD_HEADERS}/3rdParty/minizip/ )
     system( $$COPY_CMD ../include/GL/*.h $${3RD_HEADERS}/GL/ )
 
     exists($$3RD_HEADERS/TCFoundation/TCObject.h): \
@@ -105,7 +106,7 @@ unix {
     contains(USE_3RD_PARTY_3DS, YES) {
         exists($$OUT_PWD/$${3DS_LDLIBS}): 3DS_LIB_FOUND = YES
         else: message("~~~ 3DS Library not found at $$OUT_PWD/$${3DS_LDLIBS} ~~~")
-    } else {
+    } else:USE_3RD_PARTY_PREBUILT_3DS {
         # pre-built 3ds path is already abs so use without $$OUT_PWD
         exists($${3DS_LDLIBS}): 3DS_LIB_FOUND = YES
         else: message("~~~ 3DS Library not found at $${3DS_LDLIBS} ~~~")
@@ -141,10 +142,15 @@ unix {
         libraries.files         += $${TINYXML_LDLIBS}
         else: message("~~~ TINYXML Library not found at $$OUT_PWD/$${TINYXML_LDLIBS} ~~~")
     }
-    !contains(USE_SYSTEM_Z_LIB, YES) {
-        exists($$OUT_PWD/$${ZLIB_LDLIBS}): \
-        libraries.files         += $${ZLIB_LDLIBS}
-        else: message("~~~ Z Library not found at $$OUT_PWD/$${ZLIB_LDLIBS} ~~~")
+    contains(USE_3RD_PARTY_MINIZIP, YES):!USE_3RD_PARTY_PREBUILT_MINIZIP {
+        exists($$OUT_PWD/$${MINIZIP_LDLIBS}): \
+        libraries.files         += $${MINIZIP_LDLIBS}
+        else: message("~~~ MINIZIP Library not found at $$OUT_PWD/$${MINIZIP_LDLIBS} ~~~")
+    } else:USE_3RD_PARTY_PREBUILT_MINIZIP {
+        # pre-built minizip path is already abs so use without $$OUT_PWD
+        exists($${MINIZIP_LDLIBS}): \
+        libraries.files    += $${MINIZIP_LDLIBS}
+        else: message("~~~ MINIZIP Library not found at $${MINIZIP_LDLIBS} ~~~")
     }
 
     INSTALLS += target documentation resources resources_config libraries
@@ -199,10 +205,12 @@ LIBS_    = -lLDraw$${POSTFIX} \
            -lLDExporter$${POSTFIX}
 
 # override system or 3rdparty libraries as specified
+# these will be empty when not specifically defined
 if (USE_SYSTEM_LIBS|USE_3RD_PARTY_LIBS) {
    LIBS_ +=  $${PNG_LDLIBS} \
              $${JPEG_LDLIBS} \
              $${3DS_LDLIBS} \
+             $${MINIZIP_LDLIBS} \
              $${GL2PS_LDLIBS} \
              $${TINYXML_LDLIBS} \
              $${ZLIB_LDLIBS}
@@ -310,33 +318,42 @@ PRE_TARGETDEPS += LDViewMessages.ini LDViewMessages.h StudLogo.h
 # tests on unix (linux OSX)
 BUILD_CHECK: unix {
     # LDraw library path - needed for tests
-    LDRAW_PATH = $$(LDRAWDIR)
+    LDRAW_PATH = $$system_path( $$(LDRAWDIR) )
     !isEmpty(LDRAW_PATH){
         message("~~~ LDRAW LIBRARY $${LDRAW_PATH} ~~~")
-
+        LDRAW_DIR_LN=12
+        LDRAW_ZIP_LN=13
+        LGEO_DIR_LN=64
         LDRAW_DIR = LDrawDir=$${LDRAW_PATH}
         DEV_DIR   = $${_PRO_FILE_PWD_}
-        LN_13=12
-        LN_57=60
         ldviewini.target = LDViewCustomIni
         ldviewini.depends = ldviewiniMessage
-        !macx: ldviewini.commands = @sed -i      \'$${LN_13}s%.*%$${LDRAW_DIR}%\' $${DEV_DIR}/LDViewCustomIni
-        else:  ldviewini.commands = @sed -i \'\' \'$${LN_13}s%.*%$${LDRAW_DIR}%\' $${DEV_DIR}/LDViewCustomIni
-        ldviewiniMessage.commands = @echo && echo "Project MESSAGE: Updating LDViewCustomIni with entry $${LDRAW_DIR} at line $${LN_13}"
+        !macx: ldviewini.commands = @sed -i      \'$${LDRAW_DIR_LN}s%.*%$${LDRAW_DIR}%\' $${DEV_DIR}/LDViewCustomIni
+        else:  ldviewini.commands = @sed -i \'\' \'$${LDRAW_DIR_LN}s%.*%$${LDRAW_DIR}%\' $${DEV_DIR}/LDViewCustomIni
+        ldviewiniMessage.commands = @echo && echo "Project MESSAGE: Updating LDViewCustomIni with entry $${LDRAW_DIR} at line $${LDRAW_DIR_LN}"
+
+        exists($${LDRAW_PATH}/complete.zip) {
+            LDRAW_ZIP = LDrawZip=$${LDRAW_PATH}/complete.zip
+            message("~~~ LDRAW ZIP LIBRARY $${LDRAW_ZIP} ~~~")
+
+            !macx: ldviewini.commands += @sed -i      \'$${LDRAW_ZIP_LN}s%.*%$${LDRAW_ZIP}%\' $${DEV_DIR}/LDViewCustomIni
+            else:  ldviewini.commands += @sed -i \'\' \'$${LDRAW_ZIP_LN}s%.*%$${LDRAW_ZIP}%\' $${DEV_DIR}/LDViewCustomIni
+            ldviewiniMessage.commands += @echo && echo "Project MESSAGE: Updating LDViewCustomIni with entry $${LDRAW_ZIP} at line $${LDRAW_ZIP_LN}"
+        }
 
         exists($${LDRAW_PATH}/lgeo/LGEO.xml) {
             LGEO_DIR = XmlMapPath=$${LDRAW_PATH}/lgeo
             message("~~~ LGEO LIBRARY $${LGEO_DIR} ~~~")
 
-            !macx: ldviewini.commands += ; sed -i      \'$${LN_57}s%.*%$${LGEO_DIR}%\' $${DEV_DIR}/LDViewCustomIni
-            else:  ldviewini.commands += ; sed -i \'\' \'$${LN_57}s%.*%$${LGEO_DIR}%\' $${DEV_DIR}/LDViewCustomIni
-            ldviewiniMessage.commands += ; echo "Project MESSAGE: Updating LDViewCustomIni with entry $${LGEO_DIR} at line $${LN_57}"
+            !macx: ldviewini.commands += ; sed -i      \'$${LGEO_DIR_LN}s%.*%$${LGEO_DIR}%\' $${DEV_DIR}/LDViewCustomIni
+            else:  ldviewini.commands += ; sed -i \'\' \'$${LGEO_DIR_LN}s%.*%$${LGEO_DIR}%\' $${DEV_DIR}/LDViewCustomIni
+            ldviewiniMessage.commands += ; echo "Project MESSAGE: Updating LDViewCustomIni with entry $${LGEO_DIR} at line $${LGEO_DIR_LN}"
         } else {
             message("~~~ LGEO LIBRARY NOT FOUND ~~~")
 
-            !macx: ldviewini.commands += ; sed -i      \'$${LN_57}s%.*%%\' $${DEV_DIR}/LDViewCustomIni
-            else:  ldviewini.commands += ; sed -i \'\' \'$${LN_57}s%.*%%\' $${DEV_DIR}/LDViewCustomIni
-            ldviewiniMessage.commands += ; echo "Project MESSAGE: Removing LDViewCustomnIni entry XmlMapPath at line $${LN_57}"
+            !macx: ldviewini.commands += ; sed -i      \'$${LGEO_DIR_LN}s%.*%%\' $${DEV_DIR}/LDViewCustomIni
+            else:  ldviewini.commands += ; sed -i \'\' \'$${LGEO_DIR_LN}s%.*%%\' $${DEV_DIR}/LDViewCustomIni
+            ldviewiniMessage.commands += ; echo "Project MESSAGE: Removing LDViewCustomnIni entry XmlMapPath at line $${LGEO_DIR_LN}"
         }
 
         exists($$(HOME)/.ldviewrc) {

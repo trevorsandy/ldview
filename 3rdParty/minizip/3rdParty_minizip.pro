@@ -8,9 +8,9 @@ include(../../3rdParty.pri)
 message("~~~ libminizip.a LIBRARY $${BUILD} ~~~")
 
 !USE_SYSTEM_ZLIB {
-        INCLUDEPATH  += $$_PRO_FILE_PWD_/../zlib
+	INCLUDEPATH  += $$_PRO_FILE_PWD_/../zlib
 } else {
-        INCLUDEPATH  += $$_PRO_FILE_PWD_/../../include   # for zlib.h and zconf.h
+    INCLUDEPATH  += $$_PRO_FILE_PWD_/../../include   # for zlib.h and zconf.h
 }
 
 # MacOSX is a flavour of unix.
@@ -29,5 +29,6 @@ SOURCES += $$PWD/miniunz.c \
            $$PWD/mztools.c \
            $$PWD/unzip.c \
            $$PWD/zip.c
+
 win32: SOURCES += $$$PWD/iowin32.c
 else:  SOURCES += $$PWD/ioapi.c

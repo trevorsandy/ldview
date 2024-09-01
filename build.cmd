@@ -8,8 +8,8 @@ rem LDView distributions and package the build contents (exe, doc and
 rem resources ) as LPub3D 3rd Party components.
 rem --
 rem  Trevor SANDY <trevor.sandy@gmail.com>
-rem  Last Update: August 29, 2023
-rem  Copyright (c) 2020 - 2023 by Trevor SANDY
+rem  Last Update: September 07, 2024
+rem  Copyright (c) 2020 - 2024 by Trevor SANDY
 rem --
 rem This script is distributed in the hope that it will be useful,
 rem but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -76,7 +76,7 @@ IF "%BUILD_WORKER%" NEQ "True" (
 IF "%LP3D_CONDA_BUILD%" NEQ "True" (
   IF EXIST "C:\Program Files (x86)\Microsoft Visual Studio\%LP3D_VSVERSION%\Professional\VC\Auxiliary\Build" (
     SET LP3D_VCVARSALL_DIR=C:\Program Files ^(x86^)\Microsoft Visual Studio\%LP3D_VSVERSION%\Professional\VC\Auxiliary\Build
-  )  
+  )
   IF EXIST "C:\Program Files (x86)\Microsoft Visual Studio\%LP3D_VSVERSION%\Community\VC\Auxiliary\Build" (
     SET LP3D_VCVARSALL_DIR=C:\Program Files ^(x86^)\Microsoft Visual Studio\%LP3D_VSVERSION%\Community\VC\Auxiliary\Build
   )
@@ -113,6 +113,7 @@ SET OfficialCONTENT=complete.zip
 SET PACKAGE=LDView
 SET VERSION=4.5
 SET PROJECT=LDView.vcxproj
+Rem SET PROJECT=LDView.sln
 SET CONFIGURATION=Release
 
 SET MINIMUM_LOGGING=unknown
@@ -200,6 +201,12 @@ IF /I "%2"=="-chk" (
 :BUILD
 rem Display build settings
 ECHO.
+IF "%PROJECT:~-7%"=="vcxproj" (
+  ECHO   BUILD_TYPE.............[PROJECT]
+)
+IF "%PROJECT:~-3%"=="sln" (
+  ECHO   BUILD_TYPE.............[SOLUTION]
+)
 IF "%BUILD_WORKER%" EQU "True" (
   ECHO   BUILD_HOST.............[%BUILD_WORKER_HOST%]
   ECHO   BUILD_WORKER_IMAGE.....[%BUILD_WORKER_IMAGE%]
@@ -386,25 +393,37 @@ ECHO( -PATH......[!PATH!]
 EXIT /b
 
 :UPDATE_INI_POV_FILE
+IF NOT EXIST "%LDRAW_DIR%" (
+  ECHO.
+  ECHO  -LDRAW directory %LDRAW_DIR% does not exist - LDRAW path update ignored.
+) ELSE (
+SET /a LDrawDirLine=9
+SET /a XmlMapPathLine=56
+SET "LDrawDirReplacement=LDrawDir=%LDRAW_DIR%"
+SET "XmlMapPathReplacement=XmlMapPath=%LDRAW_DIR%\lgeo"
 IF EXIST "%LDRAW_DIR%\lgeo" (
-SET /a LineToReplace=51
-SET "Replacement=XmlMapPath=%LDRAW_DIR%\lgeo"
+  SET LGEO_DIR_FOUND=True
+) ELSE (
+  ECHO.
+  ECHO  -LGEO directory %LDRAW_DIR%\lgeo does not exist - LGEO update ignored.
+)
 ECHO.
 SETLOCAL ENABLEDELAYEDEXPANSION
-ECHO( -Update %INI_POV_FILE% at line !LineToReplace! with !Replacement!
+ECHO(-Update ldviewPOV.ini line !LDrawDirLine! with !LDrawDirReplacement! and line !XmlMapPathLine! with !XmlMapPathReplacement!
   ENDLOCAL
 )
 (FOR /f "tokens=1*delims=:" %%a IN ('findstr /n "^" "%INI_POV_FILE%"') DO (
   SET "Line=%%b"
-  IF %%a EQU %LineToReplace% SET "Line=%Replacement%"
+  IF %%a EQU %LDrawDirLine% SET "Line=%LDrawDirReplacement%"
+  IF "%LGEO_DIR_FOUND%" EQU "True" (
+    IF %%a EQU %XmlMapPathLine% SET "Line=%XmlMapPathReplacement%"
+  )
   SETLOCAL ENABLEDELAYEDEXPANSION
   ECHO(!Line!
   ENDLOCAL
 ))>"%INI_POV_FILE%.new"
 MOVE /Y "%INI_POV_FILE%.new" "%INI_POV_FILE%" >nul 2>&1
-) ELSE (
-  ECHO.
-  ECHO -LGEO directory %LDRAW_DIR%\lgeo does not exist - LGEO Update ignored.
+)
 )
 EXIT /b
 
@@ -460,16 +479,23 @@ IF %INSTALL_32BIT% == 1 (
   IF NOT EXIST "%DIST_INSTALL_PATH%\" (
     MKDIR "%DIST_INSTALL_PATH%\"
   )
-  %COPY_CMD% "Build\Release\%PACKAGE%.exe*" "%DIST_INSTALL_PATH%\" /B
+  %COPY_CMD% "Build\Release\%PACKAGE%.*" "%DIST_INSTALL_PATH%\" /B
   ECHO.
-  ECHO -Installing %PACKAGE% 32bit libraries to [%DIST_INSTALL_PATH%]...
-  %COPY_CMD% "LDLib\Build\Release\LDLib.lib*" "%DIST_INSTALL_PATH%\" /B
-  %COPY_CMD% "LDExporter\Build\Release\LDExporter.lib*" "%DIST_INSTALL_PATH%\" /B
-  %COPY_CMD% "LDLoader\Build\Release\LDLoader.lib*" "%DIST_INSTALL_PATH%\" /B
-  %COPY_CMD% "TRE\Build\Release\TRE.lib*" "%DIST_INSTALL_PATH%\" /B
-  %COPY_CMD% "TCFoundation\Build\Release\TCFoundation.lib*" "%DIST_INSTALL_PATH%\" /B
-  %COPY_CMD% "3rdParty\gl2ps\Build\Release\gl2ps.lib*" "%DIST_INSTALL_PATH%\" /B
-  %COPY_CMD% "3rdParty\tinyxml\Build\Release\tinyxml_STL.lib*" "%DIST_INSTALL_PATH%\" /B
+  IF "%PROJECT:~-7%"=="vcxproj" (
+    FOR %%G IN (LDLib,LDExporter,LDLoader,TRE,TCFoundation) DO (
+      %COPY_CMD% "%%G\Build\Release\%%G.*" "%DIST_INSTALL_PATH%\" /B
+    )
+	FOR %%G IN (gl2ps,tinyxml,minizip) DO (
+	  %COPY_CMD% "3rdParty\%%G\Build\Release\%%G*" "%DIST_INSTALL_PATH%\" /B
+	)
+  )
+  IF "%PROJECT:~-3%"=="sln" (
+    IF EXIST "Build\Release" (
+      ECHO -Installing %PACKAGE% 32bit libraries to [%DIST_INSTALL_PATH%]...
+      %COPY_CMD% "Build\Release\*.lib" "%DIST_INSTALL_PATH%\" /B
+      %COPY_CMD% "Build\Release\*.pdb" "%DIST_INSTALL_PATH%\" /B
+    )
+  )
   IF "%LP3D_VSVERSION%"=="2019" (
     %COPY_CMD% "lib\*-vs2017.lib" "%DIST_INSTALL_PATH%\" /B
   ) ELSE (
@@ -481,9 +507,21 @@ IF %INSTALL_32BIT% == 1 (
     IF NOT EXIST "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" (
       MKDIR "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\"
     )
-    %COPY_CMD% "Build\Debug\*.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
-    %COPY_CMD% "Build\Debug\*.bsc" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
-    %COPY_CMD% "Build\Debug\*.pdb" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
+    IF "%PROJECT:~-7%"=="vcxproj" (
+      FOR %%G IN (LDLib,LDExporter,LDLoader,TRE,TCFoundation) DO (
+        %COPY_CMD% "%%G\Build\Debug\%%G.*" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
+      )
+      FOR %%G IN (gl2ps,tinyxml,minizip) DO (
+        %COPY_CMD% "3rdParty\%%G\Build\Debug\%%G*" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
+      )
+    )
+    IF "%PROJECT:~-3%"=="sln" (
+      IF EXIST "Build\Debug" (
+        ECHO -Installing %PACKAGE% 32bit Debug libraries to [%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug...
+        %COPY_CMD% "Build\Debug\*.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
+        %COPY_CMD% "Build\Debug\*.pdb" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
+      )
+    )
     IF "%LP3D_VSVERSION%"=="2019" (
       %COPY_CMD% "lib\*-vs2017.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
     ) ELSE (
@@ -500,14 +538,21 @@ IF %INSTALL_64BIT% == 1 (
   )
   %COPY_CMD% "Build\Release64\%PACKAGE%64.exe*" "%DIST_INSTALL_PATH%\" /B
   ECHO.
-  ECHO -Installing %PACKAGE% 64bit libraries to [%DIST_INSTALL_PATH%]...
-  %COPY_CMD% "LDLib\Build\Release64\LDLib.lib*" "%DIST_INSTALL_PATH%\" /B
-  %COPY_CMD% "LDExporter\Build\Release64\LDExporter.lib*" "%DIST_INSTALL_PATH%\" /B
-  %COPY_CMD% "LDLoader\Build\Release64\LDLoader.lib*" "%DIST_INSTALL_PATH%\" /B
-  %COPY_CMD% "TRE\Build\Release64\TRE.lib*" "%DIST_INSTALL_PATH%\" /B
-  %COPY_CMD% "TCFoundation\Build\Release64\TCFoundation.lib*" "%DIST_INSTALL_PATH%\" /B
-  %COPY_CMD% "3rdParty\gl2ps\Build\Release64\gl2ps.lib*" "%DIST_INSTALL_PATH%\" /B
-  %COPY_CMD% "3rdParty\tinyxml\Build\Release64\tinyxml_STL.lib*" "%DIST_INSTALL_PATH%\" /B
+  IF "%PROJECT:~-7%"=="vcxproj" (
+    FOR %%G IN (LDLib,LDExporter,LDLoader,TRE,TCFoundation) DO (
+      %COPY_CMD% "%%G\Build\Release64\%%G.*" "%DIST_INSTALL_PATH%\" /B
+    )
+	FOR %%G IN (gl2ps,tinyxml,minizip) DO (
+	  %COPY_CMD% "3rdParty\%%G\Build\Release64\%%G*" "%DIST_INSTALL_PATH%\" /B
+	)
+  )
+  IF "%PROJECT:~-3%"=="sln" (
+    IF EXIST "Build\Release64" (
+      ECHO -Installing %PACKAGE% 32bit libraries to [%DIST_INSTALL_PATH%]...
+      %COPY_CMD% "Build\Release64\*.lib" "%DIST_INSTALL_PATH%\" /B
+      %COPY_CMD% "Build\Release64\*.pdb" "%DIST_INSTALL_PATH%\" /B
+    )
+  )
   IF "%LP3D_VSVERSION%"=="2019" (
     %COPY_CMD% "lib\x64\*-vs2019.lib" "%DIST_INSTALL_PATH%\" /B
   ) ELSE (
@@ -519,9 +564,21 @@ IF %INSTALL_64BIT% == 1 (
     IF NOT EXIST "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" (
       MKDIR "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\"
     )
-    %COPY_CMD% "Build\Debug64\*.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
-    %COPY_CMD% "Build\Debug64\*.bsc" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
-    %COPY_CMD% "Build\Debug64\*.pdb" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
+    IF "%PROJECT:~-7%"=="vcxproj" (
+      FOR %%G IN (LDLib,LDExporter,LDLoader,TRE,TCFoundation) DO (
+        %COPY_CMD% "%%G\Build\Debug64\%%G.*" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
+      )
+      FOR %%G IN (gl2ps,tinyxml,minizip) DO (
+        %COPY_CMD% "3rdParty\%%G\Build\Debug64\%%G*" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
+      )
+    )
+    IF "%PROJECT:~-3%"=="sln" (
+      IF EXIST "Build\Debug64" (
+        ECHO -Installing %PACKAGE% 32bit Debug64 libraries to [%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64...
+        %COPY_CMD% "Build\Debug64\*.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
+        %COPY_CMD% "Build\Debug64\*.pdb" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
+      )
+    )
     IF "%LP3D_VSVERSION%"=="2019" (
       %COPY_CMD% "lib\x64\*-vs2019.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
     ) ELSE (
@@ -550,6 +607,9 @@ IF NOT EXIST "%DIST_INSTALL_PATH%\TCFoundation\" (
 IF NOT EXIST "%DIST_INSTALL_PATH%\3rdParty\" (
   MKDIR "%DIST_INSTALL_PATH%\3rdParty\"
 )
+IF NOT EXIST "%DIST_INSTALL_PATH%\3rdParty\minizip\" (
+  MKDIR "%DIST_INSTALL_PATH%\3rdParty\minizip\"
+)
 IF NOT EXIST "%DIST_INSTALL_PATH%\GL\" (
   MKDIR "%DIST_INSTALL_PATH%\GL\"
 )
@@ -558,6 +618,7 @@ IF NOT EXIST "%DIST_INSTALL_PATH%\GL\" (
 %COPY_CMD% "LDLoader\*.h" "%DIST_INSTALL_PATH%\LDLoader\" /A
 %COPY_CMD% "TRE\*.h" "%DIST_INSTALL_PATH%\TRE\" /A
 %COPY_CMD% "TCFoundation\*.h" "%DIST_INSTALL_PATH%\TCFoundation\" /A
+%COPY_CMD% "3rdParty\minizip\*.h" "%DIST_INSTALL_PATH%\3rdParty\minizip\" /A
 %COPY_CMD% "include\*.h" "%DIST_INSTALL_PATH%\3rdParty\" /A
 %COPY_CMD% "include\GL\*.h" "%DIST_INSTALL_PATH%\GL\" /A
 ECHO.

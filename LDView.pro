@@ -55,7 +55,7 @@ CONFIG+=ordered # This tells Qt to compile the following SUBDIRS in order
 #        |     |--- 3rdParty_gl2ps.pro     3rdParty library project file - consumes 3rdParty.pri
 #        |
 #        `--- /minizip
-#        |     |--- 3rdParty_minizip.pro   3rdParty library project file - consumes 3rdParty.pri
+#        |     |--- 3rdParty_minizip.pro   3rdParty library project file - consumes 3rdParty.pri (override with USE_3RD_PARTY_PREBUILT_MINIZIP)
 #        |
 #        `--- /lib3ds
 #        |     |--- 3rdParty_3ds.pro       3rdParty library project file - consumes 3rdParty.pri (override with USE_3RD_PARTY_PREBUILT_3DS)
@@ -78,15 +78,22 @@ isEmpty(HOST):HOST = UNKNOWN HOST
 # CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_macos_3rdparty
 # CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_windows_3rdparty
 # CONFIG+=USE_3RD_PARTY_LIBS
-# CONFIG+=USE_3RD_PARTY_PREBUILT_3DS  # override USE_3RD_PARTY_3DS to use static pre-built lib3ds.a
+# CONFIG+=USE_3RD_PARTY_PREBUILT_3DS     # override USE_3RD_PARTY_3DS to use static pre-built lib3ds.a
+# CONFIG+=USE_3RD_PARTY_PREBUILT_MINIZIP # override USE_3RD_PARTY_MINIZIP to use static pre-built libminizip.a
 # CONFIG+=USE_SYSTEM_LIBS
-# CONFIG+=USE_OSMESA_STATIC
-# CONFIG+=BUILD_PNG
-# CONFIG+=BUILD_GL2PS
-# CONFIG+=BUILD_TINYXML
+# CONFIG+=BUILD_PNG          # override USE_SYSTEM_LIBS for libpng
+# CONFIG+=BUILD_GL2P         # override USE_SYSTEM_LIBS for libgl2ps
+# CONFIG+=BUILD_TINYXML      # override USE_SYSTEM_LIBS for libtinyxml
+# CONFIG+=BUILD_MINIZIP      # override USE_SYSTEM_LIBS for libminizip
 # CONFIG+=BUILD_GUI_ONLY
 # CONFIG+=BUILD_CUI_ONLY
-# CONFIG+=USE_SYSTEM_OSMESA    # override USE_3RD_PARTY_LIBS for OSMesa libs
+# CONFIG+=USE_OSMESA_STATIC  # build static OSMesa libraray and use system LLVM library
+# CONFIG+=USE_OSMESA_LOCAL   # use local OSmesa and LLVM libraries - for OBS images w/o OSMesa stuff (e.g. RHEL)
+# CONFIG+=USE_SYSTEM_PNG     # override USE_3RD_PARTY_LIBS for libpng
+# CONFIG+=USE_SYSTEM_JPEG    # override USE_3RD_PARTY_LIBS for libjpeg
+# CONFIG+=USE_SYSTEM_Z       # override USE_3RD_PARTY_LIBS for libz
+# CONFIG+=USE_SYSTEM_OSMESA  # override USE_3RD_PARTY_LIBS for OSMesa
+# CONFIG+=USE_SYSTEM_MINIZIP # override USE_3RD_PARTY_LIBS for libminizip
 # Trusty does have the correct versions for libpng and lib3ds so use the 3rd party
 # version if 'use system libs' selected.
 
@@ -102,9 +109,27 @@ USE_3RD_PARTY_LIBS:USE_SYSTEM_LIBS {
 TEMPLATE=subdirs
 
 # This tells Qt to compile the following SUBDIRS in order
-CONFIG 	+= ordered
+CONFIG  += ordered
 
 MAKEFILE_3RDPARTY = Makefile.ldview
+
+# Open Build Service overrides
+BUILD_TINYXML {
+    USE_3RD_PARTY_TINYXML = YES
+}
+
+BUILD_GL2PS {
+    USE_3RD_PARTY_GL2PS = YES
+}
+
+BUILD_MINIZIP {
+    USE_3RD_PARTY_MINIZIP = YES
+}
+
+# Ubuntu Trusty uses libpng12 which is too old
+if (contains(HOST, Ubuntu):contains(HOST, 14.04.5):USE_SYSTEM_LIBS|BUILD_GL2PS|BUILD_PNG) {
+    USE_3RD_PARTY_PNG = YES
+}
 
 # system lib3ds does not appear to have lib3ds.h - so always use 3rd party version pre or demand built
 !USE_3RD_PARTY_PREBUILT_3DS: USE_3RD_PARTY_3DS = YES
@@ -136,13 +161,11 @@ USE_3RD_PARTY_LIBS {
     3rdParty_tinyxml.target   = sub-3rdParty_tinyxml
     3rdParty_tinyxml.depends  =
 
-    contains(USE_3RD_PARTY_3DS, YES) {
-        SUBDIRS += 3rdParty_3ds
-        3rdParty_3ds.file     = $$PWD/3rdParty/lib3ds/3rdParty_3ds.pro
-        3rdParty_3ds.makefile = $${MAKEFILE_3RDPARTY}
-        3rdParty_3ds.target   = sub-3rdParty_3ds
-        3rdParty_3ds.depends  =
-    }
+    SUBDIRS += 3rdParty_3ds
+    3rdParty_3ds.file         = $$PWD/3rdParty/lib3ds/3rdParty_3ds.pro
+    3rdParty_3ds.makefile     = $${MAKEFILE_3RDPARTY}
+    3rdParty_3ds.target       = sub-3rdParty_3ds
+    3rdParty_3ds.depends      =
 
     SUBDIRS += 3rdParty_minizip
     3rdParty_minizip.file     = $$PWD/3rdParty/minizip/3rdParty_minizip.pro
@@ -157,22 +180,8 @@ USE_3RD_PARTY_LIBS {
     3rdParty_gl2ps.depends    =
 }
 
-# Open Build Service overrides
-BUILD_TINYXML {
-    USE_3RD_PARTY_TINYXML = YES
-}
-
-BUILD_GL2PS {
-    USE_3RD_PARTY_GL2PS = YES
-}
-
-# Ubuntu Trusty uses libpng12 which is too old
-if (contains(HOST, Ubuntu):contains(HOST, 14.04.5):USE_SYSTEM_LIBS|BUILD_GL2PS|BUILD_PNG) {
-    USE_3RD_PARTY_PNG = YES
-}
-
 USE_SYSTEM_LIBS {
-    # always built...
+    # always built unless prebuilt instance specified...
     contains(USE_3RD_PARTY_3DS, YES) {
         SUBDIRS = 3rdParty_3ds
         3rdParty_3ds.file         = $$PWD/3rdParty/lib3ds/3rdParty_3ds.pro
@@ -202,6 +211,13 @@ USE_SYSTEM_LIBS {
         3rdParty_gl2ps.makefile   = $${MAKEFILE_3RDPARTY}
         3rdParty_gl2ps.target     = sub-3rdParty_gl2ps
         3rdParty_gl2ps.depends    = 3rdParty_png
+    }
+    contains(USE_3RD_PARTY_MINIZIP, YES) {
+        SUBDIRS += 3rdParty_minizip
+        3rdParty_minizip.file     = $$PWD/3rdParty/minizip/3rdParty_minizip.pro
+        3rdParty_minizip.makefile = $${MAKEFILE_3RDPARTY}
+        3rdParty_minizip.target   = sub-3rdParty_minizip
+        3rdParty_minizip.depends  =
     }
 }
 
@@ -338,7 +354,10 @@ contains(BUILD_CUI, YES) {
     if (USE_3RD_PARTY_LIBS|BUILD_GL2PS) {
         LDView_CUI_OSMesa.depends += 3rdParty_gl2ps
     }
-    USE_3RD_PARTY_LIBS:!USE_SYSTEM_LIBS: LDView_CUI_OSMesa.depends += 3rdParty_zlib
+    if (USE_3RD_PARTY_LIBS|BUILD_MINIZIP) {
+        LDView_CUI_OSMesa.depends += 3rdParty_minizip
+    }
+    USE_3RD_PARTY_LIBS:!USE_SYSTEM_LIBS:LDView_CUI_OSMesa.depends += 3rdParty_zlib
 }
 
 OTHER_FILES += $$PWD/LDViewMessages.ini \

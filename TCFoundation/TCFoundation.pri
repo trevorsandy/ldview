@@ -21,8 +21,7 @@ TARGET = TCFoundation$$POSTFIX
 INCLUDEPATH         += $${PNG_INC}
 INCLUDEPATH         += $${JPEG_INC}
 
-macx:win32: DEFINES += HAVE_MINIZIP
-else:       DEFINES += UNZIP_CMD
+DEFINES             += HAVE_MINIZIP
 
 contains(DEFINES, HAVE_MINIZIP): INCLUDEPATH += $${MINIZIP_INC}
 
@@ -58,6 +57,7 @@ HEADERS += $$PWD/ConvertUTF.h \
            $$PWD/TCTypedPointerArray.h \
            $$PWD/TCTypedValueArray.h \
            $$PWD/TCUnzip.h \
+           $$PWD/TCUnzipStream.h \
            $$PWD/TCUserDefaults.h \
            $$PWD/TCVector.h \
            $$PWD/TCWebClient.h
@@ -85,6 +85,7 @@ SOURCES += $$PWD/ConvertUTF.c \
            $$PWD/TCSortedStringArray.cpp \
            $$PWD/TCStringArray.cpp \
            $$PWD/TCUnzip.cpp \
+           $$PWD/TCUnzipStream.cpp \
            $$PWD/TCUserDefaults.cpp \
            $$PWD/TCVector.cpp \
            $$PWD/TCWebClient.cpp
