@@ -1,7 +1,7 @@
 # Build, check and LDView
 # Trevor SANDY <trevor.sandy@gmail.com>
-# Last Update: April 29, 2023
-# Copyright (C) 2022 - 2023 by Trevor SANDY
+# Last Update: September 07, 2024
+# Copyright (C) 2022 - 2024 by Trevor SANDY
 #
 name: Build LDView
 on:
@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Work Paths
         run: |
           echo "LDRAWDIR=${HOME}/ldraw" >> ${GITHUB_ENV}
@@ -26,7 +26,7 @@ jobs:
           chmod a+x QT/docker/install-devel-packages.sh && sudo ./QT/docker/install-devel-packages.sh
       - name: Cache LDraw
         id: cache-ldraw
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ env.LDRAWDIR }}
           key: ldraw-lib
@@ -56,7 +56,7 @@ jobs:
     runs-on: windows-2019
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Work Paths
         run: |
           Echo "LP3D_DIST_DIR_PATH=$(Join-Path (resolve-path ..\) 'lpub3d_windows_3rdparty')" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
@@ -65,7 +65,7 @@ jobs:
           If ( -Not (Test-Path -Path $(Join-Path (resolve-path ..\) 'lpub3d_windows_3rdparty') ) ) { New-Item -ItemType directory -Path $(Join-Path (resolve-path ..\) 'lpub3d_windows_3rdparty') }
       - name: Cache LDraw
         id: cache-ldraw
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ env.LP3D_LDRAW_DIR_PATH }}
           key: ldraw-lib
@@ -83,7 +83,7 @@ jobs:
     runs-on: macos-11
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Work Paths
         run: |
           echo "LDRAWDIR=${HOME}/Library/ldraw" >> ${GITHUB_ENV}
@@ -98,7 +98,7 @@ jobs:
           if [[ -d /usr/X11/lib && /usr/X11/include ]]; then echo "Good to go - X11 found."; else brew install --cask xquartz; fi
       - name: Cache LDraw
         id: cache-ldraw
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ env.LDRAWDIR }}
           key: ldraw-lib
