@@ -855,7 +855,9 @@ TCLocalStrings::TCLocalStringsCleanup::~TCLocalStringsCleanup(void)
 // Note: Code Page 1252 is Windows Latin I, which is the default.
 TCLocalStrings::TCLocalStrings(void):
 #if !defined(WIN32) && !defined(__APPLE__) && !defined(_OSMESA)
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0) || defined(QT_CORE5COMPAT_LIB)
 	m_textCodec(NULL),
+#endif
 #endif // WIN32
 	m_codePage(UTF8_CODE_PAGE)
 {
@@ -1267,8 +1269,10 @@ void TCLocalStrings::instSetCodePage(int codePage)
 	QString name;
 
 	name = QString("CP%1").arg(codePage);
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0) || defined(QT_CORE5COMPAT_LIB)
 	m_textCodec =
 		QTextCodec::codecForName((const char *)name.toLatin1().constData());
+#endif
 #endif // WIN32
 }
 
@@ -1498,6 +1502,7 @@ void TCLocalStrings::mbstowstring(std::wstring &dst, const char *src,
 		}
 	}
 #if !defined(WIN32) && !defined(__APPLE__) && !defined(_OSMESA)
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0) || defined(QT_CORE5COMPAT_LIB)
 	else if (m_textCodec)
 	{
 		QString unicodeString = m_textCodec->toUnicode(src);
@@ -1510,6 +1515,7 @@ void TCLocalStrings::mbstowstring(std::wstring &dst, const char *src,
 			dst[i] = (wchar_t)qchar.unicode();
 		}
 	}
+#endif
 #endif // WIN32
 	else
 	{
