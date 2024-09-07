@@ -3,6 +3,9 @@
 
 #ifdef WIN32
 #include <io.h>
+// LPub3D Mod - treat error C3861: '_mkgmtime': identifier not found
+#include <time.h>
+// LPub3D Mod End
 #if defined(_MSC_VER) && _MSC_VER >= 1400 && defined(_DEBUG)
 #define new DEBUG_CLIENTBLOCK
 #endif // _DEBUG
