@@ -18,6 +18,8 @@ message("~~~ libLDLoader$$POSTFIX.a MODULE $$BUILD ~~~")
 
 TARGET = LDLoader$$POSTFIX
 
+macx: INCLUDEPATH += $${LIBS_INC}
+
 # Input
 HEADERS += $$PWD/LDLActionLine.h \
            $$PWD/LDLAutoCamera.h \
