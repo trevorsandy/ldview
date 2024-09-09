@@ -70,6 +70,8 @@ jobs:
         with:
           path: ${{ env.LP3D_LDRAW_DIR_PATH }}
           key: ldraw-lib
+      - name: Setup MSBuild Environment
+        uses: microsoft/setup-msbuild@v2
       - name: Windows 8.1 SDK
         run: |
           Invoke-WebRequest -Method Get -Uri https://go.microsoft.com/fwlink/p/?LinkId=323507 -OutFile sdksetup.exe -UseBasicParsing
