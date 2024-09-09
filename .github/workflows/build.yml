@@ -94,8 +94,8 @@ jobs:
         run: |
           echo "/usr/local/opt/ccache/libexec" >> ${GITHUB_PATH}
           echo "Install development packages..."
-          brew install grep ccache tinyxml gl2ps minizip qt5
-          brew link --force qt5;
+          brew install grep ccache tinyxml gl2ps minizip qt@5
+          brew link --force qt@5;
           if [[ -d /usr/X11/lib && /usr/X11/include ]]; then echo "Good to go - X11 found."; else brew install --cask xquartz; fi
       - name: Cache LDraw
         id: cache-ldraw
