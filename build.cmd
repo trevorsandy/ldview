@@ -385,6 +385,8 @@ IF "%PATH_PREPENDED%" NEQ "True" (
   )
   rem Display MSVC Compiler settings
   ECHO.
+  ECHO -Display _MSC_VER %LP3D_MSC_VER% compiler settings
+  ECHO.
   ECHO.%LP3D_MSC_VER% > %TEMP%\settings.c
   cl.exe -Bv -EP %TEMP%\settings.c >NUL
   ECHO.
