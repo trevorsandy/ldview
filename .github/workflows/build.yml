@@ -1,6 +1,6 @@
 # Build, check and LDView
 # Trevor SANDY <trevor.sandy@gmail.com>
-# Last Update: September 09, 2024
+# Last Update: September 10, 2024
 # Copyright (C) 2022 - 2024 by Trevor SANDY
 #
 name: Build LDView
@@ -70,27 +70,27 @@ jobs:
         with:
           path: ${{ env.LP3D_LDRAW_DIR_PATH }}
           key: ldraw-lib
-      - name: MSVS 2015 MSVC v140 Build Tools
+      - name: VC 140 Build Tools
         run: |
           Set-Location "C:\Program Files (x86)\Microsoft Visual Studio\Installer\"
           $InstallPath = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
-          $componentsToAdd= @(
+          $ComponentsToAdd= @(
             "Microsoft.VisualStudio.Component.VC.140"
           )
-          [string]$workloadArgs = $componentsToAdd | ForEach-Object {" --add " +  $_}
-          $Arguments = ('/c', "vs_installer.exe", 'modify', '--installPath', "`"$InstallPath`"",$workloadArgs, '--quiet', '--norestart', '--nocache')
+          [string]$WorkloadArgs = $ComponentsToAdd | ForEach-Object {" --add " +  $_}
+          $Arguments = ('/c', "vs_installer.exe", 'modify', '--installPath', "`"$InstallPath`"",$WorkloadArgs, '--quiet', '--norestart', '--nocache')
           # should be run twice
-          $process = Start-Process -FilePath cmd.exe -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden
-          $process = Start-Process -FilePath cmd.exe -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden
+          $Process = Start-Process -FilePath cmd.exe -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden
+          $Process = Start-Process -FilePath cmd.exe -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden
         shell: powershell
       - name: Windows 8.1 SDK
         run: |
           Invoke-WebRequest -Method Get -Uri https://go.microsoft.com/fwlink/p/?LinkId=323507 -OutFile sdksetup.exe -UseBasicParsing
-          Start-Process -Wait sdksetup.exe -ArgumentList "/q", "/norestart", "/features", "OptionId.WindowsDesktopSoftwareDevelopmentKit", "OptionId.NetFxSoftwareDevelopmentKit"
+          Start-Process -Wait sdksetup.exe -ArgumentList "/q", "/norestart", "/features", "OptionId.WindowsDesktopSoftwareDevelopmentKit"
         shell: powershell
       - name: Build LDView
         shell: cmd
-        run: .\build.cmd -all -chk
+        run: .\build.cmd -all -chk -minlog
 
   build-macos:
     # if: ${{ false }} # uncomment to disable
