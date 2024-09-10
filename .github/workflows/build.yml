@@ -76,6 +76,7 @@ jobs:
           $InstallPath = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
           $ComponentsToAdd= @(
             "Microsoft.VisualStudio.Component.VC.140"
+            "Microsoft.VisualStudio.Component.WinXP"
           )
           [string]$WorkloadArgs = $ComponentsToAdd | ForEach-Object {" --add " +  $_}
           $Arguments = ('/c', "vs_installer.exe", 'modify', '--installPath', "`"$InstallPath`"",$WorkloadArgs, '--quiet', '--norestart', '--nocache')
