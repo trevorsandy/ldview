@@ -390,4 +390,6 @@ OTHER_FILES += \
            ldview.1 \
            ldview.ini \
            ldviewPOV.ini \
-           ldviewrc.sample
+           ldviewrc.sample \
+           ../.github/workflows/build.yml \
+           ../.github/workflows/codeql.yml

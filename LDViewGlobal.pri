@@ -317,8 +317,13 @@ unix {
     # detect system libraries paths
     SYS_LIBINC_         = $${SYSTEM_PREFIX_}/include
     macx {                                                             # OSX
-        SYS_LIBINC_     = $${SYSTEM_PREFIX_}/local/include
-        SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/local/lib
+        contains(QT_ARCH,arm64) {
+            SYS_LIBINC_ = /opt/homebrew/include
+            SYS_LIBDIR_ = /opt/homebrew/lib
+        } else {
+            SYS_LIBINC_ = $${SYSTEM_PREFIX_}/local/include
+            SYS_LIBDIR_ = $${SYSTEM_PREFIX_}/local/lib
+        }
         SYS_LIBINC_X11_ = $${SYSTEM_PREFIX_}/X11/include
         SYS_LIBDIR_X11_ = $${SYSTEM_PREFIX_}/X11/lib
     } else: exists($${SYSTEM_PREFIX_}/lib/$$QT_ARCH-linux-gnu) {       # Debian
@@ -544,9 +549,13 @@ unix {
             # update libs path
             LIBS_INC         += $${MINIZIP_INC}
             DEFINES          += HAVE_MINIZIP
+
+        } else:macx:contains(QT_ARCH,arm64):exists(/opt/homebrew/include/minizip/unzip.h) {
+            # message("~~~ macOS System $$QT_ARCH Minizip header found ~~~")
+            DEFINES += HAVE_MINIZIP
         } else:exists(/usr/include/minizip/unzip.h)|exists(/usr/local/include/minizip/unzip.h) {
             # set HAVE_MINIZIP preprocessor directive
-            #message("~~~ System Minizip header found ~~~")
+            # message("~~~ System $$QT_ARCH Minizip header found ~~~")
             DEFINES += HAVE_MINIZIP
         }
         contains(USE_3RD_PARTY_PNG, YES) {
