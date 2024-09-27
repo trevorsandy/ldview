@@ -92,6 +92,7 @@ jobs:
 
   build-macos:
     # if: ${{ false }} # uncomment to disable
+    name: 'Build macOS ${{ matrix.runner-version }}'
     runs-on: macos-${{ matrix.runner-version }}
     strategy:
       fail-fast: false
