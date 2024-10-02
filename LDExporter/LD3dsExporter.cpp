@@ -368,7 +368,7 @@ int LD3dsExporter::doExport(LDLModel *pTopModel)
 	//}
     // LPub3D Mod - return 0 fix
 	if (lib3ds_file_save(m_file, m_filename.c_str()))
-    // LPub3D Mod End
+	// LPub3D Mod End
 	{
 		retVal = 0;
 	}

@@ -426,11 +426,11 @@ bool LDSnapshotTaker::exportFiles(bool *tried /*= nullptr*/)
 		for (i = 0; i < count && (exportFiles || !retValue); ++i)
 		{
 			std::string arg = unhandledArgs->stringAtIndex(i);
-
+			
 			if (arg[0] != '-' && arg[0] != 0)
 			{
 				std::string exportFilename;
-
+				
 				if (isFileUri(arg))
 				{
 					m_fileUri = arg;
@@ -768,7 +768,7 @@ bool LDSnapshotTaker::saveImage(bool *tried /*= nullptr*/)
 		for (i = 0; i < count && (saveSnapshots || !retValue); i++)
 		{
 			std::string arg = unhandledArgs->stringAtIndex(i);
-
+			
 			if (arg[0] != '-' && arg[0] != 0)
 			{
 				std::string imageFilename;
@@ -1281,7 +1281,7 @@ static void testZMap(const char *filename)
 {
 	FILE *zMapFile = ucfopen(filename, "rb");
 	TCImage *image = new TCImage;
-
+	
 	if (testZMap2(zMapFile, image))
 	{
 		std::string pngFilename = filename;
@@ -1842,7 +1842,7 @@ LDConsoleAlertHandler* LDSnapshotTaker::getConsoleAlertHandler(void)
 		int verbosity = 1;
 		TCStringArray *unhandledArgs =
 			TCUserDefaults::getUnhandledCommandLineArgs();
-
+		
 		if (unhandledArgs != NULL)
 		{
 			size_t count = unhandledArgs->getCount();
@@ -2104,7 +2104,7 @@ std::string LDSnapshotTaker::extensionForType(
 	if (includeDot)
 	{
 		std::string retValue(".");
-
+		
 		retValue += extensionForType(type, false);
 		return retValue;
 	}

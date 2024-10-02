@@ -42,7 +42,7 @@
 #include <TCFoundation/TCDefines.h>
 
 //Solaris
-#if (defined (__SVR4) && defined (__sun))
+#if (defined (__SVR4) && defined (__sun)) 
 #define APIENTRY
 #endif
 

@@ -431,8 +431,8 @@ void LDPreferences::applyPrimitivesSettings(void)
 		m_modelViewer->setTexturesAfterTransparent(true);
 		m_modelViewer->setTextureOffsetFactor(m_textureOffsetFactor);
 		m_modelViewer->setUseStrips(m_useStrips);
-		
-        // LPub3D Mod - stud style	
+
+		// LPub3D Mod - stud style	
 		m_modelViewer->setStudCylinderColor(m_studCylinderColor);
 		m_modelViewer->setPartEdgeColor(m_partEdgeColor);
 		m_modelViewer->setBlackEdgeColor(m_blackEdgeColor);
@@ -642,7 +642,7 @@ void LDPreferences::loadDefaultPrimitivesSettings(bool initializing /*= true*/)
 	setTexmaps(true);
 	setTextureOffsetFactor(5.0);
 	setUseStrips(true);
-	
+
 	// LPub3D Mod - stud style
 	setStudCylinderColor(27, 42, 52, 255);
 	setPartEdgeColor(0, 0, 0, 255);
@@ -860,7 +860,7 @@ void LDPreferences::loadPrimitivesSettings(void)
 	m_textureOffsetFactor = getFloatSetting(TEXTURE_OFFSET_FACTOR_KEY,
 		m_textureOffsetFactor);
 	m_useStrips = getBoolSetting(STRIPS_KEY, m_useStrips);
-		
+
 	// LPub3D Mod - stud style
 	m_studCylinderColor = (TCULong)getRGBAFromStringSetting(STUD_CYLINDER_COLOR_KEY, m_studCylinderColor);
 	m_partEdgeColor = (TCULong)getRGBAFromStringSetting(PART_EDGE_COLOR_KEY, m_partEdgeColor);
@@ -1052,7 +1052,7 @@ void LDPreferences::commitPrimitivesSettings(bool flush /*= true*/)
 	setTexmaps(m_texmaps, true);
 	setTextureOffsetFactor(m_textureOffsetFactor, true);
 	setUseStrips(m_useStrips, true);
-	
+
 	// LPub3D Mod - stud style
 	int r, g, b, a;
 	getRGBA(m_studCylinderColor, r, g, b, a);

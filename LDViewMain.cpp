@@ -450,9 +450,9 @@ static bool setupUserDefaults(
 		std::string iniFile = TCUserDefaults::commandLineStringForKey("IniFile");
 		if (iniFile.size() > 0 )
 		{
-		    std::string fileMsg = iniFileStatus(iniFile.c_str());
-		    printf("Could not set command line INI file. Returned message:\n"
-		           " - %s\n - ldview: Checking for user INI files...\n", fileMsg.c_str());
+			std::string fileMsg = iniFileStatus(iniFile.c_str());
+			printf("Could not set command line INI file. Returned message:\n"
+					" - %s\n - ldview: Checking for user INI files...\n", fileMsg.c_str());
 		}
 		// Try to force default ini or return false
 		// LPub3D Mod - end
@@ -600,10 +600,10 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE /*hPrevInstance
 	// LPub3D Mod - print arguments
 	if (haveConsole() && TCUserDefaults::boolForKey("Info", false, false))
 	{
-	  ucstring message = _UC("Command Line:\n");
+		ucstring message = _UC("Command Line:\n");
 
-	  message += lpCmdLine;
-	  printf("Arguments = %ls", message.c_str());
+		message += lpCmdLine;
+		printf("Arguments = %ls", message.c_str());
 	}
 	// LPub3D Mod end
 	if (TCUserDefaults::boolForKey(DEBUG_COMMAND_LINE_KEY, false, false))

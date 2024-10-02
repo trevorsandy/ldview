@@ -1,7 +1,6 @@
 // Microsoft Visual C++ generated resource script.
 //
 #include "../../Resource.h"
-#include "../../TCFoundation/TCDefines.h"
 
 // Generated Help ID header file
 #define APSTUDIO_HIDDEN_SYMBOLS
@@ -13,16 +12,18 @@
 //
 // Generated from the TEXTINCLUDE 2 resource.
 //
+#include "../../TCFoundation/TCDefines.h"
 #include "winresrc.h"
 #include "dlgs.h"
 #ifndef IDC_STATIC
 #define IDC_STATIC      (-1)
 #endif
+
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
+// English (United States) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
 #ifdef _WIN32
@@ -61,13 +62,16 @@ IDI_FLYTHROUGH          ICON                    "..\\..\\icons\\flythrou.ico"
 #if defined(APSTUDIO_INVOKED) || defined(LDVIEW_APP)
 #if defined(APSTUDIO_INVOKED)
 IDI_LDRAW$(LDVIEW_APP)  ICON                    "..\\..\\Icons\\LDrawIcon.ico"
+
 #else
 IDI_LDRAW               ICON                    "..\\..\\Icons\\LDrawIcon.ico"
+
 #endif
 #endif
 #if defined(APSTUDIO_INVOKED) || defined(LDVIEW_APP)
 #if defined(APSTUDIO_INVOKED)
 IDI_MPD$(LDVIEW_APP)    ICON                    "..\\..\\Icons\\MPDIcon.ico"
+
 #else
 IDI_MPD                 ICON                    "..\\..\\Icons\\MPDIcon.ico"
 #endif
@@ -201,7 +205,7 @@ CAPTION "LDView"
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     PUSHBUTTON      "Storno",IDCANCEL,171,20,50,14
-    CONTROL         "Progress1",IDC_PROGRESS,"msctls_progress32",WS_BORDER | 0x1,7,21,159,12
+    CONTROL         "Progress1",IDC_PROGRESS,"msctls_progress32",PBS_SMOOTH | WS_BORDER,7,21,159,12
     LTEXT           "Hmm",IDC_LOAD_PROGRESS_MSG,7,7,214,8
 END
 
@@ -460,7 +464,7 @@ BEGIN
     LTEXT           "DIALOG NOT CURRENTLY USED:\nDO NOT TRANSLATE",IDC_STATIC,12,161,118,17
 END
 
-IDD_SAVE_OPTIONS DIALOGEX 0, 0, 289, 108
+IDD_SAVE_OPTIONS DIALOGEX 0, 0, 289, 132
 STYLE DS_SETFONT | DS_3DLOOK | DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_CLIPSIBLINGS
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
@@ -665,10 +669,13 @@ EXSTYLE WS_EX_CONTROLPARENT
 CAPTION "LDView Model Tree"
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    CONTROL         "Tree1",IDC_MODEL_TREE,"SysTreeView32",TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_DISABLEDRAGDROP | TVS_SHOWSELALWAYS | WS_BORDER | WS_HSCROLL | WS_TABSTOP,2,2,206,112,WS_EX_CLIENTEDGE
+    EDITTEXT        IDC_SEARCH, 2, 2, 175, 14, ES_AUTOHSCROLL
+    PUSHBUTTON      "<", IDC_PREV, 179, 2, 14, 14, WS_GROUP
+    PUSHBUTTON      ">", IDC_NEXT, 194, 2, 14, 14, WS_GROUP
+    CONTROL         "Tree1",IDC_MODEL_TREE,"SysTreeView32",TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_DISABLEDRAGDROP | TVS_SHOWSELALWAYS | WS_BORDER | WS_HSCROLL | WS_TABSTOP,2,19,206,95,WS_EX_CLIENTEDGE
     CONTROL         "Highlight selected line",IDC_HIGHLIGHT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,2,118,85,10
     PUSHBUTTON      "O",IDC_HIGHLIGHT_COLOR,87,116,24,14
-    PUSHBUTTON      "Options <<",IDC_OPTIONS,154,116,50,14
+    PUSHBUTTON      "Options <<",IDC_OPTIONS,158,116,50,14
     GROUPBOX        "Show Lines",IDC_SHOW_BOX,212,2,78,112
     CONTROL         "Comment",IDC_COMMENT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,218,14,45,10
     CONTROL         "Model",IDC_MODEL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,218,26,35,10
@@ -701,6 +708,61 @@ BEGIN
     EDITTEXT        IDC_MIN_POINT,64,7,115,14,ES_AUTOHSCROLL | ES_READONLY
     RTEXT           "Maximum Point:",IDC_STATIC,7,27,50,8
     EDITTEXT        IDC_MAX_POINT,64,24,115,14,ES_AUTOHSCROLL | ES_READONLY
+END
+
+IDD_CAMERA_LOCATION DIALOGEX 0, 0, 120, 113
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Camera Location"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    RTEXT           "X:",IDC_STATIC,7,10,29,8
+    EDITTEXT        IDC_X,40,7,50,14,ES_AUTOHSCROLL
+    RTEXT           "Y:",IDC_STATIC,7,27,29,8
+    EDITTEXT        IDC_Y,40,24,50,14,ES_AUTOHSCROLL
+    RTEXT           "Z:",IDC_STATIC,7,43,29,8
+    EDITTEXT        IDC_Z,40,41,50,14,ES_AUTOHSCROLL
+    CONTROL         "Look at Model Center",IDC_LOOKATMODEL_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,23,60,80,10
+    CONTROL         "Look at Origin",IDC_LOOKATORIGIN_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,23,72,60,10
+    DEFPUSHBUTTON   "OK",IDOK,7,92,50,14
+    PUSHBUTTON      "Storno",IDCANCEL,63,92,50,14
+END
+
+IDD_ROTATION_CENTER DIALOGEX 0, 0, 120, 97
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Rotation Center"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    RTEXT           "X:",IDC_STATIC,7,10,29,8
+    EDITTEXT        IDC_X,40,7,50,14,ES_AUTOHSCROLL
+    RTEXT           "Y:",IDC_STATIC,7,27,29,8
+    EDITTEXT        IDC_Y,40,24,50,14,ES_AUTOHSCROLL
+    RTEXT           "Z:",IDC_STATIC,7,43,29,8
+    EDITTEXT        IDC_Z,40,41,50,14,ES_AUTOHSCROLL
+    PUSHBUTTON      "Reset All",IDC_RESET,7,58,50,14
+    DEFPUSHBUTTON   "OK",IDOK,7,75,50,14
+    PUSHBUTTON      "Storno",IDCANCEL,63,75,50,14
+END
+
+IDD_STATISTICS DIALOGEX 0, 0, 125, 152
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Statistics"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,68,131,50,14
+    RTEXT           "Parts:",IDC_STATIC,7,10,52,8
+    EDITTEXT        IDC_PARTS,68,7,50,14,ES_AUTOHSCROLL | ES_READONLY
+    RTEXT           "Models:",IDC_STATIC,7,27,52,8
+    EDITTEXT        IDC_MODELS,68,24,50,14,ES_AUTOHSCROLL | ES_READONLY
+    RTEXT           "Triangles:",IDC_STATIC,7,44,52,8
+    EDITTEXT        IDC_TRIANGLES,68,41,50,14,ES_AUTOHSCROLL | ES_READONLY
+    RTEXT           "Quads:",IDC_STATIC,7,61,52,8
+    EDITTEXT        IDC_QUADS,68,58,50,14,ES_AUTOHSCROLL | ES_READONLY
+    RTEXT           "Lines:",IDC_STATIC,7,78,52,8
+    EDITTEXT        IDC_LINES,68,75,50,14,ES_AUTOHSCROLL | ES_READONLY
+    RTEXT           "Edge Lines:",IDC_STATIC,7,96,52,8
+    EDITTEXT        IDC_EDGE_LINES,68,93,50,14,ES_AUTOHSCROLL | ES_READONLY
+    RTEXT           "Conditional Lines:",IDC_STATIC,7,113,57,8
+    EDITTEXT        IDC_CONDITIONAL_LINES,68,110,50,14,ES_AUTOHSCROLL | ES_READONLY
 END
 
 IDD_LAT_LON DIALOGEX 0, 0, 221, 89
@@ -963,6 +1025,30 @@ BEGIN
         BOTTOMMARGIN, 39
     END
 
+    IDD_CAMERA_LOCATION, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 113
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 106
+    END
+
+    IDD_ROTATION_CENTER, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 113
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 89
+    END
+
+    IDD_STATISTICS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 113
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 89
+    END
+
     IDD_LAT_LON, DIALOG
     BEGIN
         LEFTMARGIN, 7
@@ -1100,6 +1186,7 @@ BEGIN
         MENUITEM "Model &Tree...\tCtrl+T",      ID_TOOLS_MODELTREE
         MENUITEM "Model &Bounding Box...\tCtrl+B", ID_TOOLS_BOUNDINGBOX
         MENUITEM "&MPD Model Selection...\tCtrl+M", ID_TOOLS_MPD
+        MENUITEM "Statistics...\tCtrl+Shift+S", ID_TOOLS_STATISTICS
         MENUITEM SEPARATOR
         MENUITEM "&Show View Info...",          ID_TOOLS_VIEW_INFO
         MENUITEM SEPARATOR
@@ -1118,6 +1205,13 @@ END
 IDR_TOOLBAR_MENU MENU 
 BEGIN
     POPUP "Drátové zobrazení"
+    BEGIN
+        MENUITEM "Main",                        ID_TBCONTEXT_MAIN
+        MENUITEM "Steps",                       ID_TBCONTEXT_STEPS
+        MENUITEM SEPARATOR
+        MENUITEM "Customize...",                ID_TBCONTEXT_CUSTOMIZE
+    END
+    POPUP "Hrany"
     BEGIN
         MENUITEM "Mlha",                         ID_WIREFRAME_FOG
         MENUITEM "Odstranit skryté hrany",         ID_WIREFRAME_REMOVEHIDDENLINES
@@ -1185,6 +1279,7 @@ BEGIN
     "G",            ID_GOTO_STEP,           VIRTKEY, CONTROL, NOINVERT
     "L",            ID_TOOLS_PARTSLIST,     VIRTKEY, CONTROL, NOINVERT
     "M",            ID_TOOLS_MPD,           VIRTKEY, CONTROL, NOINVERT
+    "S",            ID_TOOLS_STATISTICS,    VIRTKEY, SHIFT, CONTROL, NOINVERT
     "O",            ID_FILE_OPEN,           VIRTKEY, CONTROL, NOINVERT
     "P",            ID_FILE_PRINT,          VIRTKEY, CONTROL, NOINVERT
     "P",            ID_EDIT_PREFERENCES,    VIRTKEY, SHIFT, CONTROL, NOINVERT
@@ -1205,167 +1300,6 @@ BEGIN
     "X",            ID_VIEW_EXAMINE,        VIRTKEY, SHIFT, CONTROL, NOINVERT
 END
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Bitmap
-//
-
-#if defined(APSTUDIO_INVOKED) || defined(LDVIEW_APP)
-#if defined(APSTUDIO_INVOKED)
-IDB_PARSE$(LDVIEW_APP)  BITMAP                  "..\\..\\Icons\\error_parse.bmp"
-#else
-IDB_PARSE               BITMAP                  "..\\..\\Icons\\error_parse.bmp"
-#endif
-#endif
-#if defined(APSTUDIO_INVOKED) || defined(LDVIEW_APP)
-#if defined(APSTUDIO_INVOKED)
-IDB_FNF$(LDVIEW_APP)    BITMAP                  "..\\..\\Icons\\error_fnf.bmp"
-#else
-IDB_FNF                 BITMAP                  "..\\..\\Icons\\error_fnf.bmp"
-#endif
-#endif
-#if defined(APSTUDIO_INVOKED) || defined(LDVIEW_APP)
-#if defined(APSTUDIO_INVOKED)
-IDB_MATCHING_POINTS$(LDVIEW_APP) BITMAP                  "..\\..\\Icons\\error_matching_points.bmp"
-#else
-IDB_MATCHING_POINTS     BITMAP                  "..\\..\\Icons\\error_matching_points.bmp"
-#endif
-#endif
-#if defined(APSTUDIO_INVOKED) || defined(LDVIEW_APP)
-#if defined(APSTUDIO_INVOKED)
-IDB_CONCAVE_QUAD$(LDVIEW_APP) BITMAP                  "..\\..\\Icons\\error_concave_quad.bmp"
-#else
-IDB_CONCAVE_QUAD        BITMAP                  "..\\..\\Icons\\error_concave_quad.bmp"
-#endif
-#endif
-#if defined(APSTUDIO_INVOKED) || defined(LDVIEW_APP)
-#if defined(APSTUDIO_INVOKED)
-IDB_DETERMINANT$(LDVIEW_APP) BITMAP                  "..\\..\\Icons\\error_determinant.bmp"
-#else
-IDB_DETERMINANT         BITMAP                  "..\\..\\Icons\\error_determinant.bmp"
-#endif
-#endif
-#if defined(APSTUDIO_INVOKED) || defined(LDVIEW_APP)
-#if defined(APSTUDIO_INVOKED)
-IDB_INFO$(LDVIEW_APP)   BITMAP                  "..\\..\\Icons\\error_info.bmp"
-#else
-IDB_INFO                BITMAP                  "..\\..\\Icons\\error_info.bmp"
-#endif
-#endif
-#if defined(APSTUDIO_INVOKED) || defined(LDVIEW_APP)
-#if defined(APSTUDIO_INVOKED)
-IDB_PARSE_MASK$(LDVIEW_APP) BITMAP                  "..\\..\\Icons\\error_parse_mask.bmp"
-#else
-IDB_PARSE_MASK          BITMAP                  "..\\..\\Icons\\error_parse_mask.bmp"
-#endif
-#endif
-#if defined(APSTUDIO_INVOKED) || defined(LDVIEW_APP)
-#if defined(APSTUDIO_INVOKED)
-IDB_CONCAVE_QUAD_MASK$(LDVIEW_APP) BITMAP                  "..\\..\\Icons\\error_concave_quad_mask.bmp"
-#else
-IDB_CONCAVE_QUAD_MASK   BITMAP                  "..\\..\\Icons\\error_concave_quad_mask.bmp"
-#endif
-#endif
-#if defined(APSTUDIO_INVOKED) || defined(LDVIEW_APP)
-#if defined(APSTUDIO_INVOKED)
-IDB_MATCHING_POINTS_MASK$(LDVIEW_APP) BITMAP                  "..\\..\\Icons\\error_matching_points_mask.bmp"
-#else
-IDB_MATCHING_POINTS_MASK BITMAP                  "..\\..\\Icons\\error_matching_points_mask.bmp"
-#endif
-#endif
-#if defined(APSTUDIO_INVOKED) || defined(LDVIEW_APP)
-#if defined(APSTUDIO_INVOKED)
-IDB_DETERMINANT_MASK$(LDVIEW_APP) BITMAP                  "..\\..\\Icons\\error_determinant_mask.bmp"
-#else
-IDB_DETERMINANT_MASK    BITMAP                  "..\\..\\Icons\\error_determinant_mask.bmp"
-#endif
-#endif
-#if defined(APSTUDIO_INVOKED) || defined(LDVIEW_APP)
-#if defined(APSTUDIO_INVOKED)
-IDB_FNF_MASK$(LDVIEW_APP) BITMAP                  "..\\..\\Icons\\error_fnf_mask.bmp"
-#else
-IDB_FNF_MASK            BITMAP                  "..\\..\\Icons\\error_fnf_mask.bmp"
-#endif
-#endif
-#if defined(APSTUDIO_INVOKED) || defined(LDVIEW_APP)
-#if defined(APSTUDIO_INVOKED)
-IDB_INFO_MASK$(LDVIEW_APP) BITMAP                  "..\\..\\Icons\\error_info_mask.bmp"
-#else
-IDB_INFO_MASK           BITMAP                  "..\\..\\Icons\\error_info_mask.bmp"
-#endif
-#endif
-IDB_EXTRA_DIRS          BITMAP                  "..\\..\\Icons\\extra_dirs_toolbar.bmp"
-#if defined(APSTUDIO_INVOKED) || defined(LDVIEW_APP)
-#if defined(APSTUDIO_INVOKED)
-IDB_MATRIX$(LDVIEW_APP) BITMAP                  "..\\..\\icons\\error_matrix.bmp"
-#else
-IDB_MATRIX              BITMAP                  "..\\..\\icons\\error_matrix.bmp"
-#endif
-#endif
-#if defined(APSTUDIO_INVOKED) || defined(LDVIEW_APP)
-#if defined(APSTUDIO_INVOKED)
-IDB_MATRIX_MASK$(LDVIEW_APP) BITMAP                  "..\\..\\icons\\error_matrix_mask.bmp"
-#else
-IDB_MATRIX_MASK         BITMAP                  "..\\..\\icons\\error_matrix_mask.bmp"
-#endif
-#endif
-#if defined(APSTUDIO_INVOKED) || defined(LDVIEW_APP)
-#if defined(APSTUDIO_INVOKED)
-IDB_NON_FLAT_QUAD$(LDVIEW_APP) BITMAP                  "..\\..\\icons\\error_non_flat_quad.bmp"
-#else
-IDB_NON_FLAT_QUAD       BITMAP                  "..\\..\\icons\\error_non_flat_quad.bmp"
-#endif
-#endif
-#if defined(APSTUDIO_INVOKED) || defined(LDVIEW_APP)
-#if defined(APSTUDIO_INVOKED)
-IDB_NON_FLAT_QUAD_MASK$(LDVIEW_APP) BITMAP                  "..\\..\\icons\\error_non_flat_quad_mask.bmp"
-#else
-IDB_NON_FLAT_QUAD_MASK  BITMAP                  "..\\..\\icons\\error_non_flat_quad_mask.bmp"
-#endif
-#endif
-#if defined(APSTUDIO_INVOKED) || defined(LDVIEW_APP)
-#if defined(APSTUDIO_INVOKED)
-IDB_COLINEAR$(LDVIEW_APP) BITMAP                  "..\\..\\icons\\error_colinear.bmp"
-#else
-IDB_COLINEAR            BITMAP                  "..\\..\\icons\\error_colinear.bmp"
-#endif
-#endif
-#if defined(APSTUDIO_INVOKED) || defined(LDVIEW_APP)
-#if defined(APSTUDIO_INVOKED)
-IDB_COLINEAR_MASK$(LDVIEW_APP) BITMAP                  "..\\..\\icons\\error_colinear_mask.bmp"
-#else
-IDB_COLINEAR_MASK       BITMAP                  "..\\..\\icons\\error_colinear_mask.bmp"
-#endif
-#endif
-#if defined(APSTUDIO_INVOKED) || defined(LDVIEW_APP)
-#if defined(APSTUDIO_INVOKED)
-IDB_VERTEX_ORDER$(LDVIEW_APP) BITMAP                  "..\\..\\icons\\error_vertex_order.bmp"
-#else
-IDB_VERTEX_ORDER        BITMAP                  "..\\..\\icons\\error_vertex_order.bmp"
-#endif
-#endif
-#if defined(APSTUDIO_INVOKED) || defined(LDVIEW_APP)
-#if defined(APSTUDIO_INVOKED)
-IDB_VERTEX_ORDER_MASK$(LDVIEW_APP) BITMAP                  "..\\..\\icons\\error_vertex_order_mask.bmp"
-#else
-IDB_VERTEX_ORDER_MASK   BITMAP                  "..\\..\\icons\\error_vertex_order_mask.bmp"
-#endif
-#endif
-#if defined(APSTUDIO_INVOKED) || defined(LDVIEW_APP)
-#if defined(APSTUDIO_INVOKED)
-IDB_ERROR_LOOP$(LDVIEW_APP) BITMAP                  "..\\..\\icons\\error_loop.bmp"
-#else
-IDB_ERROR_LOOP          BITMAP                  "..\\..\\icons\\error_loop.bmp"
-#endif
-#endif
-#if defined(APSTUDIO_INVOKED) || defined(LDVIEW_APP)
-#if defined(APSTUDIO_INVOKED)
-IDB_ERROR_LOOP_MASK$(LDVIEW_APP) BITMAP                  "..\\..\\icons\\error_loop_mask.bmp"
-#else
-IDB_ERROR_LOOP_MASK     BITMAP                  "..\\..\\icons\\error_loop_mask.bmp"
-#endif
-#endif
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1390,12 +1324,12 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "Comments", "3D Lego Model Viewer for models in LDraw format."
-            VALUE "FileDescription", "LDView - LPub3D Edition"
+            VALUE "FileDescription", "LDView"
             VALUE "FileVersion", "4.6 Alpha 1"
             VALUE "InternalName", "LDView"
             VALUE "LegalCopyright", "Copyright © 2024 Travis Cobbs & Peter Bartfai"
             VALUE "OriginalFilename", "LDView.exe"
-            VALUE "ProductName", "LDView - LPub3D Edition"
+            VALUE "ProductName", "LDView"
             VALUE "ProductVersion", "4.6 Alpha 1"
         END
     END
@@ -1422,80 +1356,155 @@ IDR_EXPORTER_STRINGS    RCDATA                  "..\\..\\LDExporter\\LDExportMes
 //
 
 IDR_STUDLOGO_PNG         PNGDATA_1X                  "..\\..\\Textures\\StudLogo.png"
+
 IDR_SS_PREVIEW           PNGDATA_1X                  "..\\..\\Icons\\screen_saver_preview.png"
+
 IDC_ALL_CONDITIONAL      PNGDATA_1X                  "..\\..\\Icons\\toolbar_all_cond.png"
+
 IDC_SHOW_AXES            PNGDATA_1X                  "..\\..\\Icons\\toolbar_axes.png"
+
 IDC_BFC                  PNGDATA_1X                  "..\\..\\Icons\\toolbar_bfc.png"
+
 IDC_CONDITIONAL_CONTROLS  PNGDATA_1X                 "..\\..\\Icons\\toolbar_cond_ctrl.png"
+
 IDC_HIGHLIGHTS           PNGDATA_1X                  "..\\..\\Icons\\toolbar_edge.png"
+
 IDR_TB_ERRORS            PNGDATA_1X                  "..\\..\\Icons\\toolbar_errors.png"
+
 IDR_TB_EXAMINE           PNGDATA_1X                  "..\\..\\Icons\\toolbar_examine.png"
+
 IDR_TB_EXPORT            PNGDATA_1X                  "..\\..\\Icons\\toolbar_export.png"
+
 IDC_FLAT_SHADING         PNGDATA_1X                  "..\\..\\Icons\\toolbar_flat.png"
+
 IDR_TB_FLYTHROUGH        PNGDATA_1X                  "..\\..\\Icons\\toolbar_fly.png"
+
 IDR_TB_FULLSCREEN        PNGDATA_1X                  "..\\..\\Icons\\toolbar_fullscreen.png"
+
 IDR_TB_HELP              PNGDATA_1X                  "..\\..\\Icons\\toolbar_help.png"
+
 IDC_LIGHTING             PNGDATA_1X                  "..\\..\\Icons\\toolbar_light.png"
+
 IDR_TB_LATLON            PNGDATA_1X                  "..\\..\\Icons\\toolbar_latlon.png"
+
 IDR_TB_LATLONROT         PNGDATA_1X                  "..\\..\\Icons\\toolbar_latlonrot.png"
+
 IDC_STUD_QUALITY         PNGDATA_1X                  "..\\..\\Icons\\toolbar_low_studs.png"
+
 IDR_TB_MODELBBOX         PNGDATA_1X                  "..\\..\\Icons\\toolbar_model_bbox.png"
+
 IDR_TB_MODELTREE         PNGDATA_1X                  "..\\..\\Icons\\toolbar_model_tree.png"
+
 IDR_TB_MPD               PNGDATA_1X                  "..\\..\\Icons\\toolbar_mpd.png"
+
 IDR_TB_OPEN              PNGDATA_1X                  "..\\..\\Icons\\toolbar_open.png"
+
 IDC_PART_BOUNDING_BOXES  PNGDATA_1X                  "..\\..\\Icons\\toolbar_part_bbox.png"
+
 IDR_TB_PARTSLIST         PNGDATA_1X                  "..\\..\\Icons\\toolbar_partslist.png"
+
 IDR_TB_POVCAMERA         PNGDATA_1X                  "..\\..\\Icons\\toolbar_povcamera.png"
+
 IDR_TB_PREFERENCES       PNGDATA_1X                  "..\\..\\Icons\\toolbar_preferences.png"
+
 IDC_PRIMITIVE_SUBSTITUTION  PNGDATA_1X               "..\\..\\Icons\\toolbar_primsubs.png"
+
 IDR_TB_PRINT             PNGDATA_1X                  "..\\..\\Icons\\toolbar_print.png"
+
 IDC_RANDOM_COLORS        PNGDATA_1X                  "..\\..\\Icons\\toolbar_random.png"
+
 IDR_TB_RELOAD            PNGDATA_1X                  "..\\..\\Icons\\toolbar_reload.png"
+
 IDR_TB_RIGHTSIDEUP       PNGDATA_1X                  "..\\..\\Icons\\toolbar_rightsideup.png"
+
 IDC_SEAMS                PNGDATA_1X                  "..\\..\\Icons\\toolbar_seams.png"
+
 IDC_SMOOTH_CURVES        PNGDATA_1X                  "..\\..\\Icons\\toolbar_smooth.png"
+
 IDR_TB_SAVE              PNGDATA_1X                  "..\\..\\Icons\\toolbar_snapshot.png"
+
 IDR_TB_STUD              PNGDATA_1X                  "..\\..\\Icons\\toolbar_stud.png"
+
 IDR_TB_TEXMAPS           PNGDATA_1X                  "..\\..\\Icons\\toolbar_texmaps.png"
+
 IDR_TB_TOPMOST           PNGDATA_1X                  "..\\..\\Icons\\toolbar_topmost.png"
+
 IDC_TRANS_DEFAULT_COLOR  PNGDATA_1X                  "..\\..\\Icons\\toolbar_trans_default.png"
+
 ID_VIEWANGLE             PNGDATA_1X                  "..\\..\\Icons\\toolbar_view.png"
+
 IDR_TB_WALK              PNGDATA_1X                  "..\\..\\Icons\\toolbar_walk.png"
+
 IDC_WIREFRAME            PNGDATA_1X                  "..\\..\\Icons\\toolbar_wireframe.png"
+
 IDC_CUTAWAY              PNGDATA_1X                  "..\\..\\Icons\\toolbar_wire_cutaway.png"
+
 IDR_TB_ZOOMTOFIT         PNGDATA_1X                  "..\\..\\Icons\\toolbar_zoom2fit.png"
+
 IDR_TB_FIRST_STEP        PNGDATA_1X                  "..\\..\\Icons\\toolbar_step_first.png"
+
 IDR_TB_LAST_STEP         PNGDATA_1X                  "..\\..\\Icons\\toolbar_step_last.png"
+
 IDR_TB_NEXT_STEP         PNGDATA_1X                  "..\\..\\Icons\\toolbar_step_next.png"
+
 IDR_TB_PREV_STEP         PNGDATA_1X                  "..\\..\\Icons\\toolbar_step_prev.png"
+
 IDR_TB_VIEW_FRONT        PNGDATA_1X                  "..\\..\\Icons\\toolbar_view_front.png"
+
 IDR_TB_VIEW_BACK         PNGDATA_1X                  "..\\..\\Icons\\toolbar_view_back.png"
+
 IDR_TB_VIEW_LEFT         PNGDATA_1X                  "..\\..\\Icons\\toolbar_view_left.png"
+
 IDR_TB_VIEW_RIGHT        PNGDATA_1X                  "..\\..\\Icons\\toolbar_view_right.png"
+
 IDR_TB_VIEW_TOP          PNGDATA_1X                  "..\\..\\Icons\\toolbar_view_top.png"
+
 IDR_TB_VIEW_BOTTOM       PNGDATA_1X                  "..\\..\\Icons\\toolbar_view_bottom.png"
+
 IDR_TB_VIEW_2_3RDS       PNGDATA_1X                  "..\\..\\Icons\\toolbar_view_2_3rds.png"
+
 IDR_INFO                 PNGDATA_1X                  "..\\..\\Icons\\error_info.png"
+
 IDR_PARSE                PNGDATA_1X                  "..\\..\\Icons\\error_parse.png"
+
 IDR_FNF                  PNGDATA_1X                  "..\\..\\Icons\\error_fnf.png"
+
 IDR_MATRIX               PNGDATA_1X                  "..\\..\\Icons\\error_matrix.png"
+
 IDR_DETERMINANT          PNGDATA_1X                  "..\\..\\Icons\\error_determinant.png"
+
 IDR_NON_FLAT_QUAD        PNGDATA_1X                  "..\\..\\Icons\\error_non_flat_quad.png"
+
 IDR_CONCAVE_QUAD         PNGDATA_1X                  "..\\..\\Icons\\error_concave_quad.png"
+
 IDR_MATCHING_POINTS      PNGDATA_1X                  "..\\..\\Icons\\error_matching_points.png"
+
 IDR_COLINEAR             PNGDATA_1X                  "..\\..\\Icons\\error_colinear.png"
+
 IDR_VERTEX_ORDER         PNGDATA_1X                  "..\\..\\Icons\\error_vertex_order.png"
+
 IDR_ERROR_LOOP           PNGDATA_1X                  "..\\..\\Icons\\error_loop.png"
+
 IDR_DOTS                 PNGDATA_1X                  "..\\..\\Icons\\error_dots.png"
+
 IDR_LIGHT_ANGLE_UL       PNGDATA_1X                  "..\\..\\Icons\\LightAngleUL.png"
+
 IDR_LIGHT_ANGLE_UM       PNGDATA_1X                  "..\\..\\Icons\\LightAngleUM.png"
+
 IDR_LIGHT_ANGLE_UR       PNGDATA_1X                  "..\\..\\Icons\\LightAngleUR.png"
+
 IDR_LIGHT_ANGLE_ML       PNGDATA_1X                  "..\\..\\Icons\\LightAngleML.png"
+
 IDR_LIGHT_ANGLE_MM       PNGDATA_1X                  "..\\..\\Icons\\LightAngleMM.png"
+
 IDR_LIGHT_ANGLE_MR       PNGDATA_1X                  "..\\..\\Icons\\LightAngleMR.png"
+
 IDR_LIGHT_ANGLE_LL       PNGDATA_1X                  "..\\..\\Icons\\LightAngleLL.png"
+
 IDR_LIGHT_ANGLE_LM       PNGDATA_1X                  "..\\..\\Icons\\LightAngleLM.png"
+
 IDR_LIGHT_ANGLE_LR       PNGDATA_1X                  "..\\..\\Icons\\LightAngleLR.png"
+
 IDR_EXTRA_DIRS_TOOLBAR   PNGDATA_1X                  "..\\..\\Icons\\extra_dirs_toolbar.png"
 
 
@@ -1505,79 +1514,153 @@ IDR_EXTRA_DIRS_TOOLBAR   PNGDATA_1X                  "..\\..\\Icons\\extra_dirs_
 //
 
 IDC_ALL_CONDITIONAL     PNGDATA_2X                 "..\\..\\Icons\\toolbar_all_cond@2x.png"
+
 IDC_SHOW_AXES           PNGDATA_2X                 "..\\..\\Icons\\toolbar_axes@2x.png"
+
 IDC_BFC                 PNGDATA_2X                 "..\\..\\Icons\\toolbar_bfc@2x.png"
+
 IDC_CONDITIONAL_CONTROLS PNGDATA_2X                "..\\..\\Icons\\toolbar_cond_ctrl@2x.png"
+
 IDC_HIGHLIGHTS          PNGDATA_2X                 "..\\..\\Icons\\toolbar_edge@2x.png"
+
 IDR_TB_ERRORS           PNGDATA_2X                 "..\\..\\Icons\\toolbar_errors@2x.png"
+
 IDR_TB_EXAMINE          PNGDATA_2X                 "..\\..\\Icons\\toolbar_examine@2x.png"
+
 IDR_TB_EXPORT           PNGDATA_2X                 "..\\..\\Icons\\toolbar_export@2x.png"
+
 IDC_FLAT_SHADING        PNGDATA_2X                 "..\\..\\Icons\\toolbar_flat@2x.png"
+
 IDR_TB_FLYTHROUGH       PNGDATA_2X                 "..\\..\\Icons\\toolbar_fly@2x.png"
+
 IDR_TB_FULLSCREEN       PNGDATA_2X                 "..\\..\\Icons\\toolbar_fullscreen@2x.png"
+
 IDR_TB_HELP             PNGDATA_2X                 "..\\..\\Icons\\toolbar_help@2x.png"
+
 IDC_LIGHTING            PNGDATA_2X                 "..\\..\\Icons\\toolbar_light@2x.png"
+
 IDR_TB_LATLON           PNGDATA_2X                 "..\\..\\Icons\\toolbar_latlon@2x.png"
+
 IDR_TB_LATLONROT        PNGDATA_2X                 "..\\..\\Icons\\toolbar_latlonrot@2x.png"
+
 IDC_STUD_QUALITY        PNGDATA_2X                 "..\\..\\Icons\\toolbar_low_studs@2x.png"
+
 IDR_TB_MODELBBOX        PNGDATA_2X                 "..\\..\\Icons\\toolbar_model_bbox@2x.png"
+
 IDR_TB_MODELTREE        PNGDATA_2X                 "..\\..\\Icons\\toolbar_model_tree@2x.png"
+
 IDR_TB_MPD              PNGDATA_2X                 "..\\..\\Icons\\toolbar_mpd@2x.png"
+
 IDR_TB_OPEN             PNGDATA_2X                 "..\\..\\Icons\\toolbar_open@2x.png"
+
 IDC_PART_BOUNDING_BOXES PNGDATA_2X                 "..\\..\\Icons\\toolbar_part_bbox@2x.png"
+
 IDR_TB_PARTSLIST        PNGDATA_2X                 "..\\..\\Icons\\toolbar_partslist@2x.png"
+
 IDR_TB_POVCAMERA        PNGDATA_2X                 "..\\..\\Icons\\toolbar_povcamera@2x.png"
+
 IDR_TB_PREFERENCES      PNGDATA_2X                 "..\\..\\Icons\\toolbar_preferences@2x.png"
+
 IDC_PRIMITIVE_SUBSTITUTION PNGDATA_2X              "..\\..\\Icons\\toolbar_primsubs@2x.png"
+
 IDR_TB_PRINT            PNGDATA_2X                 "..\\..\\Icons\\toolbar_print@2x.png"
+
 IDC_RANDOM_COLORS       PNGDATA_2X                 "..\\..\\Icons\\toolbar_random@2x.png"
+
 IDR_TB_RELOAD           PNGDATA_2X                 "..\\..\\Icons\\toolbar_reload@2x.png"
+
 IDR_TB_RIGHTSIDEUP      PNGDATA_2X                 "..\\..\\Icons\\toolbar_rightsideup@2x.png"
+
 IDC_SEAMS               PNGDATA_2X                 "..\\..\\Icons\\toolbar_seams@2x.png"
+
 IDC_SMOOTH_CURVES       PNGDATA_2X                 "..\\..\\Icons\\toolbar_smooth@2x.png"
+
 IDR_TB_SAVE             PNGDATA_2X                 "..\\..\\Icons\\toolbar_snapshot@2x.png"
+
 IDR_TB_STUD             PNGDATA_2X                 "..\\..\\Icons\\toolbar_stud@2x.png"
+
 IDR_TB_TEXMAPS          PNGDATA_2X                 "..\\..\\Icons\\toolbar_texmaps@2x.png"
+
 IDR_TB_TOPMOST          PNGDATA_2X                 "..\\..\\Icons\\toolbar_topmost@2x.png"
+
 IDC_TRANS_DEFAULT_COLOR PNGDATA_2X                 "..\\..\\Icons\\toolbar_trans_default@2x.png"
+
 ID_VIEWANGLE            PNGDATA_2X                 "..\\..\\Icons\\toolbar_view@2x.png"
+
 IDR_TB_WALK             PNGDATA_2X                 "..\\..\\Icons\\toolbar_walk@2x.png"
+
 IDC_WIREFRAME           PNGDATA_2X                 "..\\..\\Icons\\toolbar_wireframe@2x.png"
+
 IDC_CUTAWAY             PNGDATA_2X                 "..\\..\\Icons\\toolbar_wire_cutaway@2x.png"
+
 IDR_TB_ZOOMTOFIT        PNGDATA_2X                 "..\\..\\Icons\\toolbar_zoom2fit@2x.png"
+
 IDR_TB_FIRST_STEP       PNGDATA_2X                 "..\\..\\Icons\\toolbar_step_first@2x.png"
+
 IDR_TB_LAST_STEP        PNGDATA_2X                 "..\\..\\Icons\\toolbar_step_last@2x.png"
+
 IDR_TB_NEXT_STEP        PNGDATA_2X                 "..\\..\\Icons\\toolbar_step_next@2x.png"
+
 IDR_TB_PREV_STEP        PNGDATA_2X                 "..\\..\\Icons\\toolbar_step_prev@2x.png"
+
 IDR_TB_VIEW_FRONT       PNGDATA_2X                 "..\\..\\Icons\\toolbar_view_front@2x.png"
+
 IDR_TB_VIEW_BACK        PNGDATA_2X                 "..\\..\\Icons\\toolbar_view_back@2x.png"
+
 IDR_TB_VIEW_LEFT        PNGDATA_2X                 "..\\..\\Icons\\toolbar_view_left@2x.png"
+
 IDR_TB_VIEW_RIGHT       PNGDATA_2X                 "..\\..\\Icons\\toolbar_view_right@2x.png"
+
 IDR_TB_VIEW_TOP         PNGDATA_2X                 "..\\..\\Icons\\toolbar_view_top@2x.png"
+
 IDR_TB_VIEW_BOTTOM      PNGDATA_2X                 "..\\..\\Icons\\toolbar_view_bottom@2x.png"
+
 IDR_TB_VIEW_2_3RDS      PNGDATA_2X                 "..\\..\\Icons\\toolbar_view_2_3rds@2x.png"
+
 IDR_INFO                PNGDATA_2X                 "..\\..\\Icons\\error_info@2x.png"
+
 IDR_PARSE               PNGDATA_2X                 "..\\..\\Icons\\error_parse@2x.png"
+
 IDR_FNF                 PNGDATA_2X                 "..\\..\\Icons\\error_fnf@2x.png"
+
 IDR_MATRIX              PNGDATA_2X                 "..\\..\\Icons\\error_matrix@2x.png"
+
 IDR_DETERMINANT         PNGDATA_2X                 "..\\..\\Icons\\error_determinant@2x.png"
+
 IDR_NON_FLAT_QUAD       PNGDATA_2X                 "..\\..\\Icons\\error_non_flat_quad@2x.png"
+
 IDR_CONCAVE_QUAD        PNGDATA_2X                 "..\\..\\Icons\\error_concave_quad@2x.png"
+
 IDR_MATCHING_POINTS     PNGDATA_2X                 "..\\..\\Icons\\error_matching_points@2x.png"
+
 IDR_COLINEAR            PNGDATA_2X                 "..\\..\\Icons\\error_colinear@2x.png"
+
 IDR_VERTEX_ORDER        PNGDATA_2X                 "..\\..\\Icons\\error_vertex_order@2x.png"
+
 IDR_ERROR_LOOP          PNGDATA_2X                 "..\\..\\Icons\\error_loop@2x.png"
+
 IDR_DOTS                PNGDATA_2X                 "..\\..\\Icons\\error_dots@2x.png"
+
 IDR_LIGHT_ANGLE_UL      PNGDATA_2X                 "..\\..\\Icons\\LightAngleUL@2x.png"
+
 IDR_LIGHT_ANGLE_UM      PNGDATA_2X                 "..\\..\\Icons\\LightAngleUM@2x.png"
+
 IDR_LIGHT_ANGLE_UR      PNGDATA_2X                 "..\\..\\Icons\\LightAngleUR@2x.png"
+
 IDR_LIGHT_ANGLE_ML      PNGDATA_2X                 "..\\..\\Icons\\LightAngleML@2x.png"
+
 IDR_LIGHT_ANGLE_MM      PNGDATA_2X                 "..\\..\\Icons\\LightAngleMM@2x.png"
+
 IDR_LIGHT_ANGLE_MR      PNGDATA_2X                 "..\\..\\Icons\\LightAngleMR@2x.png"
+
 IDR_LIGHT_ANGLE_LL      PNGDATA_2X                 "..\\..\\Icons\\LightAngleLL@2x.png"
+
 IDR_LIGHT_ANGLE_LM      PNGDATA_2X                 "..\\..\\Icons\\LightAngleLM@2x.png"
+
 IDR_LIGHT_ANGLE_LR      PNGDATA_2X                 "..\\..\\Icons\\LightAngleLR@2x.png"
+
 IDR_EXTRA_DIRS_TOOLBAR  PNGDATA_2X                 "..\\..\\Icons\\extra_dirs_toolbar@2x.png"
+
 IDR_SANS_FONT           PNGDATA_2X                 "..\\..\\Icons\\SanSerif@2x.png"
 
 
@@ -1591,14 +1674,19 @@ BEGIN
     IDS_DESCRIPTION         "LDView 3D LEGO Models"
     HIDC_AA_BOX              "Antialiasing-related settings."
     HIDC_ALL_CONDITIONAL     "This option is only available if edge lines and conditional lines are enabled.  Enabling it causes all conditional edge lines to be drawn, whether or not they are on a silhouette.  This option is primarily designed for part authors, since it is often difficult to notice missing conditional lines."
+    HIDC_ALL_STEPS           "Enabling this option causes a separate snapshot to be generated for every step in the model."
+    HIDC_ALL_STEPS_BOX       "Settings related to generating snapshots for all steps."
     HIDC_ALTERNATE_LIGHTING  "This option is only available if lighting is enabled.  Selecting this causes LDView to use an alternate lighting setup, which may improve performance on some video cards, but will more likely decrease performance.  The alternate setup is used automatically when specular highlight is enabled, whether or not this option is enabled, since specular highlight only works properly with the alternate setup."
     HIDC_ALWAYS_BLACK        "This option is only available if edge lines are enabled.  Enabling it causes all edge lines to be drawn in black.  This can be useful to part authors, as it causes the edge lines in the default color (light gray) to be much more visible."
     HIDC_ANISO_LEVEL         "This option is only available if primitive substitution and texture studs are both enabled, and anisotropic filtering is selected as the filtering type.  It adjusts the anisotropic filtering level.  Higher numbers produce higher quality filtering."
+    HIDC_ANISO_LEVEL_LABEL   "This option is only available if primitive substitution and texture studs are both enabled, and anisotropic filtering is selected as the filtering type.  It adjusts the anisotropic filtering level.  Higher numbers produce higher quality filtering."
+    HIDC_AUTO_CROP           "Enabling this option causes the snapshot to be cropped to fit the generated image."
     HIDC_BACKGROUND_COLOR    "This allows you to set the color used to draw the background behind the model."
     HIDC_BACKGROUND_COLOR_LABEL "This allows you to set the color used to draw the background behind the model."
     HIDC_BFC                 "Enabling this option turns on back-face culling (BFC).  BFC is a technique that can improve rendering performance by not drawing the back faces of polygons.  (Only BFC-certified parts have their back faces removed.)\r\n\r\nNote that while this can improve rendering performance, it can also slow things down, so don't assume that enabling this will always result in the best performance."
     HIDC_BFC_BOX             "BFC-related settings."
     HIDC_BLUE_NEUTRAL_FACES  "This option is only available while BFC is enabled.  Enabling it causes the faces of non-BFC-certified polygons to be drawn in blue.  This is mainly useful for part authors to allow them to correctly specify which direction faces should face in order to BFC certify their part files."
+    HIDC_BROWSE_CUSTOM_CONFIG "Set the path of the file used for custom config."
     HIDC_BROWSE_EXPORT_DIR   "Set the default directory to use for Exports.\r\n\r\nModel: The default directory is the same directory as the currently loaded model.\r\n\r\nLast Saved Export: The default directory is whatever directory was used last.  (The first time you save an export, the default directory is the model's directory.)\r\n\r\nSpecified: The default directory is specified in the field to the right of the drop-down box.  Use the Browse... button to browse for a directory, or enter it in the field directly."
     HIDC_BROWSE_LDRAW_DIR    "Set the LDraw directory.\r\n\r\nNote: Even if the LDraw Zip is set, this still must be set, and will be used to download unofficial parts from ldraw.org."
     HIDC_BROWSE_LDRAW_ZIP    "Set the LDraw Parts Library Zip file.\r\n\r\nNote: If a file named ldrawunf.zip exists in the same directory as this file, it will automatically be searched for unofficial parts."
@@ -1611,6 +1699,8 @@ BEGIN
     HIDC_CROSS_EYED_STEREO   "This option is only available if stereo is enabled.  Selecting this sets the stereo mode to cross-eyed stereo.  The two images are drawn side by side, with the image for the right eye on the left and the image for the left eye on the right.  By crossing your eyes and then focusing, you can see a stereoscopic image.  Many people find it difficult or even impossible to focus with their eyes crossed."
     HIDC_CURVE_QUALITY       "This option is only available if primitive substitution is enabled.  It adjusts the quality of substituted primitives by changing the number of facets used to draw curved primitives.  Changing this from its default value can lead to holes in the model between the substitute primitives and other geometry.  Be very careful with this setting.  Setting it too high can lead to huge slow-downs.  The default setting of 2 (9%) is fine for most models."
     HIDC_CURVE_QUALITY_LABEL "This option is only available if primitive substitution is enabled.  It adjusts the quality of substituted primitives by changing the number of facets used to draw curved primitives.  Changing this from its default value can lead to holes in the model between the substitute primitives and other geometry.  Be very careful with this setting.  Setting it too high can lead to huge slow-downs.  The default setting of 2 (9%) is fine for most models."
+    HIDC_CUSTOM_CONFIG       "Set the path of the file used for custom config."
+    HIDC_CUSTOM_CONFIG_BOX   "Custom config-related settings."
     HIDC_CUTAWAY             "Enabling this option causes the cutaway portion of the model to be drawn in wireframe.  Hold down the Control key and click and drag up with the right mouse button to increase the amount of the model that is cut away.  Control right drag down to decrease the cutaway amount."
     HIDC_CUTAWAY_BOX         "Wireframe cutaway-related settings."
     HIDC_CUTAWAY_COLOR       "This option is only available if wireframe cutaway is enabled.  Selecting it causes the wireframe cutaway to be drawn in color."
@@ -1647,6 +1737,7 @@ BEGIN
     HIDC_HIDE_LIGHT_DAT      "Selecting this causes LDView to not display the geometry from LIGHT.DAT parts.  Since the geometry is a small set of 3D coordinate axes, you often don't want to see it."
     HIDC_HIGHLIGHTS          "Enabling this option causes the edge lines that outline all the pieces to be drawn. It is recommended that you disable the seam width option if you enable this option."
     HIDC_HI_RES              "Enabling this option causes LDView to attempt to load hi-res versions of primitives before loading the standard ones.  The hi-res primitives are otherwise known as 48-sided primitives, because they approximate circular features with 48-sided features."
+    HIDC_IGNORE_FBO          "Enabling this option disables the use of a framebuffer object for snapshot rendering.  Use of a framebuffer object can result in a corrupt image on certain video cards with certain video drivers.  If your snapshots are corrupted, enable this.  Otherwise, leave it disabled."
     HIDC_IGNORE_PBUFFER      "Enabling this option disables the use of a pixel buffer for snapshot rendering.  Use of a pixel buffer can result in a corrupt image on certain video cards with certain video drivers.  If your snapshots are corrupted, enable this.  Otherwise, leave it disabled."
     HIDC_IGNORE_PIXEL_FORMAT "Enabling this option disables the use of custom pixel formats for snapshot rendering.  Use of custom pixel formats can result in a corrupt image on certain video cards with certain video drivers.  If your snapshots are corrupted, enable this.  Otherwise, leave it disabled."
     HIDC_LDRAW_DIR           "This contains the full path to the LDraw directory.\r\n\r\nNote: Even if the LDraw Zip is set, this still must be set, and will be used to download unofficial parts from ldraw.org."
@@ -1730,6 +1821,8 @@ BEGIN
     HIDC_SS_SLEEP            "This will only be enabled if it is supported by your operating system.  Check this if your system won’t go into sleep mode when using the LDView Screen Saver, even though it is set to go into sleep mode.  It may solve the problem.\r\n\r\nNote that if you have a screen saver password set and use this, you will have a blank screen if you wake the computer up from sleep mode and then cancel the password prompt."
     HIDC_SS_SPEED_BOX        "Use this to control how fast the model that is displayed by the LDView Screen Saver moves."
     HIDC_SS_SPEED_SLIDER     "Use this to control how fast the model that is displayed by the LDView Screen Saver moves."
+    HIDC_STEP_SUFFIX         "This option is only available if all steps are enabled. It is used to set the filename suffix for steps."
+    HIDC_STEP_SUFFIX_LABEL   "This option is only available if all steps are enabled. It is used to set the filename suffix for steps."
     HIDC_STEREO              "Enabling this option turns on stereo mode.  Stereo mode draws two images: a slightly different one for each eye."
     HIDC_STEREO_BOX          "Stereo-related settings."
     HIDC_STEREO_SPACING      "This option is only available if stereo is enabled.  The slider controls the stereo spacing.  A small value will result in a very subtle stereoscopic effect, as if you were looking at a very large object from a very long distance.  (The minimum value results in no stereoscopic effect at all.)  A large value will result in a pronounced stereoscopic effect, as if you were looking at a small object from a very short distance."
@@ -1744,6 +1837,7 @@ BEGIN
     HIDC_TEXTURE_STUDS       "This option is only available if primitive substitution is enabled.  Enabling it causes a LEGO® logo to be textured onto all the standard studs."
     HIDC_TEXTURE_TRILINEAR   "This option is only available if primitive substitution and texture studs are both enabled.  Selecting it causes trilinear texture filtering to be used.  This has higher quality than bilinear filtering, and lower quality than anisotropic filtering."
     HIDC_TRANSPARENCY_BOX    "Transparency-related settings."
+    HIDC_TRANSPARENT_BACKGROUND "Enabling this option causes the generated snapshot to have a transparent background.\n\nOnly available for PNG snapshots."
     HIDC_TRANS_DEFAULT_COLOR "Enabling this option causes default-colored items to be transparent."
     HIDC_UPDATED_DAYS        "Set this to the number of days you want LDView to wait between checks for updates to an unofficial part that it has successfully downloaded from the LDraw.org Parts Tracker.  Since unofficial parts can update on the Parts Tracker, LDView will check for updates with the specified frequency when it encounters unofficial parts in a model.  This number must be greater than zero. "
     HIDC_UPDATED_DAYS_LABEL  "Set this to the number of days you want LDView to wait between checks for updates to an unofficial part that it has successfully downloaded from the LDraw.org Parts Tracker.  Since unofficial parts can update on the Parts Tracker, LDView will check for updates with the specified frequency when it encounters unofficial parts in a model.  This number must be greater than zero. "
@@ -1764,7 +1858,7 @@ BEGIN
     HIDR_LIGHT_ANGLE_UR      "Set the light direction to come from the upper right."
 END
 
-#endif    // English (U.S.) resources
+#endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

@@ -640,9 +640,13 @@ bool LDLPrimitiveCheck::performPrimitiveSubstitution(
 		{
 			// LPub3D Mod - stud style
 			if (TCUserDefaults::longForKey("StudStyle", 0, 0))
+			{
 				return false;
+			}
 			else
+			{
 				return substituteStud();
+			}
 			// LPub3D Mod End
 		}
 		else if (strcasecmp(m_modelName, "1-8sphe.dat") == 0)

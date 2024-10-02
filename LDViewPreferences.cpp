@@ -2867,7 +2867,7 @@ DWORD LDViewPreferences::doComboSelChange(HWND hPage, int controlId,
 	case IDC_MEMORY_COMBO:
 		enableApply(hPage);
 		break;
-    // LPub3D Mod - stud style		
+	// LPub3D Mod - stud style		
 	case IDC_STUD_STYLE_COMBO:
 		enableApply(hPage);
 		break;

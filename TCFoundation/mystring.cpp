@@ -3210,4 +3210,3 @@ bool isLittleEndian()
 	char *numPtr = (char*)&number;
 	return (numPtr[0] == 1);
 }
-
