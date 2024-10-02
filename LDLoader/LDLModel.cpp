@@ -1071,7 +1071,8 @@ bool LDLModel::initializeNewSubModel(
 // LPub3D Mod End
 	bool zipValid = zipStream != NULL && zipStream->is_valid();
 // LPub3D Mod - stud style
-	if (!studStylePrimitive && (subModelStream.is_open() || zipValid) && !subModel->load(subModelStream))
+	if (!studStylePrimitive && (subModelStream.is_open() || zipValid) &&
+		!subModel->load(subModelStream, zipStream))
 	{
 // LPub3D Mod End
 		subModelDict->removeObjectForKey(dictName);
@@ -1260,7 +1261,7 @@ void LDLModel::initCheckDirs()
 	}
 #ifdef WIN32
 	char buf[1024];
-
+	
 	if (GetPrivateProfileString("LDraw", "BaseDirectory", "", buf, 1024,
 		"ldraw.ini"))
 	{
@@ -1284,7 +1285,7 @@ void LDLModel::initCheckDirs()
 	if (homeDir != NULL)
 	{
 		char *homeLib = copyString(homeDir, strlen(libDir));
-
+		
 		stripTrailingPathSeparators(homeLib);
 		strcat(homeLib, libDir);
 		sm_checkDirs.push_back(homeLib);
@@ -2870,7 +2871,7 @@ void LDLModel::scanPoints(
 			if (step >= 0 && fileLine->getLineType() == LDLLineTypeComment)
 			{
 				LDLCommentLine *commentLine = (LDLCommentLine *)fileLine;
-
+				
 				if (commentLine->isStepMeta() && !emptyStep)
 				{
 					emptyStep = true;
@@ -3164,7 +3165,7 @@ bool LDLModel::searchNext(
 		if (child->getLineType() == LDLLineTypeModel)
 		{
 			LDLModel *childModel = ((LDLModelLine *)child)->getModel();
-
+			
 			if (childModel != NULL && childModel->searchNext(searchString,
 				childPath, -1, activeLineTypes))
 			{
@@ -3222,7 +3223,7 @@ bool LDLModel::searchPrevious(
 		if (child->getLineType() == LDLLineTypeModel)
 		{
 			LDLModel *childModel = ((LDLModelLine *)child)->getModel();
-
+			
 			if (childModel != NULL && childModel->searchPrevious(searchString,
 				childPath, -1, activeLineTypes))
 			{

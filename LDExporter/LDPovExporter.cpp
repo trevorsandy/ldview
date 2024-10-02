@@ -347,14 +347,14 @@ void LDPovExporter::loadSettings(void)
 	{
 		m_bottomInclude = "";
 	}
-    // LPub3D Mod - lights
+	// LPub3D Mod - lights
 	temp = stringForKey("PovLights", EXPORT_POV_LIGHTS_DEFAULT);
 	if (temp != NULL)
 	{
 		loadLights(temp);
 		delete[] temp;
 	}
-    // LPub3D Mod End
+	// LPub3D Mod End
 }
 
 LDExporterSetting *LDPovExporter::addEdgesSettings(
@@ -523,7 +523,7 @@ void LDPovExporter::initSettings(void) const
 	addSetting(pGroup, ls(_UC("PovDiffuse")), m_diffuse,
 		udKey("Diffuse").c_str(), 0.0f, 1.0f);
 
-    // LPub3D Mod - lights
+	// LPub3D Mod - lights
 	pGroup = addSettingGroup(ls(_UC("PovLights")));
 	if (pGroup == NULL)
 	{
@@ -533,7 +533,7 @@ void LDPovExporter::initSettings(void) const
 	addSetting(pGroup, LDExporterSetting(ls(_UC("PovLights")),
 		lightString.c_str(), udKey("PovLights").c_str()));
 	m_settings.back().setTooltip("PovLightsTT");
-    // LPub3D Mod End
+	// LPub3D Mod End
 
 	pGroup = addSettingGroup(ls(_UC("PovMaterialProps")));
 	if (pGroup == NULL)
@@ -648,8 +648,8 @@ void LDPovExporter::loadLights(const char* povLights)
 			int rows;
 			int columns;
 			int attributes = sscanf(value, "%d %d %f %f %s %s %f %f %f %f %f %f %d %d %d %d %d",
-				                           &type, &shadowless, &latitude, &longitude, target, color, &intensity, &fadeDistance,
-				                           &fadePower, &radius, &falloff, &tightness, &circle, &width, &height, &rows, &columns);
+											&type, &shadowless, &latitude, &longitude, target, color, &intensity, &fadeDistance,
+											&fadePower, &radius, &falloff, &tightness, &circle, &width, &height, &rows, &columns);
 			if (value && attributes == 17)
 			{
 				Light light { type, shadowless, latitude, longitude, target, color, intensity, fadeDistance,
@@ -1026,23 +1026,23 @@ int LDPovExporter::doExport(LDLModel *pTopModel)
 		{
 			return 1;
 		}
-        // LPub3D Mod - global settings
-        writeGlobalSettings();
-        // LPub3D Mod End
+		// LPub3D Mod - global settings
+		writeGlobalSettings();
+		// LPub3D Mod End
 		if (m_topInclude.size() > 0)
 		{
 			fprintf(m_pPovFile, "#include \"%s\"\n\n", m_topInclude.c_str());
 		}
-        // LPub3D Mod - lgQuality
+		// LPub3D Mod - lgQuality
 		writeLgQuality();
-        // LPub3D Mod End
+		// LPub3D Mod End
 		if (!writeCamera())
 		{
 			return 1;
 		}
-        // LPub3D Mod - light source macro
+		// LPub3D Mod - light source macro
 		writeLightSourceMacro();
-        // LPub3D Mod End
+		// LPub3D Mod End
 		if (!writeLights())
 		{
 			return 1;
@@ -1298,6 +1298,10 @@ bool LDPovExporter::writeHeader(void)
 	}
 	fprintf(m_pPovFile, ls("PovNote"), m_appName.c_str());
 	fprintf(m_pPovFile, "#version %g;\n\n", m_fileVersion);
+	// LPub3D Mod - global settings
+	// Moved to writeGlobalSettings macro
+	// fprintf(m_pPovFile, "#if (version >= 3.7) global_settings {assumed_gamma 1} #end\n\n");
+	// LPub3D Mod End
 	writeDeclare("LDXQual", m_quality, "PovQualDesc");
 	writeDeclare("LDXSW", m_seamWidth, "PovSeamWidthDesc");
 	writeDeclare("LDXStuds", !m_hideStuds, "PovStudsDesc");

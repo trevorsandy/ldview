@@ -191,16 +191,20 @@ protected:
 	~LDPovExporter(void);
 	void dealloc(void);
 	bool writeHeader(void);
-    // LPub3D Mod - additional POV-Ray export settings
+	// LPub3D Mod - additional POV-Ray export settings
 	void writeLgQuality(void);
 	void writeGlobalSettings(void);
 	void writeLightSourceMacro(void);
-    // LPub3D Mod End
+	// LPub3D Mod End
 	void writeMainModel(void);
 	void writeFloor(void);
 	bool writeModel(LDLModel *pModel, const TCFloat *matrix, bool inPart);
 	bool writeCamera(void);
 	bool writeLights(void);
+	// LPub3D Mod - lights
+	// Replaced with writeLightSourceMacro()
+	// void writeLight(TCFloat lat, TCFloat lon, int num);
+	// LPub3D Mod End
 	bool writeModelObject(LDLModel *pModel, bool mirrored,
 		const TCFloat *matrix, bool inPart);
 	void writeGeometry(IntShapeListMap &colorGeometryMap);

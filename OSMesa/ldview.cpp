@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <string>
 #include <map>
-
+// LPub3D Mod - version info
 #ifdef VERSION_INFO
 #ifdef ARCH
 char LDViewVersion[] = VERSION_INFO " (" ARCH ")      ";
@@ -15,33 +15,37 @@ char LDViewVersion[] = VERSION_INFO "      ";
 #else
 char LDViewVersion[] = "4.5.0      ";
 #endif
-
+// LPub3D Mod End
 #include <TCFoundation/TCUserDefaults.h>
 #include <TCFoundation/mystring.h>
+#include <LDLib/LDSnapshotTaker.h>
+#include <LDLoader/LDLModel.h>
 #include <TCFoundation/TCAutoreleasePool.h>
 #include <TCFoundation/TCAlertManager.h>
 #include <TCFoundation/TCProgressAlert.h>
 #include <TCFoundation/TCLocalStrings.h>
-#include <LDLib/LDSnapshotTaker.h>
-#include <LDLoader/LDLModel.h>
 
+// LPub3D Mod - Main includes
 #if defined (__APPLE__)
 #include <GLUT/glut.h>
 #endif
 #ifndef GLAPIENTRY
 #define GLAPIENTRY
 #endif
-
+// LPub3D Mod End
 #include <GL/osmesa.h>
 #include <TRE/TREMainModel.h>
+// LPub3D Mod - Main includes
 #include <GLInfo.h>
+// LPub3D Mod End
 #include "StudLogo.h"
 #include "LDViewMessages.h"
-
+// LPub3D Mod - Main includes
 #ifdef __USE_GNU
 #include <errno.h>
 #include <stdlib.h>
 #endif
+// LPub3D Mod End
 
 typedef std::map<std::string, std::string> StringMap;
 
@@ -76,34 +80,39 @@ protected:
 	}
 };
 
+// LPub3D Mod - process ini file
 std::string iniFileStatus(const char *iniPath )
 {
 #ifdef __USE_GNU
-		errno = 0;
+	errno = 0;
 #endif
-  FILE *iniFile = ucfopen(iniPath, "r+b");
+	FILE *iniFile = ucfopen(iniPath, "r+b");
 
-  if (!iniFile)
-  {
+	if (!iniFile)
+ 	{
 #ifdef __USE_GNU
-	return formatString("%s: Could not open file %s; %s",
-						  program_invocation_short_name, iniPath, strerror(errno));
+		return formatString("%s: Could not open file %s; %s",
+							program_invocation_short_name, iniPath, strerror(errno));
 #else
-	return formatString("LDView: Cound not open file %s", iniPath);
+		return formatString("LDView: Cound not open file %s", iniPath);
 #endif
-  }
-  // we should never get here, but if we do ...
-  return NULL;
+	}
+	// we should never get here, but if we do ...
+	return NULL;
 }
+// LPub3D Mod End
 
+// LPub3D Mod - process ini file
 int setupDefaults(char *argv[])
 {
 	int retVal = 0;
+// LPub3D Mod End
 	TCUserDefaults::setCommandLine(argv);
 	// IniFile can be specified on the command line; if so, don't load a
 	// different one.
 	if (!TCUserDefaults::isIniFileSet())
 	{
+		// LPub3D Mod - process ini file
 		// Check if IniFile specified on command line ...
 		std::string iniFile = TCUserDefaults::commandLineStringForKey("IniFile");
 		if (iniFile.size() > 0 )
@@ -112,11 +121,13 @@ int setupDefaults(char *argv[])
 			printf("Could not set command line INI file. Returned message:\n"
 				   " - %s\n - ldview: Checking for user INI files...\n", fileMsg.c_str());
 		}
+		// LPub3D Mod End
 
 		char *homeDir = getenv("HOME");
 
 		if (homeDir)
 		{
+			// LPub3D Mod - process ini file
 			bool iniFileSet = false;
 
 			char *rcFile = copyString(homeDir, 128);
@@ -158,17 +169,22 @@ int setupDefaults(char *argv[])
 				retVal = 1;
 			}
 			delete rcFile;
+			// LPub3D Mod End
 			delete rcFile2;
 		}
 		else
 		{
 			printf("HOME environment variable not defined: cannot use "
 				"~/.ldviewrc.\n");
+			// LPub3D Mod - process ini file
 			retVal = 1;
+			// LPub3D Mod End
 		}
 	}
 	setDebugLevel(TCUserDefaults::longForKey("DebugLevel", 0, false));
+	// LPub3D Mod - process ini file
 	return retVal;
+	// LPub3D Mod End
 }
 
 void *setupContext(OSMesaContext &ctx)
@@ -336,19 +352,20 @@ bool fileCaseCallback(char *filename)
 
 int main(int argc, char *argv[])
 {
+	// LPub3D Mod - print header and arguments
 	printf("\nLDView - LPub3D Edition CUI (Offscreen Renderer) Version %s\n", LDViewVersion);
 	printf("=========================================\n");
-
+	bool defaultsKO = false;
+	// LPub3D Mod End
 	void *buffer;
 	OSMesaContext ctx;
 	int stringTableSize = sizeof(LDViewMessages_bytes);
 	char *stringTable = new char[sizeof(LDViewMessages_bytes) + 1];
-	bool defaultsKO = false;
 
 	memcpy(stringTable, LDViewMessages_bytes, stringTableSize);
 	stringTable[stringTableSize] = 0;
 	TCLocalStrings::setStringTable(stringTable);
-
+	// LPub3D Mod - setup defaults
 	if (setupDefaults(argv) != 0)
 	{
 		if (TCUserDefaults::boolForKey("Info"))
@@ -360,11 +377,11 @@ int main(int argc, char *argv[])
 			return 1;
 		}
 	}
-
+	// LPub3D Mod End
 	if ((buffer = setupContext(ctx)) != NULL)
 	{
 		//ProgressHandler *progressHandler = new ProgressHandler;
-
+		// LPub3D Mod - setup defaults and print GL info
 		if (TCUserDefaults::boolForKey("Info"))
 		{
 			printf("Arguments = ");
@@ -390,13 +407,13 @@ int main(int argc, char *argv[])
 		{
 			return 1;
 		}
+		// LPub3D Mod End
 		TREMainModel::setStudTextureData(StudLogo_bytes,
 			sizeof(StudLogo_bytes));
 		LDLModel::setFileCaseCallback(fileCaseCallback);
 		LDSnapshotTaker::doCommandLine();
 		OSMesaDestroyContext(ctx);
 		free(buffer);
-
 		//TCObject::release(progressHandler);
 	}
 	TCAutoreleasePool::processReleases();
