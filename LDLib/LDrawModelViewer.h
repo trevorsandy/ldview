@@ -642,24 +642,29 @@ class LDrawModelViewer: public TCAlertSender
 		void setBlackEdgeColor(TCULong value);
 		void setDarkEdgeColor(TCULong value);
 
+		void setStudCylinderColorEnabled(bool value);
+		void setPartEdgeColorEnabled(bool value);
+		void setBlackEdgeColorEnabled(bool value);
+		void setDarkEdgeColorEnabled(bool value);
+		void setAutomateEdgeColor(bool value);
 		void setPartEdgeContrast(TCFloat value);
 		void setPartColorValueLDIndex(TCFloat value);
-
-		void setAutomateEdgeColor(bool value);
 		void setStudStyle(int value);
 
-		TCULong getStudCylinderColor(void) const { return studCylinderColor; };
-		TCULong getPartEdgeColor(void) const { return partEdgeColor; };
-		TCULong getBlackEdgeColor(void) const { return blackEdgeColor; };
-		TCULong getDarkEdgeColor(void) const { return darkEdgeColor; };
+		TCULong getStudCylinderColor(void) const { return studCylinderColor; }
+		TCULong getPartEdgeColor(void) const { return partEdgeColor; }
+		TCULong getBlackEdgeColor(void) const { return blackEdgeColor; }
+		TCULong getDarkEdgeColor(void) const { return darkEdgeColor; }
 
-		TCFloat getPartEdgeContrast(void) { return partEdgeContrast; };
-		TCFloat getPartColorValueLDIndex(void) { return partColorValueLDIndex; };
+		bool getStudCylinderColorEnabled(void) { return studCylinderColorEnabled != false; }
+		bool getPartEdgeColorEnabled(void) { return partEdgeColorEnabled != false; }
+		bool getBlackEdgeColorEnabled(void) { return blackEdgeColorEnabled != false; }
+		bool getDarkEdgeColorEnabled(void) { return darkEdgeColorEnabled != false; }
+		bool getAutomateEdgeColor(void) { return automateEdgeColor != false; }
 
-		bool getAutomateEdgeColor(void) 
-		{ 
-			return flags.automateEdgeColor != false;
-		};
+		TCFloat getPartEdgeContrast(void) { return partEdgeContrast; }
+		TCFloat getPartColorValueLDIndex(void) { return partColorValueLDIndex; }
+
 		int getStudStyle(void) const { return studStyle; }
 		// LPub3D Mod End
 
@@ -865,6 +870,12 @@ class LDrawModelViewer: public TCAlertSender
 		TCULong blackEdgeColor;
 		TCULong darkEdgeColor;
 
+		bool studCylinderColorEnabled;
+		bool partEdgeColorEnabled;
+		bool blackEdgeColorEnabled;
+		bool darkEdgeColorEnabled;
+		bool automateEdgeColor;
+
 		TCFloat partEdgeContrast;
 		TCFloat partColorValueLDIndex;
 
@@ -965,9 +976,6 @@ class LDrawModelViewer: public TCAlertSender
 			bool keepRightSideUp:1;
 			bool texmaps:1;
 			bool texturesAfterTransparent:1;
-			// LPub3D Mod - stud style
-			bool automateEdgeColor:1;
-			// LPub3D Mod End
 			bool useStrips:1;
 		} flags;
 		struct CameraData

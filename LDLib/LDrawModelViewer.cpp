@@ -155,6 +155,20 @@ LDrawModelViewer::LDrawModelViewer(TCFloat width, TCFloat height)
 	highlightR(160),
 	highlightG(224),
 	highlightB(255),
+	// LPub3D Mod - stud style
+	studCylinderColor(1780276), // 27,42,52,255
+	partEdgeColor(0),           // 0,0,0,255
+	blackEdgeColor(16777215),   // 255,255,255,255
+	darkEdgeColor(1780276),     // 27,42,52,255
+	studCylinderColorEnabled(true),
+	partEdgeColorEnabled(true),
+	blackEdgeColorEnabled(true),
+	darkEdgeColorEnabled(true),
+	automateEdgeColor(false),
+	partEdgeContrast(0.5f),
+	partColorValueLDIndex(0.5f),
+	studStyle(0),
+	// LPub3D Mod End
 	cameraData(NULL)
 {
 #ifdef _LEAK_DEBUG
@@ -233,9 +247,6 @@ LDrawModelViewer::LDrawModelViewer(TCFloat width, TCFloat height)
 	flags.noUI = false;
 	flags.keepRightSideUp = false;
 	flags.texmaps = true;
-	// LPub3D Mod - stud style
-	flags.automateEdgeColor = false;
-	// LPub3D Mod End
 	flags.useStrips = true;
 	TCAlertManager::registerHandler(LDLFindFileAlert::alertClass(), this,
 		(TCAlertCallback)&LDrawModelViewer::findFileAlertCallback);
@@ -2344,7 +2355,7 @@ void LDrawModelViewer::setStudCylinderColor(TCULong value)
 	if (value != studCylinderColor)
 	{
 		studCylinderColor = value;
-		flags.needsReparse = true;
+		flags.needsReload = true;
 	}
 }
 
@@ -2353,7 +2364,7 @@ void LDrawModelViewer::setPartEdgeColor(TCULong value)
 	if (value != partEdgeColor)
 	{
 		partEdgeColor = value;
-		flags.needsReparse = true;
+		flags.needsReload = true;
 	}
 }
 
@@ -2362,7 +2373,7 @@ void LDrawModelViewer::setBlackEdgeColor(TCULong value)
 	if (value != blackEdgeColor)
 	{
 		blackEdgeColor = value;
-		flags.needsReparse = true;
+		flags.needsReload = true;
 	}
 }
 
@@ -2371,7 +2382,43 @@ void LDrawModelViewer::setDarkEdgeColor(TCULong value)
 	if (value != darkEdgeColor)
 	{
 		darkEdgeColor = value;
-		flags.needsReparse = true;
+		flags.needsReload = true;
+	}
+}
+
+void LDrawModelViewer::setStudCylinderColorEnabled(bool value)
+{
+	if (value != studCylinderColorEnabled)
+	{
+		studCylinderColorEnabled = value;
+		flags.needsReload = true;
+	}
+}
+
+void LDrawModelViewer::setPartEdgeColorEnabled(bool value)
+{
+	if (value != partEdgeColorEnabled)
+	{
+		partEdgeColorEnabled = value;
+		flags.needsReload = true;
+	}
+}
+
+void LDrawModelViewer::setBlackEdgeColorEnabled(bool value)
+{
+	if (value != blackEdgeColorEnabled)
+	{
+		blackEdgeColorEnabled = value;
+		flags.needsReload = true;
+	}
+}
+
+void LDrawModelViewer::setDarkEdgeColorEnabled(bool value)
+{
+	if (value != darkEdgeColorEnabled)
+	{
+		darkEdgeColorEnabled = value;
+		flags.needsReload = true;
 	}
 }
 
@@ -2380,7 +2427,7 @@ void LDrawModelViewer::setPartEdgeContrast(TCFloat value)
 	if (value != partEdgeContrast)
 	{
 		partEdgeContrast = value;
-		flags.needsReparse = true;
+		flags.needsReload = true;
 	}
 }
 
@@ -2389,17 +2436,16 @@ void LDrawModelViewer::setPartColorValueLDIndex(TCFloat value)
 	if (value != partColorValueLDIndex)
 	{
 		partColorValueLDIndex = value;
-		flags.needsReparse = true;
+		flags.needsReload = true;
 	}
 }
 
-
 void LDrawModelViewer::setAutomateEdgeColor(bool value)
 {
-	if (value != flags.automateEdgeColor)
+	if (value != automateEdgeColor)
 	{
-		flags.automateEdgeColor = value;
-		flags.needsReparse = true;
+		automateEdgeColor = value;
+		flags.needsReload = true;
 	}
 }
 
@@ -2408,7 +2454,7 @@ void LDrawModelViewer::setStudStyle(int value)
 	if (value != studStyle)
 	{
 		studStyle = value;
-		flags.needsReparse = true;
+		flags.needsReload = true;
 	}
 }
 // LPub3D Mod End

@@ -157,12 +157,16 @@
 #define WIREFRAME_THICKNESS_KEY "WireframeThickness"
 #define ZOOM_MAX_KEY "ZoomMax"									// NO UI
 // LPub3D Mod - stud style
-#define STUD_CYLINDER_COLOR_KEY "StudCylinderColor"
-#define PART_EDGE_COLOR_KEY "PartEdgeColor"
-#define BLACK_EDGE_COLOR_KEY "BlackEdgeColor"
-#define DARK_EDGE_COLOR_KEY "DarkEdgeColor"
-#define PART_EDGE_CONTRAST_KEY "PartEdgeContrast"
-#define PART_COLOR_VALUE_LD_INDEX_KEY "PartColorValueLDIndex"
+#define STUD_CYLINDER_COLOR_KEY "StudCylinderColor"					// NO UI
+#define PART_EDGE_COLOR_KEY "PartEdgeColor"							// NO UI
+#define BLACK_EDGE_COLOR_KEY "BlackEdgeColor"						// NO UI
+#define DARK_EDGE_COLOR_KEY "DarkEdgeColor"							// NO UI
+#define STUD_CYLINDER_COLOR_ENABLED_KEY "StudCylinderColorEnabled"	// NO UI
+#define PART_EDGE_COLOR_ENABLED_KEY "PartEdgeColorEnabled"			// NO UI
+#define BLACK_EDGE_COLOR_ENABLED_KEY "BlackEdgeColorEnabled"		// NO UI
+#define DARK_EDGE_COLOR_ENABLED_KEY "DarkEdgeColorEnabled"			// NO UI
+#define PART_EDGE_CONTRAST_KEY "PartEdgeContrast"					// NO UI
+#define PART_COLOR_VALUE_LD_INDEX_KEY "PartColorValueLDIndex"		// NO UI
 #define AUTOMATE_EDGE_COLOR_KEY "AutomateEdgeColor"
 #define STUD_STYLE_KEY "StudStyle"
 // LPub3D Mod End

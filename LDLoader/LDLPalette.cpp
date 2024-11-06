@@ -36,6 +36,9 @@ LDLColor LDLPalette::sm_blackEdgeColor{ 255,255,255,255 };
 LDLColor LDLPalette::sm_darkEdgeColor{ 27,42,52,255 };
 TCFloat  LDLPalette::sm_partEdgeContrast = 0.5f;
 TCFloat  LDLPalette::sm_partColorValueLDIndex = 0.5f;
+bool     LDLPalette::sm_partEdgeColorEnabled = true;
+bool     LDLPalette::sm_blackEdgeColorEnabled = true;
+bool     LDLPalette::sm_darkEdgeColorEnabled = true;
 bool     LDLPalette::sm_automateEdgeColor = false;
 int      LDLPalette::sm_studStyle = 0;
 
@@ -503,6 +506,9 @@ void LDLPalette::initStudStyleSettings()
 	sm_automateEdgeColor = TCUserDefaults::boolForKey(AUTOMATE_EDGE_COLOR_KEY, sm_automateEdgeColor);
 	sm_partEdgeContrast = TCUserDefaults::floatForKey(PART_EDGE_CONTRAST_KEY, sm_partEdgeContrast);
 	sm_partColorValueLDIndex = TCUserDefaults::floatForKey(PART_COLOR_VALUE_LD_INDEX_KEY, sm_partColorValueLDIndex);
+	sm_partEdgeColorEnabled = TCUserDefaults::boolForKey(PART_EDGE_COLOR_ENABLED_KEY, sm_partEdgeColorEnabled);
+	sm_blackEdgeColorEnabled = TCUserDefaults::boolForKey(BLACK_EDGE_COLOR_ENABLED_KEY, sm_blackEdgeColorEnabled);
+	sm_darkEdgeColorEnabled = TCUserDefaults::boolForKey(DARK_EDGE_COLOR_ENABLED_KEY, sm_darkEdgeColorEnabled);
 
 	if (sm_studStyle < 6 && !sm_automateEdgeColor)
 		return;
@@ -577,13 +583,15 @@ int LDLPalette::getStudStyleOrAutoEdgeColor(int colorNumber)
 	}
 	else
 	{
-		if (colorNumber == 0)
+		if (sm_blackEdgeColorEnabled && colorNumber == 0)
 			return getEdgeColorNumberFromRGB(sm_blackEdgeColor);
-		else if (colorNumber != 4242 &&
+		else if (sm_darkEdgeColorEnabled && colorNumber != 4242 &&
 			valueLuminescence < lightDarkControl)
 			return getEdgeColorNumberFromRGB(sm_darkEdgeColor);
-		else
+		else if (sm_partEdgeColorEnabled)
 			return getEdgeColorNumberFromRGB(sm_partEdgeColor);
+		else
+			return getEdgeColorNumber(colorNumber, isLPubHighlightColor);
 	}
 
 	debugPrintf("Error creating edge color number for color: %d\n",

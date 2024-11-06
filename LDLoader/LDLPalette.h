@@ -110,6 +110,9 @@ protected:
 	static LDLColor sm_darkEdgeColor;
 	static TCFloat sm_partEdgeContrast;
 	static TCFloat sm_partColorValueLDIndex;
+	static bool sm_partEdgeColorEnabled;
+	static bool sm_blackEdgeColorEnabled;
+	static bool sm_darkEdgeColorEnabled;
 	static bool sm_automateEdgeColor;
 	static int  sm_studStyle;
 	// LPub3D Mod End

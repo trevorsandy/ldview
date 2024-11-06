@@ -152,6 +152,7 @@ std::string LDLModel::sm_systemLDrawDirSlashes;
 char *LDLModel::sm_defaultLDrawDir = NULL;
 LDrawIniS *LDLModel::sm_lDrawIni = NULL;
 int LDLModel::sm_modelCount = 0;
+bool LDLModel::sm_studCylinderColorEnabled = true;
 LDLFileCaseCallback LDLModel::fileCaseCallback = NULL;
 LDLModel::LDLModelCleanup LDLModel::sm_cleanup;
 StringList LDLModel::sm_checkDirs;
@@ -373,7 +374,7 @@ LDLModel *LDLModel::subModelNamed(const char *subModelName, bool lowRes,
 		ancestorCheck = true;
 	}
 	// LPub3D Mod - stud style
-	if (isStudStylePrimitive(subModelName, TCUserDefaults::longForKey("StudStyle", 0, 0)))
+	if (isStudStylePrimitive(subModelName, TCUserDefaults::longForKey("StudStyle", 0)))
 	{
 		// LPub3D Mod End
 		m_flags.hasStuds = true;
@@ -952,14 +953,72 @@ bool LDLModel::openSubModelNamed(
 }
 
 // LPub3D Mod - stud style
+char *LDLModel::setCylinderColor(char *input)
+{
+	if (sm_studCylinderColorEnabled)
+		return input;
+
+	const char *substring = "4242";
+	const char *replace = "16";
+	int     number_of_matches = 0;
+	size_t  substring_size = strlen(substring), replace_size = strlen(replace), buffer_size;
+	char    *buffer, *bp, *ip;
+
+	if (substring_size)
+	{
+		ip = strstr(input, substring);
+		while (ip != NULL)
+		{
+			number_of_matches++;
+			ip = strstr(ip+substring_size, substring);
+		}
+	}
+	else
+		number_of_matches = strlen (input) + 1;
+
+	buffer_size = strlen(input) + number_of_matches*(replace_size - substring_size) + 1;
+
+	if ((buffer = ((char *) malloc(buffer_size))) == NULL)
+	{
+		return NULL;
+	}
+
+	bp = buffer;
+	ip = strstr(input, substring);
+	while ((ip != NULL) && (*input != '\0'))
+	{
+		if (ip == input)
+		{
+			memcpy (bp, replace, replace_size+1);
+			bp += replace_size;
+			if (substring_size)
+				input += substring_size;
+			else
+				*(bp++) = *(input++);
+			ip = strstr(input, substring);
+		}
+		else
+			while (input != ip)
+				*(bp++) = *(input++);
+	}
+
+	if (substring_size)
+		strcpy (bp, input);
+	else
+		memcpy (bp, replace, replace_size+1);
+
+	return buffer;
+}
+
 int LDLModel::getStudStyleFile(LDLModel* subModel, const char* dictName, int studStyle, bool openStud)
 {
 	char data[TC_MAX_DATA_LEN];
 	char tempPath[256];
+	sm_studCylinderColorEnabled = TCUserDefaults::boolForKey("StudCylinderColorEnabled", true);
 #ifdef WIN32
-	sprintf(tempPath, "%s\\ldview_stud_style%d_%s", getenv("TEMP"), studStyle, dictName);
+	sprintf(tempPath, "%s\\ldview_stud_style%d_%d_%s", getenv("TEMP"), studStyle, sm_studCylinderColorEnabled, dictName);
 #else
-	sprintf(tempPath, "/tmp/ldview_stud_style%d_%s", studStyle, dictName);
+	sprintf(tempPath, "/tmp/ldview_stud_style%d_%d_%s", studStyle, sm_studCylinderColorEnabled, dictName);
 #endif
 
 	std::ifstream existingSubModelStream(tempPath, std::ios::binary);
@@ -980,9 +1039,9 @@ int LDLModel::getStudStyleFile(LDLModel* subModel, const char* dictName, int stu
 			if (strcasecmp(dictName, StudStylePrimitives[i].Name) == 0)
 			{
 				if (studStyle == 6)
-					strcpy(data, StudStylePrimitives[i].Data);
+					strcpy(data, setCylinderColor(StudStylePrimitives[i].Data));
 				else
-					strcpy(data, StudStylePrimitives[i].DataLogo1);
+					strcpy(data, setCylinderColor(StudStylePrimitives[i].DataLogo1));
 				break;
 			}
 		}
@@ -1058,7 +1117,7 @@ bool LDLModel::initializeNewSubModel(
 	}
 // LPub3D Mod - stud style
 	unsigned int studStylePrimitive = 0;
-	unsigned int studStyle = TCUserDefaults::longForKey("StudStyle", 0, 0);
+	unsigned int studStyle = TCUserDefaults::longForKey("StudStyle", 0);
 	if (studStyle && m_flags.loadingPrimitive && m_flags.hasStuds)
 	{
 		unsigned int studStyleType = isStudStylePrimitive(dictName, studStyle);

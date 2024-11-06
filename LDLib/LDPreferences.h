@@ -205,10 +205,15 @@ public:
 	void getBlackEdgeColor(int& r, int& g, int& b, int& a);
 	void getDarkEdgeColor(int& r, int& g, int& b, int& a);
 
-	TCFloat getPartEdgeContrast(void) { return m_partEdgeContrast; };
-	TCFloat getPartColorValueLDIndex(void) { return m_partColorValueLDIndex; };
+	bool getStudCylinderColorEnabled(void) { return m_studCylinderColorEnabled; }
+	bool getPartEdgeColorEnabled(void) { return m_partEdgeColorEnabled; }
+	bool getBlackEdgeColorEnabled(void) { return m_blackEdgeColorEnabled; }
+	bool getDarkEdgeColorEnabled(void) { return m_darkEdgeColorEnabled; }
+	bool getAutomateEdgeColor(void) { return m_automateEdgeColor; }
+	
+	TCFloat getPartEdgeContrast(void) { return m_partEdgeContrast; }
+	TCFloat getPartColorValueLDIndex(void) { return m_partColorValueLDIndex; }
 
-	bool getAutomateEdgeColor(void) { return m_automateEdgeColor; };
 	int getStudStyle(void) { return m_studStyle; }
 	// LPub3D Mod End
 
@@ -356,11 +361,13 @@ public:
 	void setPartEdgeColor(int r, int g, int b, int a, bool commit = false);
 	void setBlackEdgeColor(int r, int g, int b, int a, bool commit = false);
 	void setDarkEdgeColor(int r, int g, int b, int a, bool commit = false);
-
+	void setStudCylinderColorEnabled(bool value, bool commit = false, bool apply = false);
+	void setPartEdgeColorEnabled(bool value, bool commit = false, bool apply = false);
+	void setBlackEdgeColorEnabled(bool value, bool commit = false, bool apply = false);
+	void setDarkEdgeColorEnabled(bool value, bool commit = false, bool apply = false);
+	void setAutomateEdgeColor(bool value, bool commit = false, bool apply = false);
 	void setPartEdgeContrast(TCFloat value, bool commit = false, bool apply = false);
 	void setPartColorValueLDIndex(TCFloat value, bool commit = false, bool apply = false);
-
-	void setAutomateEdgeColor(bool value, bool commit = false, bool apply = false);
 	void setStudStyle(int value, bool commit = false, bool apply = false);
 	// LPub3D Mod End
 
@@ -548,11 +555,16 @@ protected:
 	TCULong m_partEdgeColor;
 	TCULong m_blackEdgeColor;
 	TCULong m_darkEdgeColor;
+	
+	bool m_studCylinderColorEnabled;
+	bool m_partEdgeColorEnabled;
+	bool m_blackEdgeColorEnabled;
+	bool m_darkEdgeColorEnabled;
+	bool m_automateEdgeColor;
 
 	TCFloat m_partEdgeContrast;
 	TCFloat m_partColorValueLDIndex;
 
-	bool m_automateEdgeColor;
 	int m_studStyle;
 	// LPub3D Mod End
 

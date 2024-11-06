@@ -212,6 +212,7 @@ protected:
 
 	// LPub3D Mod - stud style
 	static int isStudStylePrimitive(const char* FileName, int studStyle);
+	static char *setCylinderColor(char *input);
 	static int getStudStyleFile(LDLModel* subModel, const char* dictName,
 		int studStyle, bool openStud);
 	// LPub3D Mod End
@@ -289,6 +290,7 @@ protected:
 	static char *sm_defaultLDrawDir;
 	static LDrawIniS *sm_lDrawIni;
 	static int sm_modelCount;
+	static bool sm_studCylinderColorEnabled;
 	static LDLFileCaseCallback fileCaseCallback;
 	static std::string sm_ldrawZipPath;
 	static std::string sm_unoffZipPath;
