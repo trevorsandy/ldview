@@ -1243,9 +1243,12 @@ void LDLModel::ldrawZipUpdated(void)
 #ifdef HAVE_MINIZIP
 	closeZips();
 	if (!sm_ldrawZipPath.empty())
-	{
+	{   
+		// LPub3D Mod - unofficial library zip 
+		char* unoffZipName = TCUserDefaults::stringForKey("UnoffLDrawZip", "lpub3dldrawunf.zip", false);
 		sm_ldrawZip = TCUnzipStream::open(sm_ldrawZipPath.c_str());
-		sm_unoffZipPath = directoryFromPath(sm_ldrawZipPath) + "/ldrawunf.zip";
+		sm_unoffZipPath = directoryFromPath(sm_ldrawZipPath) + "/" + unoffZipName;
+		// LPub3D Mod End
 		sm_unoffZip = TCUnzipStream::open(sm_unoffZipPath.c_str());
 		if (sm_unoffZip == NULL)
 		{

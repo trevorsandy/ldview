@@ -170,6 +170,9 @@
 #define AUTOMATE_EDGE_COLOR_KEY "AutomateEdgeColor"
 #define STUD_STYLE_KEY "StudStyle"
 // LPub3D Mod End
+// LPub3D Mod - unofficial library zip 
+#define UNOFFICIAL_LDRAW_ZIP_KEY "UnoffLDrawZip"                    // NO UI
+// LPub3D Mod End
 
 // The following are undocumented, and should stay that way.
 #define DEBUG_LEVEL_KEY "DebugLevel"
