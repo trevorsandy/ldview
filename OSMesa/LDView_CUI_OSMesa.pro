@@ -60,6 +60,7 @@ unix {
 3RD_PARTY_INSTALL {
     isEmpty(3RD_PACKAGE_VER):3RD_PACKAGE_VER = $$TARGET-$$VER_MAJ"."$$VER_MIN
     isEmpty(3RD_BINDIR):3RD_BINDIR           = $$3RD_PREFIX/$$3RD_PACKAGE_VER/bin/$$QT_ARCH
+    isEmpty(3RD_LIBDIR):3RD_LIBDIR           = $$3RD_PREFIX/$$3RD_PACKAGE_VER/lib/$$QT_ARCH
     isEmpty(3RD_DOCDIR):3RD_DOCDIR           = $$3RD_PREFIX/$$3RD_PACKAGE_VER/docs
     isEmpty(3RD_RESOURCES):3RD_RESOURCES     = $$3RD_PREFIX/$$3RD_PACKAGE_VER/resources
     isEmpty(3RD_HEADERS):3RD_HEADERS         = $$3RD_PREFIX/$$3RD_PACKAGE_VER/include
@@ -96,7 +97,7 @@ unix {
     resources_config.path       = $${3RD_RESOURCES}/config
     resources_config.files      = ldview.ini ldviewPOV.ini LDViewCustomIni
 
-    libraries.path              = $${3RD_BINDIR}
+    libraries.path              = $${3RD_LIBDIR}
     libraries.files             = ../TCFoundation/$$DESTDIR/libTCFoundation$${POSTFIX}.a \
                                   ../LDLoader/$$DESTDIR/libLDLoader$${POSTFIX}.a \
                                   ../TRE/$$DESTDIR/libTRE$${POSTFIX}.a \
@@ -114,9 +115,9 @@ unix {
     contains(3DS_LIB_FOUND, YES) {
         # Treat Mageia 'error adding symbols: Archive has no index...'
         contains(HOST,Mageia) {
-            message("~~~ COPY lib$${LIB_3DS}.$${EXT_S} TO $${3RD_BINDIR}/ ~~~")
-            3RD_3DS_COPY_CMD    = if ! test -e $${3RD_BINDIR}; then mkdir -p $${3RD_BINDIR}; fi; \
-                                  cp -f $${3DS_LDLIBS} $${3RD_BINDIR}/
+            message("~~~ COPY lib$${LIB_3DS}.$${EXT_S} TO $${3RD_LIBDIR}/ ~~~")
+            3RD_3DS_COPY_CMD    = if ! test -e $${3RD_LIBDIR}; then mkdir -p $${3RD_LIBDIR}; fi; \
+                                  cp -f $${3DS_LDLIBS} $${3RD_LIBDIR}/
             system( $${3RD_3DS_COPY_CMD} )
         } else {
             libraries.files    += $${3DS_LDLIBS}
@@ -393,4 +394,4 @@ OTHER_FILES += \
            ldviewrc.sample \
            ../.github/workflows/build.yml \
            ../.github/workflows/codeql.yml \
-           ..build.cmd
+           ../build.cmd

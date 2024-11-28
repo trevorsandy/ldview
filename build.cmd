@@ -8,7 +8,7 @@ rem LDView distributions and package the build contents (exe, doc and
 rem resources ) as LPub3D 3rd Party components.
 rem --
 rem  Trevor SANDY <trevor.sandy@gmail.com>
-rem  Last Update: September 12, 2024
+rem  Last Update: November 28, 2024
 rem  Copyright (c) 2019 - 2024 by Trevor SANDY
 rem --
 rem This script is distributed in the hope that it will be useful,
@@ -482,33 +482,39 @@ ECHO.
 ECHO -Installing distribution files...
 SET COPY_CMD=COPY /V /Y
 SET DIST_INSTALL_PATH=%DIST_DIR%\%PACKAGE%-%VERSION%\bin\i386
+SET LIBS_INSTALL_PATH=%DIST_DIR%\%PACKAGE%-%VERSION%\lib\i386
 IF %INSTALL_32BIT% == 1 (
   ECHO.
   ECHO -Installing %PACKAGE% 32bit exe to [%DIST_INSTALL_PATH%]...
   IF NOT EXIST "%DIST_INSTALL_PATH%\" (
     MKDIR "%DIST_INSTALL_PATH%\"
   )
+  IF NOT EXIST "%LIBS_INSTALL_PATH%\" (
+    MKDIR "%LIBS_INSTALL_PATH%\"
+  )
   %COPY_CMD% "Build\Release\%PACKAGE%.*" "%DIST_INSTALL_PATH%\" /B
-  ECHO.
   IF "%PROJECT:~-7%"=="vcxproj" (
+    ECHO.
+    ECHO -Installing %PACKAGE% 32bit libraries to [%LIBS_INSTALL_PATH%]...
     FOR %%G IN (LDLib,LDExporter,LDLoader,TRE,TCFoundation) DO (
-      %COPY_CMD% "%%G\Build\Release\%%G.*" "%DIST_INSTALL_PATH%\" /B
+      %COPY_CMD% "%%G\Build\Release\%%G.*" "%LIBS_INSTALL_PATH%\" /B
     )
     FOR %%G IN (gl2ps,tinyxml,minizip) DO (
-      %COPY_CMD% "3rdParty\%%G\Build\Release\%%G*" "%DIST_INSTALL_PATH%\" /B
+      %COPY_CMD% "3rdParty\%%G\Build\Release\%%G*" "%LIBS_INSTALL_PATH%\" /B
     )
   )
   IF "%PROJECT:~-3%"=="sln" (
     IF EXIST "Build\Release" (
-      ECHO -Installing %PACKAGE% 32bit libraries to [%DIST_INSTALL_PATH%]...
-      %COPY_CMD% "Build\Release\*.lib" "%DIST_INSTALL_PATH%\" /B
-      %COPY_CMD% "Build\Release\*.pdb" "%DIST_INSTALL_PATH%\" /B
+      ECHO.
+      ECHO -Installing %PACKAGE% 32bit libraries to [%LIBS_INSTALL_PATH%]...
+      %COPY_CMD% "Build\Release\*.lib" "%LIBS_INSTALL_PATH%\" /B
+      %COPY_CMD% "Build\Release\*.pdb" "%LIBS_INSTALL_PATH%\" /B
     )
   )
   IF "%LP3D_VSVERSION%"=="2019" (
-    %COPY_CMD% "lib\*-vs2017.lib" "%DIST_INSTALL_PATH%\" /B
+    %COPY_CMD% "lib\*-vs2017.lib" "%LIBS_INSTALL_PATH%\" /B
   ) ELSE (
-    %COPY_CMD% "lib\*-vs2015.lib" "%DIST_INSTALL_PATH%\" /B
+    %COPY_CMD% "lib\*-vs2015.lib" "%LIBS_INSTALL_PATH%\" /B
   )
   IF EXIST "Build\Debug\LDView.exe" (
     ECHO.
@@ -539,33 +545,39 @@ IF %INSTALL_32BIT% == 1 (
   )
 )
 SET DIST_INSTALL_PATH=%DIST_DIR%\%PACKAGE%-%VERSION%\bin\x86_64
+SET LIBS_INSTALL_PATH=%DIST_DIR%\%PACKAGE%-%VERSION%\lib\x86_64
 IF %INSTALL_64BIT% == 1 (
   ECHO.
   ECHO -Installing %PACKAGE% 64bit exe to [%DIST_INSTALL_PATH%]...
   IF NOT EXIST "%DIST_INSTALL_PATH%\" (
     MKDIR "%DIST_INSTALL_PATH%\"
   )
-  %COPY_CMD% "Build\Release64\%PACKAGE%64.exe*" "%DIST_INSTALL_PATH%\" /B
-  ECHO.
+  IF NOT EXIST "%LIBS_INSTALL_PATH%\" (
+    MKDIR "%LIBS_INSTALL_PATH%\"
+  )
+  %COPY_CMD% "Build\Release64\%PACKAGE%64.*" "%DIST_INSTALL_PATH%\" /B
   IF "%PROJECT:~-7%"=="vcxproj" (
+    ECHO.
+    ECHO -Installing %PACKAGE% 64bit libraries to [%LIBS_INSTALL_PATH%]..
     FOR %%G IN (LDLib,LDExporter,LDLoader,TRE,TCFoundation) DO (
-      %COPY_CMD% "%%G\Build\Release64\%%G.*" "%DIST_INSTALL_PATH%\" /B
+      %COPY_CMD% "%%G\Build\Release64\%%G.*" "%LIBS_INSTALL_PATH%\" /B
     )
     FOR %%G IN (gl2ps,tinyxml,minizip) DO (
-      %COPY_CMD% "3rdParty\%%G\Build\Release64\%%G*" "%DIST_INSTALL_PATH%\" /B
+      %COPY_CMD% "3rdParty\%%G\Build\Release64\%%G*" "%LIBS_INSTALL_PATH%\" /B
     )
   )
   IF "%PROJECT:~-3%"=="sln" (
     IF EXIST "Build\Release64" (
-      ECHO -Installing %PACKAGE% 32bit libraries to [%DIST_INSTALL_PATH%]...
-      %COPY_CMD% "Build\Release64\*.lib" "%DIST_INSTALL_PATH%\" /B
-      %COPY_CMD% "Build\Release64\*.pdb" "%DIST_INSTALL_PATH%\" /B
+      ECHO.
+      ECHO -Installing %PACKAGE% 32bit libraries to [%LIBS_INSTALL_PATH%]...
+      %COPY_CMD% "Build\Release64\*.lib" "%LIBS_INSTALL_PATH%\" /B
+      %COPY_CMD% "Build\Release64\*.pdb" "%LIBS_INSTALL_PATH%\" /B
     )
   )
   IF "%LP3D_VSVERSION%"=="2019" (
-    %COPY_CMD% "lib\x64\*-vs2019.lib" "%DIST_INSTALL_PATH%\" /B
+    %COPY_CMD% "lib\x64\*-vs2019.lib" "%LIBS_INSTALL_PATH%\" /B
   ) ELSE (
-    %COPY_CMD% "lib\x64\*-vs2015.lib" "%DIST_INSTALL_PATH%\" /B
+    %COPY_CMD% "lib\x64\*-vs2015.lib" "%LIBS_INSTALL_PATH%\" /B
   )
   IF EXIST "Build\Debug64\LDView64.exe" (
     ECHO.
