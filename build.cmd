@@ -8,7 +8,7 @@ rem LDView distributions and package the build contents (exe, doc and
 rem resources ) as LPub3D 3rd Party components.
 rem --
 rem  Trevor SANDY <trevor.sandy@gmail.com>
-rem  Last Update: November 28, 2024
+rem  Last Update: November 29, 2024
 rem  Copyright (c) 2019 - 2024 by Trevor SANDY
 rem --
 rem This script is distributed in the hope that it will be useful,
@@ -19,7 +19,7 @@ CALL :ELAPSED_BUILD_TIME Start
 
 SET PWD=%CD%
 
-IF "%LP3D_VSVERSION%" == "" SET "LP3D_VSVERSION=2022"
+IF "%LP3D_VSVERSION%" == "" SET LP3D_VSVERSION=2022
 
 IF "%GITHUB%" EQU "True" (
   SET "BUILD_WORKER=True"
@@ -277,6 +277,7 @@ rem Initialize the Visual Studio command line development environment
 CALL :CONFIGURE_BUILD_ENV
 rem Assemble command line
 SET COMMAND_LINE=msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%PLATFORM_ARCH% /p:WindowsTargetPlatformVersion=%LP3D_VCSDKVER% /p:PlatformToolset=%LP3D_VCTOOLSET% %PROJECT% %LOGGING_FLAGS%
+ECHO.
 ECHO -Build Command: %COMMAND_LINE%
 rem Launch msbuild
 %COMMAND_LINE%
@@ -396,7 +397,7 @@ IF "%PATH_PREPENDED%" NEQ "True" (
 )
 ECHO.
 SETLOCAL ENABLEDELAYEDEXPANSION
-ECHO( -PATH......[!PATH!]
+ECHO(-PATH......[!PATH!]
   ENDLOCAL
 )
 EXIT /b
@@ -511,42 +512,44 @@ IF %INSTALL_32BIT% == 1 (
       %COPY_CMD% "Build\Release\*.pdb" "%LIBS_INSTALL_PATH%\" /B
     )
   )
-  IF "%LP3D_VSVERSION%"=="2019" (
+  IF %LP3D_VSVERSION% GEQ 2019 (
     %COPY_CMD% "lib\*-vs2017.lib" "%LIBS_INSTALL_PATH%\" /B
   ) ELSE (
     %COPY_CMD% "lib\*-vs2015.lib" "%LIBS_INSTALL_PATH%\" /B
   )
-  IF EXIST "Build\Debug\LDView.exe" (
-    ECHO.
-    ECHO -Installing %PACKAGE% 32bit Debug libraries to [%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug]...
-    IF NOT EXIST "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" (
-      MKDIR "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\"
-    )
-    IF "%PROJECT:~-7%"=="vcxproj" (
-      FOR %%G IN (LDLib,LDExporter,LDLoader,TRE,TCFoundation) DO (
-        %COPY_CMD% "%%G\Build\Debug\%%G.*" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
+  IF "%CONFIGURATION%" == "Debug" (
+    IF EXIST "Build\Debug\LDView.exe" (
+      ECHO.
+      ECHO -Installing %PACKAGE% 32bit Debug libraries to [%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug]...
+      IF NOT EXIST "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" (
+        MKDIR "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\"
       )
-      FOR %%G IN (gl2ps,tinyxml,minizip) DO (
-        %COPY_CMD% "3rdParty\%%G\Build\Debug\%%G*" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
+      IF "%PROJECT:~-7%"=="vcxproj" (
+        FOR %%G IN (LDLib,LDExporter,LDLoader,TRE,TCFoundation) DO (
+          %COPY_CMD% "%%G\Build\Debug\%%G.*" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
+        )
+        FOR %%G IN (gl2ps,tinyxml,minizip) DO (
+          %COPY_CMD% "3rdParty\%%G\Build\Debug\%%G*" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
+        )
       )
-    )
-    IF "%PROJECT:~-3%"=="sln" (
-      IF EXIST "Build\Debug" (
-        ECHO -Installing %PACKAGE% 32bit Debug libraries to [%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug...
-        %COPY_CMD% "Build\Debug\*.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
-        %COPY_CMD% "Build\Debug\*.pdb" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
+      IF "%PROJECT:~-3%"=="sln" (
+        IF EXIST "Build\Debug" (
+          ECHO -Installing %PACKAGE% 32bit Debug libraries to [%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug...
+          %COPY_CMD% "Build\Debug\*.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
+          %COPY_CMD% "Build\Debug\*.pdb" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
+        )
       )
-    )
-    IF "%LP3D_VSVERSION%"=="2019" (
-      %COPY_CMD% "lib\*-vs2017.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
-    ) ELSE (
-      %COPY_CMD% "lib\*-vs2015.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
+      IF %LP3D_VSVERSION% GEQ 2019 (
+        %COPY_CMD% "lib\*-vs2017.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
+      ) ELSE (
+        %COPY_CMD% "lib\*-vs2015.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug\" /B
+      )
     )
   )
 )
 SET DIST_INSTALL_PATH=%DIST_DIR%\%PACKAGE%-%VERSION%\bin\x86_64
 SET LIBS_INSTALL_PATH=%DIST_DIR%\%PACKAGE%-%VERSION%\lib\x86_64
-IF %INSTALL_64BIT% == 1 (
+IF %INSTALL_64BIT% EQU 1 (
   ECHO.
   ECHO -Installing %PACKAGE% 64bit exe to [%DIST_INSTALL_PATH%]...
   IF NOT EXIST "%DIST_INSTALL_PATH%\" (
@@ -574,36 +577,38 @@ IF %INSTALL_64BIT% == 1 (
       %COPY_CMD% "Build\Release64\*.pdb" "%LIBS_INSTALL_PATH%\" /B
     )
   )
-  IF "%LP3D_VSVERSION%"=="2019" (
+  IF %LP3D_VSVERSION% GEQ 2019 (
     %COPY_CMD% "lib\x64\*-vs2019.lib" "%LIBS_INSTALL_PATH%\" /B
   ) ELSE (
     %COPY_CMD% "lib\x64\*-vs2015.lib" "%LIBS_INSTALL_PATH%\" /B
   )
-  IF EXIST "Build\Debug64\LDView64.exe" (
-    ECHO.
-    ECHO -Installing %PACKAGE% 64bit Debug libraries to [%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64]...
-    IF NOT EXIST "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" (
-      MKDIR "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\"
-    )
-    IF "%PROJECT:~-7%"=="vcxproj" (
-      FOR %%G IN (LDLib,LDExporter,LDLoader,TRE,TCFoundation) DO (
-        %COPY_CMD% "%%G\Build\Debug64\%%G.*" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
+  IF "%CONFIGURATION%" == "Debug" (
+    IF EXIST "Build\Debug64\LDView64.exe" (
+      ECHO.
+      ECHO -Installing %PACKAGE% 64bit Debug libraries to [%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64]...
+      IF NOT EXIST "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" (
+        MKDIR "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\"
       )
-      FOR %%G IN (gl2ps,tinyxml,minizip) DO (
-        %COPY_CMD% "3rdParty\%%G\Build\Debug64\%%G*" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
+      IF "%PROJECT:~-7%"=="vcxproj" (
+        FOR %%G IN (LDLib,LDExporter,LDLoader,TRE,TCFoundation) DO (
+          %COPY_CMD% "%%G\Build\Debug64\%%G.*" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
+        )
+        FOR %%G IN (gl2ps,tinyxml,minizip) DO (
+          %COPY_CMD% "3rdParty\%%G\Build\Debug64\%%G*" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
+        )
       )
-    )
-    IF "%PROJECT:~-3%"=="sln" (
-      IF EXIST "Build\Debug64" (
-        ECHO -Installing %PACKAGE% 32bit Debug64 libraries to [%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64...
-        %COPY_CMD% "Build\Debug64\*.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
-        %COPY_CMD% "Build\Debug64\*.pdb" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
+      IF "%PROJECT:~-3%"=="sln" (
+        IF EXIST "Build\Debug64" (
+          ECHO -Installing %PACKAGE% 32bit Debug64 libraries to [%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64...
+          %COPY_CMD% "Build\Debug64\*.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
+          %COPY_CMD% "Build\Debug64\*.pdb" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
+        )
       )
-    )
-    IF "%LP3D_VSVERSION%"=="2019" (
-      %COPY_CMD% "lib\x64\*-vs2019.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
-    ) ELSE (
-      %COPY_CMD% "lib\x64\*-vs2015.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
+      IF %LP3D_VSVERSION% GEQ 2019 (
+        %COPY_CMD% "lib\x64\*-vs2019.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
+      ) ELSE (
+        %COPY_CMD% "lib\x64\*-vs2015.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
+      )
     )
   )
 )
@@ -675,8 +680,10 @@ EXIT /b
 ECHO.
 ECHO -Backing up ini files before build check...
 SET INI_FILE=%PWD%\OSMesa\ldviewPOV.ini
+ECHO -Copy %INI_FILE% to %INI_FILE%.hold
 COPY /V /Y "%INI_FILE%" "%INI_FILE%.hold" /A
 SET INI_FILE=%PWD%\OSMesa\ldview.ini
+ECHO -Copy %INI_FILE% to %INI_FILE%.hold
 COPY /V /Y "%INI_FILE%" "%INI_FILE%.hold" /A
 EXIT /b
 
@@ -684,8 +691,10 @@ EXIT /b
 ECHO.
 ECHO -Restoring ini files after build check...
 SET INI_FILE=%PWD%\OSMesa\ldviewPOV.ini
+ECHO -Move %INI_FILE%.hold to %INI_FILE%
 MOVE /Y "%INI_FILE%.hold" "%INI_FILE%" >nul 2>&1
 SET INI_FILE=%PWD%\OSMesa\ldview.ini
+ECHO -Move %INI_FILE%.hold to %INI_FILE%
 MOVE /Y "%INI_FILE%.hold" "%INI_FILE%" >nul 2>&1
 EXIT /b
 
