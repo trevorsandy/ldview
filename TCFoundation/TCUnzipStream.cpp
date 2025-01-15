@@ -11,6 +11,8 @@
 
 #ifdef HAVE_MINIZIP_NG
 #define uLong unsigned long
+#elif defined HAVE_MINIZIP
+#define uLong unsigned int
 #endif
 
 TCUnzipStream::TCUnzipStream(void)
