@@ -8,6 +8,7 @@
 #ifndef TCUnzipStream_h
 #define TCUnzipStream_h
 
+#include <TCFoundation/TCDefines.h>
 #include <sstream>
 
 #ifdef HAVE_MINIZIP
@@ -19,11 +20,11 @@
 #include <string>
 #endif // HAVE_MINIZIP
 
-class TCUnzipStream: public std::istringstream
+class TCExport TCUnzipStream: public std::istringstream
 {
 public:
 	TCUnzipStream(void);
-	~TCUnzipStream(void);
+	virtual ~TCUnzipStream(void);
 #ifdef HAVE_MINIZIP
 #ifdef USE_CPP11
 	// This map will have thousands of entries, so we want it to be as fast as

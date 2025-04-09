@@ -23,7 +23,7 @@
 typedef TCFloat* GlPt;
 typedef const TCFloat *ConstGlPt;
 
-class TCVector
+class TCExport TCVector
 {
 public:
 	// Constructors
@@ -34,7 +34,7 @@ public:
 	TCVector(const std::string& defaultsString);
 
 	// Destructor
-	~TCVector(void);
+	virtual ~TCVector(void);
 
 	// Member Functions
 	void print(FILE* = stdout) const;
