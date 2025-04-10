@@ -1,5 +1,5 @@
 #include "mystring.h"
-#ifndef WIN32
+#if !defined (WIN32) || defined (__MINGW64__)
 #ifdef USE_UTF8_LOCALE
 #include <clocale>
 #else
@@ -2200,7 +2200,11 @@ char *ucstringtoutf8(CUCSTR src, int length /*= -1*/)
 	int dstLen = WideCharToMultiByte(CP_UTF8, 0, src, length + 1, NULL, 0, NULL, NULL);
 	if (dstLen == 0)
 	{
+#ifdef __MINGW64__
+		return 0;
+#else
 		return false;
+#endif
 	}
 	char* retValue = new char[dstLen];
 	WideCharToMultiByte(CP_UTF8, 0, src, length + 1, retValue, dstLen, NULL, NULL);

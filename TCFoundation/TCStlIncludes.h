@@ -29,8 +29,10 @@
 #ifdef WIN32
 
 #if _MSC_VER < 1400	// VC < VC 2005
+#ifndef __MINGW64__
 #define strcasecmp stricmp
 #define strncasecmp strnicmp
+#endif
 #define wcscasecmp wcsicmp
 #define wcsncasecmp wcsnicmp
 #else //  VC < VC 2005

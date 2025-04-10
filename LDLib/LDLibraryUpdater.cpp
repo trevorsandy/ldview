@@ -280,16 +280,30 @@ void LDLibraryUpdater::scanDir(const std::string &dir, StringList &dirList)
 #ifdef WIN32
 	path += dir + "/";
 	std::string findString = path + "*.dat";
+#ifdef __MINGW64__
+	std::wstring wfindString;
+	utf8towstring(wfindString, findString);
+	LPCWSTR lpfindString = (LPCWSTR)wfindString.c_str();
+#else
+	LPCSTR lpfindString = (LPCSTR)findString.c_str();
+#endif
 	WIN32_FIND_DATA ffd;
 	HANDLE hFind;
 
-	hFind = FindFirstFile(findString.c_str(), &ffd);
+	hFind = FindFirstFile(lpfindString, &ffd);
 	if (hFind != INVALID_HANDLE_VALUE)
 	{
-		dirList.push_back(path + ffd.cFileName);
+		std::string fileName;
+#ifdef __MINGW64__
+		wstringtoutf8(fileName, ffd.cFileName);
+#else
+		fileName = ffd.cFileName;
+#endif
+		std::string fullpath = std::string(path.begin(), path.end()) + fileName;
+		dirList.push_back(fullpath);
 		while (FindNextFile(hFind, &ffd))
 		{
-			dirList.push_back(path + ffd.cFileName);
+			dirList.push_back(fullpath);
 		}
 		FindClose(hFind);
 	}
@@ -1130,14 +1144,38 @@ void LDLibraryUpdater::extractUpdate(const char *filename)
 
 		// We're dealing with 16-bit DOS programs, so we don't want any long
 		// filenames in the executable path or the working directory path.
-		len = GetShortPathName(filename, shortFilename, sizeof(shortFilename));
+		// LPub3D Mod - Enable MSYS2 build
+		len =
+#ifndef __MINGW64__
+			GetShortPathName(filename, shortFilename, sizeof(shortFilename));
+#else
+			GetShortPathNameA(filename, shortFilename, sizeof(shortFilename));
+#endif
+		// LPub3D Mod End
 		if (len == 0 || len >= sizeof(shortFilename))
 		{
 			strncpy(shortFilename, filename, sizeof(shortFilename));
 			shortFilename[sizeof(shortFilename) - 1] = 0;
 		}
-		len = GetShortPathName(m_ldrawDirParent, startupDir,
-			sizeof(startupDir));
+		// LPub3D Mod - Enable MSYS2 build
+		len =
+#ifndef __MINGW64__
+			GetShortPathName(m_ldrawDirParent, startupDir,
+				sizeof(startupDir));
+#else
+			GetShortPathNameA(m_ldrawDirParent, startupDir,
+				sizeof(startupDir));
+		std::string str(shortFilename);
+		std::wstring wstr(str.begin(), str.end());
+		LPCWSTR wShortFilename = (LPCWSTR)wstr.c_str();
+		str = commandLine;
+		wstr = std::wstring(str.begin(), str.end());
+		LPWSTR wCommandLine = (LPWSTR)wstr.c_str();
+		str = startupDir;
+		wstr = std::wstring(str.begin(), str.end());
+		LPWSTR wStartupDir = (LPWSTR)wstr.c_str();
+#endif
+		// LPub3D Mod End
 		if (len == 0 || len >= sizeof(startupDir))
 		{
 			strncpy(startupDir, m_ldrawDirParent, sizeof(startupDir));
@@ -1148,9 +1186,15 @@ void LDLibraryUpdater::extractUpdate(const char *filename)
 		startupInfo.cb = sizeof(STARTUPINFO);
 		startupInfo.dwFlags = STARTF_USESHOWWINDOW;
 		startupInfo.wShowWindow = SW_SHOWMINNOACTIVE;
+#ifndef __MINGW64__
 		if (CreateProcess(shortFilename, commandLine, NULL, NULL, FALSE,
 			DETACHED_PROCESS | NORMAL_PRIORITY_CLASS, NULL, startupDir,
 			&startupInfo, &processInfo))
+#else
+		if (CreateProcess(wShortFilename, wCommandLine, NULL, NULL, FALSE,
+			DETACHED_PROCESS | NORMAL_PRIORITY_CLASS, NULL, wStartupDir,
+			&startupInfo, &processInfo))
+#endif
 		{
 			while (1)
 			{

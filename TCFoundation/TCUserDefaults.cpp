@@ -179,7 +179,11 @@ void TCUserDefaults::initAppPath(void)
 	HMODULE hModule = GetModuleHandle(NULL);
 	char programPath[2048];
 
+#ifdef __MINGW64__
+	if (GetModuleFileNameA(hModule, programPath, sizeof(programPath)) > 0)
+#else
 	if (GetModuleFileName(hModule, programPath, sizeof(programPath)) > 0)
+#endif
 	{
 		char *spot = strrchr(programPath, '\\');
 
@@ -2455,7 +2459,7 @@ void TCUserDefaults::defSetValueForKey(const LPBYTE value, int length,
 			ucstring spotUC;
 			utf8toucstring(spotUC, spot);
 			RegSetValueExW(hParentKey, spotUC.c_str(), 0, type, value, length);
-#endif TC_NO_UNICODE
+#endif // TC_NO_UNICODE
 		}
 		else
 		{
@@ -2518,7 +2522,7 @@ LPBYTE TCUserDefaults::defValueForKey(DWORD& size, DWORD type, const char* key,
 			&size) == ERROR_SUCCESS) ||
 			(unicode && RegQueryValueExW(hParentKey, spotUC.c_str(), 0,
 			&valueType, NULL, &size) == ERROR_SUCCESS))
-#endif TC_NO_UNICODE
+#endif // TC_NO_UNICODE
 		{
 			if (valueType == type)
 			{
@@ -2531,7 +2535,7 @@ LPBYTE TCUserDefaults::defValueForKey(DWORD& size, DWORD type, const char* key,
 					&valueType, value, &size) != ERROR_SUCCESS) ||
 					(unicode && RegQueryValueExW(hParentKey, spotUC.c_str(), 0,
 					&valueType, value, &size) != ERROR_SUCCESS))
-#endif TC_NO_UNICODE
+#endif // TC_NO_UNICODE
 				{
 					delete[] value;
 					value = NULL;

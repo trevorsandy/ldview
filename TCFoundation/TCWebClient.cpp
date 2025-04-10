@@ -678,9 +678,15 @@ bool TCWebClient::receiveHeader(void)
 				int lerrorNumber = WSAGetLastError();
 				char errorBuf[1024];
 
+#ifdef __MINGW64__
+				FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM |
+					FORMAT_MESSAGE_IGNORE_INSERTS, NULL, lerrorNumber, 0,
+					errorBuf, sizeof(errorBuf), NULL);
+#else
 				FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
 					FORMAT_MESSAGE_IGNORE_INSERTS, NULL, lerrorNumber, 0,
 					errorBuf, sizeof(errorBuf), NULL);
+#endif
 				debugPrintf("Socket error: %s\n", errorBuf);
 #endif
 			}
@@ -2635,7 +2641,11 @@ int TCWebClient::createDirectory(const char* directory, int *errorNumber)
 			if (errno == ENOENT)
 			{
 #ifdef WIN32
+#ifdef __MINGW64__
+				if (!CreateDirectoryA(directory, NULL))
+#else
 				if (!CreateDirectory(directory, NULL))
+#endif
 				{
 					*errorNumber = WCE_DIR_CREATION;
 					result = 0;
@@ -2836,9 +2846,15 @@ int TCWebClient::setNonBlock(void)
 		int lerrorNumber = WSAGetLastError();
 		char buf[1024];
 
+#ifdef __MINGW64__
+		FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM |
+			FORMAT_MESSAGE_IGNORE_INSERTS, NULL, lerrorNumber, 0, buf, 1024,
+			NULL);
+#else
 		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
 			FORMAT_MESSAGE_IGNORE_INSERTS, NULL, lerrorNumber, 0, buf, 1024,
 			NULL);
+#endif
 		debugPrintf("error: %s\n", buf);
 #else // WIN32
 #if defined (_QT) || defined (__APPLE__) || defined(_OSMESA)

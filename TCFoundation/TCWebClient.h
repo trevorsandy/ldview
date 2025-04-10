@@ -10,7 +10,11 @@
 #include <time.h>
 
 typedef __int64 int64;
+#ifdef __MINGW64__
+#define ZERO64 0LL
+#else
 #define ZERO64 0i64
+#endif
 #else // WIN32
 #if defined (_QT) || defined (__APPLE__) || defined(_OSMESA)
 #include <sys/time.h>

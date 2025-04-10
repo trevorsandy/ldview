@@ -71,7 +71,9 @@ LDRAWINI_BEGIN_STDC
 #pragma warning(disable: 6308 6001)
 
 #if _MSC_VER < 1400	// VC < VC 2005
+#ifndef __MINGW64__
 #define strcasecmp stricmp
+#endif
 #else //  VC < VC 2005
 #define strcasecmp _stricmp
 #endif // VC < VC 2005
