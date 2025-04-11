@@ -381,8 +381,10 @@ int main(int argc, char *argv[])
 	if ((buffer = setupContext(ctx)) != NULL)
 	{
 		//ProgressHandler *progressHandler = new ProgressHandler;
-		// LPub3D Mod - setup defaults and print GL info
-		if (TCUserDefaults::boolForKey("Info"))
+		// LPub3D Mod - print Arguments and/or OpenGL Info
+		bool printInfo = TCUserDefaults::boolForKey("Info");
+		bool printArguments = TCUserDefaults::boolForKey("Arguments");
+		if (printInfo || printArguments)
 		{
 			printf("Arguments = ");
 			int cnt;
@@ -398,10 +400,13 @@ int main(int argc, char *argv[])
 				printf("\n");
 			printf("\n");
 
-			//get OpenGL info
-			glInfo glinfo;
-			glinfo.getInfo();
-			glinfo.printSelf();
+			if (printInfo)
+			{
+				//get OpenGL info
+				glInfo glinfo;
+				glinfo.getInfo();
+				glinfo.printSelf();
+			}
 		}
 		if (defaultsKO)
 		{
