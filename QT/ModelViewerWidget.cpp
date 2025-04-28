@@ -676,7 +676,7 @@ void ModelViewerWidget::doFilePrint(void)
 	printer->setColorMode(QPrinter::Color);
 //	printer->setFullPage(true);
 #if QT_VERSION >= 0x40400
-#if QT_VERSION >= 0x60000
+#if QT_VERSION >= 0x50300
 	printer->setPageMargins(QMarginsF(
 		TCUserDefaults::longForKey(LEFT_MARGIN_KEY, 500, false) / 1000.0f,
 		TCUserDefaults::longForKey(TOP_MARGIN_KEY, 500, false) / 1000.0f,
@@ -718,7 +718,7 @@ void ModelViewerWidget::doFilePrint(void)
 				*right = new qreal,
 				*top   = new qreal,
 				*bottom= new qreal;
-#if QT_VERSION >= 0x60000
+#if QT_VERSION >= 0x50300
 		TCUserDefaults::setLongForKey((long)printer->pageLayout().pageSize().id(),PAPER_SIZE_KEY,false);
 		TCUserDefaults::setLongForKey((long)printer->pageLayout().orientation(), ORIENTATION_KEY, false);
 		QMarginsF margins = printer->pageLayout().margins(QPageLayout::Inch);
@@ -941,8 +941,13 @@ void ModelViewerWidget::mouseReleaseEvent(QMouseEvent *event)
 		return;
 	}
 	if (!inputHandler->mouseUp(convertKeyModifiers(event->modifiers()),
-		convertMouseButton(event->button()), event->globalX(),
-		event->globalY()))
+		convertMouseButton(event->button()),
+#if QT_VERSION >= 0x60000
+		event->globalPosition().x(),event->globalPosition().y()
+#else
+		event->globalX(), event->globalY()
+#endif
+		))
 	{
 		event->ignore();
 	}
@@ -958,7 +963,7 @@ void ModelViewerWidget::wheelEvent(QWheelEvent *event)
 		return;
 	}
 	if (!inputHandler->mouseWheel(convertKeyModifiers(event->modifiers()),
-#if QT_VERSION >= 0x60000
+#if QT_VERSION >= 0x50000
 		(TCFloat)event->angleDelta().y() * 0.5f))
 #else
 		(TCFloat)event->delta() * 0.5f))
@@ -978,7 +983,12 @@ void ModelViewerWidget::mouseMoveEvent(QMouseEvent *event)
 		return;
 	}
 	if (!inputHandler->mouseMove(convertKeyModifiers(event->modifiers()),
-		event->globalX(), event->globalY()))
+#if QT_VERSION >= 0x60000
+		event->globalPosition().x(),event->globalPosition().y()
+#else
+		event->globalX(), event->globalY()
+#endif
+		))
 	{
 		event->ignore();
 	}
@@ -1507,10 +1517,9 @@ void ModelViewerWidget::doHelpContents(void)
 	CFURLRef url = NULL;
 	CFStringRef urlString;
 	bool macSuccess = false;
-    // LPub3D Mod - fix error: no member named 'utf8' in QString' Old value: qUrl.utf8()
-    urlString = CFStringCreateWithCString(NULL, qUrl.toUtf8().constData(),
+
+	urlString = CFStringCreateWithCString(NULL, qUrl.toUtf8(),
 		kCFStringEncodingUTF8);
-    // LPub3D Mod End
 	if (urlString && (url = CFURLCreateWithString(NULL, urlString, NULL)) !=
 		NULL)
 	{
@@ -1533,17 +1542,16 @@ void ModelViewerWidget::doHelpContents(void)
 	}
 	FSRef fsRef;
 	Boolean isDirectory;
-
-    // LPub3D Mod - fix error: cannot cast from type 'QString' to pointer type 'const char*' Old value: (const char *)helpFilename
-    if (FSPathMakeRef((const UInt8 *)helpFilename.toUtf8().constData(), &fsRef,
+/*
+	if (FSPathMakeRef((const UInt8 *)(const char *)helpFilename, &fsRef,
 		&isDirectory) == 0 && !isDirectory)
-    // LPub3D Mod End
 	{
 		if (LSOpenFSRef(&fsRef, NULL) == 0)
 		{
 			return;
 		}
 	}
+*/
 #endif // __APPLE__
 	QFile file(helpFilename);
 	if (!file.exists())
@@ -2841,7 +2849,6 @@ bool ModelViewerWidget::saveImage(
 		false);
 	retValue = grabImage(imageWidth, imageHeight, fromCommandLine);
 	return retValue;
-
 }
 
 bool ModelViewerWidget::fileExists(const char* filename)
@@ -3567,7 +3574,7 @@ void ModelViewerWidget::libraryUpdateProgress(TCProgressAlert *alert)
 
 void ModelViewerWidget::progressAlertCallback(TCProgressAlert *alert)
 {
-	if (alert)
+	if (alert && !saving)
 	{
 		if (strcmp(alert->getSource(), "LDLibraryUpdater") == 0)
 		{

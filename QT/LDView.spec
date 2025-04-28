@@ -137,7 +137,7 @@ BuildRequires: mesa-libGLU-devel
 BuildRequires: libjpeg-turbo-devel, tinyxml-devel, gl2ps-devel, minizip-compat-devel
 %endif
 
-%if 0%{?centos_version} || 0%{?scientificlinux_version}
+%if 0%{?centos_version} || 0%{?scientificlinux_version} || 0%{?oraclelinux}
 %define tinyxml_static 1
 %define gl2ps_static   1
 %endif
@@ -191,24 +191,6 @@ BuildRequires: lib64osmesa-devel, lib64qt4-devel
 BuildRequires: libosmesa-devel, libqt4-devel
 %endif
 %endif
-%endif
-
-%if 0%{?mdkversion}
-BuildRequires: libqt4-devel, boost-devel, cmake, kdelibs4-devel
-%define gl2ps_static   1
-# For openSUSE Build Service
-%if 0%{?opensuse_bs}
-%if (0%{?mdkversion} != 200910) && (0%{?mdkversion} != 201000)
-BuildRequires: kde-l10n-en_GB
-%endif
-BuildRequires: aspell-en, myspell-en_US
-%endif
-%define tinyxml_static 1
-%define without_osmesa 1
-%endif
-
-%if ( 0%{?centos_version}<600 && 0%{?centos_version}>=500 ) || ( 0%{?rhel_version}<600 && 0%{?rhel_version}>=500 )
-BuildRequires: qt4-devel
 %endif
 
 %description
@@ -272,6 +254,9 @@ echo "AlmaLinux:          %{almalinux_ver}"
 %if 0%{?oraclelinux}
 echo "OracleLinux:        0%{?oraclelinux}"
 %endif
+%if 0%{?rocky_ver}
+echo "RockyLinux:         %{rocky_ver}"
+%endif
 %if 0%{?fedora}
 echo "Fedora:             %{fedora}"
 %endif
@@ -312,7 +297,7 @@ if [ -x %{_libdir}/qt4/bin/qmake ] ; then
 export PATH=%{_libdir}/qt4/bin:$PATH
 fi
 %endif
-%if (0%{?qt5}!=1)
+%if (0%{?qt5}!=1) && (0%{?qt6}!=1)
 %ifarch x86_64
 export RPM_OPT_FLAGS="$RPM_OPT_FLAGS -I%{_libdir}/qt4/include"
 %endif

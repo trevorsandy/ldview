@@ -16,6 +16,7 @@ sub load {
 		$s=$_;
 		$id=$msg="";
 		if ($s =~ /VIRTKEY/) { $s="";}
+		if ($s =~ /pragma code_page\(([0-9]+)\)/) {$id="codepage";$msg=$1;}
 		if ($s =~ /([_A-Z0-9]*)[ \t]*DIALOG/) {$section=$1; $cnt=0; }
 		if ($s =~ /"([^"]+)"[ \t]*\,[ \t]*(ID[A-Z0-9_]+)/) {
 			$msg=$1;
@@ -38,12 +39,13 @@ sub load {
 }
 
 sub dumptrans {
-    ($filename,$from,$to) = @_;
+    ($filename,$from,$to,$outfile) = @_;
 	$fromtext=$from."text";
     open(FILE,$filename);
+	open(OFILE,'>'.$outfile) || die "open error";
     while($sor=<FILE>)
 	{
-		$sor =~s/code_page\([0-9]*\)/code_page\(1250\)/;
+		if ($sor =~ /code_page\([0-9]*\)/) {$sor ="#pragma code_page(".$$to{codepage}.")";}
 		if ($sor =~ /"([^"]+)"/) 
 		{
 			$text=$1;
@@ -60,12 +62,22 @@ sub dumptrans {
 			}
 		}
 		$sor=~ s/\"Icons/\"..\\\\..\\\\Icons/  ;
-		print $sor;
+		$sor=~ s/\"Textures\\\\/\"..\/..\/Textures\\\\/ ;
+		$sor=~ s/^\#include \"([A-Z])/\#include \"..\/..\/$1/ ;
+		print OFILE $sor;
     }
     close FILE;
+	close OFILE;
 }
 
 load("../LDView.rc","english");
 load("../Translations/Hungarian/LDView.rc","hungarian");
+load("../Translations/German/LDView.rc","german");
+load("../Translations/Italian/LDView.rc","italian");
+load("../Translations/Czech/LDView.rc","czech");
 
-dumptrans("../LDView.rc","english","hungarian");
+dumptrans("../LDView.rc","english","hungarian","/tmp/LDView-hu.rc");
+dumptrans("../LDView.rc","english","czech","/tmp/LDView-cz.rc");
+dumptrans("../LDView.rc","english","italian","/tmp/LDView-it.rc");
+dumptrans("../LDView.rc","english","german","/tmp/LDView-de.rc");
+

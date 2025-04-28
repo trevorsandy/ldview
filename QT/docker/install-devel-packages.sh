@@ -43,10 +43,12 @@ download (){
 		LDVIEW=ldview
 	fi
 	cp -f $LDVIEW/QT/LDView.spec $LDVIEW/QT/LDView-qt5.spec
+	cp -f $LDVIEW/QT/LDView.spec $LDVIEW/QT/LDView-qt6.spec
 	sed 's/define qt5 0/define qt5 1/' -i $LDVIEW/QT/LDView-qt5.spec
+	sed 's/define qt6 0/define qt6 1/' -i $LDVIEW/QT/LDView-qt6.spec
 }
 
-if [ -f /etc/centos-release ] ; then
+if [ -f /etc/centos-release -o -f /etc/oracle-release ] ; then
 	yum install -y git rpm-build rpmlint which
 	download
 	if which yum-builddep >/dev/null 2>/dev/null ; then
@@ -62,15 +64,16 @@ elif [ -f /etc/fedora-release -o -f /etc/mageia-release ] ; then
 	test "$NOQT4" = true || dnf builddep -y $LDVIEW/QT/LDView.spec
 	test "$NOQT5" = true || dnf builddep -y $LDVIEW/QT/LDView-qt5.spec
 	test "$NOQT6" = true || dnf builddep -y $LDVIEW/QT/LDView-qt6.spec || true
-elif [ -f /etc/redhat-release ] ; then
-	dnf install -y git rpm-build
-	download
-	dnf builddep -y $LDVIEW/QT/LDView-qt5.spec
 elif [ -f /etc/rocky-release ] ; then
 	dnf install -y git rpmlint dnf-plugins-core rpm-build
 	download
 	test "$NOQT4" = true || dnf builddep -y $LDVIEW/QT/LDView.spec
 	test "$NOQT5" = true || dnf builddep -y $LDVIEW/QT/LDView-qt5.spec
+elif [ -f /etc/redhat-release ] ; then
+	dnf install -y git rpm-build
+	download
+	dnf builddep -y $LDVIEW/QT/LDView-qt5.spec
+
 elif [ -f /etc/debian_version ] ; then
 	apt-get update
 	apt-get install -y git lintian build-essential debhelper \
