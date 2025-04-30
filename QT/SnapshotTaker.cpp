@@ -4,6 +4,7 @@
 #include "SnapshotTaker.h"
 #include "SnapshotAlertHandler.h"
 #include <TCFoundation/TCAlertManager.h>
+#include <TCFoundation/TCLocalStrings.h>
 #include <TCFoundation/TCAlert.h>
 #include <LDLib/LDSnapshotTaker.h>
 #if (QT_VERSION >= 0x50100) && defined(QOFFSCREEN)
@@ -15,6 +16,9 @@ static Display *display = NULL;
 static GLXContext context = NULL;
 static GLXPbuffer pbuffer = 0;
 #endif
+#ifndef _MSC_VER
+#include "GLInfo.h"
+#endif
 
 SnapshotTaker::SnapshotTaker()
 	: ldSnapshotTaker(NULL)
@@ -24,6 +28,7 @@ SnapshotTaker::SnapshotTaker()
 	, qOglCtx(NULL)
 	, qFbo(NULL)
 #endif
+	, printGLInfo(false)
 {
 }
 
@@ -85,8 +90,9 @@ bool SnapshotTaker::getUseFBO()
 	return ldSnapshotTaker != NULL && ldSnapshotTaker->getUseFBO();
 }
 
-bool SnapshotTaker::doCommandLine()
+bool SnapshotTaker::doCommandLine(bool info)
 {
+	printGLInfo = info;
 #if (QT_VERSION < 0x50100) || !defined(QOFFSCREEN)
 	if (display == NULL)
 	{
@@ -191,5 +197,20 @@ void SnapshotTaker::snapshotCallback(TCAlert *alert)
 		ldSnapshotTaker = (LDSnapshotTaker*)alert->getSender()->retain();
 		ldSnapshotTaker->setUseFBO(true);
 #endif
+		if (printGLInfo)
+		{
+#ifdef _MSC_VER
+			int extensionCount;
+			UCSTR extensions = LDrawModelViewer::getOpenGLDriverInfo(extensionCount);
+			printf("\nOpenGL Driver Info\n==========================\n");
+			printf("%ls ", extensions);
+			printf("\n%d %ls", extensionCount, (TCLocalStrings::get(L"OpenGlnExtensionsSuffix")));
+			printf("\n==========================\n");
+#else
+			GLInfo glInfo;
+			glInfo.printGLInfo();
+#endif
+			printGLInfo = false;
+		}
 	}
 }

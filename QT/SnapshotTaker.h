@@ -15,7 +15,7 @@ class SnapshotTaker: public TCObject
 {
 public:
 	SnapshotTaker();
-	bool doCommandLine();
+	bool doCommandLine(bool info = false);
 	void snapshotCallback(TCAlert *alert);
 protected:
 	virtual ~SnapshotTaker(void);
@@ -30,6 +30,7 @@ protected:
 	QOpenGLContext *qOglCtx;
 	QOpenGLFramebufferObject *qFbo;
 #endif
+	bool printGLInfo;
 };
 
 #endif // __SNAPSHOTTAKER_H__
