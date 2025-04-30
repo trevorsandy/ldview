@@ -1,6 +1,13 @@
 #ifndef __MISC_H__
 #define __MISC_H__
 
+#include <QtGlobal>
+
+#ifdef Q_OS_WIN
+#include <winsock2.h>
+#include <windows.h>
+#endif
+
 #include <string.h>
 #ifdef _AIX
 #include <strings.h>
