@@ -9,7 +9,7 @@
 // XP specific stuff
 #include <uxtheme.h>
 // _MSC_VER 1500 = Visual Studio 2008.
-#if (defined(_MSC_VER) && _MSC_VER >= 1400)
+#if (defined(_MSC_VER) && _MSC_VER >= 1400) || defined (__MINGW64__)
 #include <vssym32.h>
 #else
 #include <tmschema.h>
@@ -28,33 +28,33 @@ typedef HRESULT (__stdcall *PFNDRAWTHEMETEXT)(HTHEME hTheme, HDC hdc,
 typedef HRESULT (__stdcall *PFNGETTHEMEBACKGROUNDCONTENTRECT)(HTHEME hTheme,
 	HDC hdc, int iPartId, int iStateId,  const RECT *pBoundingRect,
 	RECT *pContentRect);
-typedef HRESULT (_stdcall *PFNDRAWTHEMEEDGE)(HTHEME hTheme, HDC hdc,
+typedef HRESULT (CUIAPI *PFNDRAWTHEMEEDGE)(HTHEME hTheme, HDC hdc,
 	int iPartId, int iStateId, const RECT *pDestRect, UINT uEdge, UINT uFlags,
 	RECT *pContentRect);
-typedef HRESULT (_stdcall *PFNSETWINDOWTHEME)(HWND hWnd, LPCWSTR pwszSubAppName,
+typedef HRESULT (CUIAPI *PFNSETWINDOWTHEME)(HWND hWnd, LPCWSTR pwszSubAppName,
 	LPCWSTR pwszSubIdList);
-typedef HTHEME (_stdcall *PFNGETWINDOWTHEME)(HWND hWnd);
-typedef HRESULT (_stdcall *PFNGETTHEMECOLOR)(HTHEME hTheme, int iPartId,
+typedef HTHEME (CUIAPI *PFNGETWINDOWTHEME)(HWND hWnd);
+typedef HRESULT (CUIAPI *PFNGETTHEMECOLOR)(HTHEME hTheme, int iPartId,
 	int iStateId, int iPropId, COLORREF *pColor);
-typedef void (_stdcall *PFNSETTHEMEAPPPROPERTIED)(DWORD dwFlags);
-typedef DWORD (_stdcall *PFNGETTHEMEAPPPROPERTIED)(void);
-typedef HRESULT (_stdcall *PFNGETTHEMERECT)(HTHEME hTheme, int iPartId,
+typedef void (CUIAPI *PFNSETTHEMEAPPPROPERTIED)(DWORD dwFlags);
+typedef DWORD (CUIAPI *PFNGETTHEMEAPPPROPERTIED)(void);
+typedef HRESULT (CUIAPI *PFNGETTHEMERECT)(HTHEME hTheme, int iPartId,
 	int iStateId, int iPropId, RECT *pRect);
-typedef HRESULT (_stdcall *PFNGETTHEMEPOSITION)(HTHEME hTheme, int iPartId,
+typedef HRESULT (CUIAPI *PFNGETTHEMEPOSITION)(HTHEME hTheme, int iPartId,
 	int iStateId, int iPropId, POINT *pPoint);
-typedef HRESULT (_stdcall *PFNGETTHEMEMARGINS)(HTHEME hTheme, HDC hdc,
+typedef HRESULT (CUIAPI *PFNGETTHEMEMARGINS)(HTHEME hTheme, HDC hdc,
 	int iPartId, int iStateId, int iPropId, RECT *pRect, MARGINS *pMargins);
-typedef HRESULT (_stdcall *PFNGETTHEMETEXTEXTENT)(HTHEME hTheme, HDC hdc,
+typedef HRESULT (CUIAPI *PFNGETTHEMETEXTEXTENT)(HTHEME hTheme, HDC hdc,
     int iPartId, int iStateId, LPCWSTR pszText, int iCharCount,
 	DWORD dwTextFlags, const RECT *pBoundingRect, RECT *pExtentRect);
-typedef HRESULT (_stdcall *PFNDDRAWTHEMEPARENTBACKGROUND)(HWND hwnd, HDC hdc,
+typedef HRESULT (CUIAPI *PFNDDRAWTHEMEPARENTBACKGROUND)(HWND hwnd, HDC hdc,
 	RECT* prc);
-typedef HRESULT (_stdcall *PFNGETTHEMEPARTSIZE)(HTHEME hTheme, HDC hdc,
+typedef HRESULT (CUIAPI *PFNGETTHEMEPARTSIZE)(HTHEME hTheme, HDC hdc,
 	int iPartId, int iStateId, RECT *prc, enum THEMESIZE eSize, SIZE *psz);
-typedef HRESULT (_stdcall *PFNENABLETHEMEDIALOGTEXTURE)(HWND hwnd,
+typedef HRESULT (CUIAPI *PFNENABLETHEMEDIALOGTEXTURE)(HWND hwnd,
 	DWORD dwFlags);
-typedef COLORREF (_stdcall *PFNGETTHEMESYSCOLOR)(HTHEME hTheme, int iColorID);
-typedef BOOL (_stdcall *PFNISTHEMEACTIVE)(void);
+typedef COLORREF (CUIAPI *PFNGETTHEMESYSCOLOR)(HTHEME hTheme, int iColorID);
+typedef BOOL (CUIAPI *PFNISTHEMEACTIVE)(void);
 
 class CUIExport CUIThemes
 {
