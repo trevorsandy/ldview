@@ -1,5 +1,8 @@
 #include "CUIScaler.h"
 #include "CUIModuleHolder.h"
+#ifdef __MINGW64__
+#include <cmath>
+#endif
 
 bool CUIScaler::sm_use32bit = haveWindowsXPOrLater();
 
