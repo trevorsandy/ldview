@@ -15,7 +15,11 @@
 #include "Resource.h"
 #include <LDLib/LDUserDefaultsKeys.h>
 #include "ModelWindow.h"
+#ifdef _LP3D_CUI_WGL
+#include "LDViewCUIWindow.h"
+#else
 #include "LDViewWindow.h"
+#endif
 #include <CUI/CUIScaler.h>
 
 #include <TCFoundation/TCUserDefaults.h>
@@ -1928,6 +1932,7 @@ void LDViewPreferences::applyGeneralChanges(void)
 
 bool LDViewPreferences::applyLDrawChanges(void)
 {
+#ifndef _LP3D_CUI_WGL
 	if (hLDrawPage)
 	{
 		ucstring fieldText;
@@ -1952,6 +1957,7 @@ bool LDViewPreferences::applyLDrawChanges(void)
 		recordExtraSearchDirs();
 	}
 	ldPrefs->commitLDrawSettings();
+#endif
 	return true;
 }
 
@@ -2240,12 +2246,14 @@ void LDViewPreferences::chooseColor(HWND hColorButton, HBITMAP hColorBitmap,
 
 void LDViewPreferences::chooseCustomConfig(void)
 {
+#ifndef _LP3D_CUI_WGL
 	ucstring ldrawFilename = LDViewWindow::getLDrawFilename(this, _UC("."));
 	if (ldrawFilename.empty())
 	{
 		return;
 	}
 	SetWindowText(hCustomConfigField, ldrawFilename.c_str());
+#endif
 }
 
 void LDViewPreferences::browseForDir(
@@ -2253,6 +2261,7 @@ void LDViewPreferences::browseForDir(
 	HWND hTextField,
 	ucstring &dir)
 {
+#ifndef _LP3D_CUI_WGL
 	ucstring newDir = LDViewWindow::browseForDir(prompt, dir.c_str());
 
 	if (!newDir.empty())
@@ -2261,6 +2270,7 @@ void LDViewPreferences::browseForDir(
 		SetWindowText(hTextField, dir.c_str());
 		enableApply(GetParent(hTextField));
 	}
+#endif
 }
 
 void LDViewPreferences::doGeneralClick(int controlId, HWND /*controlHWnd*/)
@@ -3431,6 +3441,7 @@ void LDViewPreferences::browseForLDrawZip(void)
 
 void LDViewPreferences::browseForLDrawDir(void)
 {
+#ifndef _LP3D_CUI_WGL
 	std::string oldDir = LDViewWindow::getLDrawDir();
 	if (ldviewWindow->verifyLDrawDir(true))
 	{
@@ -3444,6 +3455,7 @@ void LDViewPreferences::browseForLDrawDir(void)
 			LDLModel::setLDrawDir(oldDir.c_str());
 		}
 	}
+#endif
 }
 
 ucstring LDViewPreferences::browseForFile(
@@ -3505,6 +3517,7 @@ BOOL LDViewPreferences::doRemoveExtraDir(void)
 
 BOOL LDViewPreferences::doAddExtraDir(void)
 {
+#ifndef _LP3D_CUI_WGL
 	BROWSEINFO browseInfo;
 	UCCHAR displayName[MAX_PATH];
 	LPITEMIDLIST itemIdList;
@@ -3547,6 +3560,7 @@ BOOL LDViewPreferences::doAddExtraDir(void)
 			pMalloc->Release();
 		}
 	}
+#endif
 	return TRUE;
 }
 
@@ -4631,11 +4645,13 @@ void LDViewPreferences::setupAntialiasing(void)
 
 bool LDViewPreferences::doApply(void)
 {
+#ifndef _LP3D_CUI_WGL
 	if (!applyChanges())
 	{
 		return false;
 	}
 	checkAbandon = true;
+#endif
 	return true;
 }
 

@@ -2,7 +2,11 @@
 #include <LDLib/LDrawModelViewer.h>
 #include <TCFoundation/TCMacros.h>
 #include "LDVExtensionsSetup.h"
+#ifdef _LP3D_CUI_WGL
+#include "LDViewCUIWindow.h"
+#else
 #include "LDViewWindow.h"
+#endif
 #include "JpegOptionsDialog.h"
 #include "ExportOptionsDialog.h"
 #include <TCFoundation/TCAutoreleasePool.h>
@@ -802,7 +806,11 @@ void ModelWindow::updateFSAA()
 	applyingPrefs = true;
 	uncompile();
 	closeWindow();
+#ifndef _LP3D_CUI_WGL
 	if (!((LDViewWindow*)parentWindow)->getFullScreen())
+#else
+	if (true)
+#endif
 	{
 		x -= 2;
 		y -= 2;
@@ -824,8 +832,10 @@ void ModelWindow::updateFSAA()
 		// fly while the model is rotating if it is created after the model
 		// window.  Since we just destroyed and recreated the model window, we
 		// need to destroy and recreate the status window.
+#ifndef _LP3D_CUI_WGL
 		((LDViewWindow*)parentWindow)->switchStatusBar();
 		((LDViewWindow*)parentWindow)->switchStatusBar();
+#endif
 	}
 }
 
@@ -1647,7 +1657,9 @@ void ModelWindow::applyPrefs(void)
 		currentAntialiasType;
 
 	loadSettings();
+#ifndef _LP3D_CUI_WGL
 	((LDViewWindow*)parentWindow)->applyPrefs();
+#endif
 	if (LDVExtensionsSetup::haveMultisampleExtension() && antialiasChanged)
 	{
 		setTimer(FSAA_UPDATE_TIMER, 0);
@@ -1753,13 +1765,19 @@ void ModelWindow::hideProgress(void)
 	{
 		progressBarSetPos(hProgressBar, 0);
 		statusBarSetText(hStatusBar, 1, _UC(""));
+#ifndef _LP3D_CUI_WGL
 		((LDViewWindow *)parentWindow)->redrawStatusBar();
+#endif
 		EnumThreadWindows(GetWindowThreadProcessId(hParentWindow, NULL),
 			enableNonModalWindow, (LPARAM)hParentWindow);
+#ifndef _LP3D_CUI_WGL
 		((LDViewWindow*)parentWindow)->setLoading(false);
+#endif
 //		doDialogClose(hProgressWindow);
 		loading = false;
+#ifndef _LP3D_CUI_WGL
 		((LDViewWindow*)parentWindow)->forceShowStatusBar(false);
+#endif
 	}
 }
 
@@ -2252,7 +2270,12 @@ int ModelWindow::populateErrorTree(void)
 
 void ModelWindow::showErrorsIfNeeded(BOOL onlyIfNeeded)
 {
-	if (windowShown && !((LDViewWindow*)parentWindow)->getFullScreen())
+	if (windowShown &&
+#ifndef _LP3D_CUI_WGL
+		!((LDViewWindow*)parentWindow)->getFullScreen())
+#else
+		true)
+#endif
 	{
 		if (!hErrorWindow)
 		{
@@ -2499,7 +2522,9 @@ int ModelWindow::progressCallback(
 		//clearErrors();
 		loading = true;
 		setupProgress();
+#ifndef _LP3D_CUI_WGL
 		((LDViewWindow*)parentWindow)->forceShowStatusBar(true);
+#endif
 		if (!flushModal(hParentWindow, false))
 		{
 			PostQuitMessage(0);
@@ -2509,12 +2534,16 @@ int ModelWindow::progressCallback(
 		{
 			loadCanceled = true;
 		}
+#ifndef _LP3D_CUI_WGL
 		((LDViewWindow*)parentWindow)->setLoading(true);
 	}
 	if (message && message[0])
 	{
 		setStatusText(hStatusBar, 1, message, true);
 	}
+#else
+	}
+#endif
 	if (progress >= 0.0f)
 	{
 		int oldProgress;
@@ -2584,6 +2613,7 @@ LRESULT ModelWindow::doCreate(HWND hWnd, LPCREATESTRUCT lpcs)
 
 LRESULT ModelWindow::doDropFiles(HDROP hDrop)
 {
+#ifndef _LP3D_CUI_WGL
 	UCCHAR buf[1024];
 	if (DragQueryFile(hDrop, 0, buf, COUNT_OF(buf)) > 0)
 	{
@@ -2592,6 +2622,9 @@ LRESULT ModelWindow::doDropFiles(HDROP hDrop)
 		return 0;
 	}
 	return 1;
+#else
+	return 0;
+#endif
 }
 
 void ModelWindow::checkForPart(void)
@@ -2692,11 +2725,14 @@ void ModelWindow::setStatusText(
 	CUCSTR text,
 	bool redraw)
 {
+#ifndef _LP3D_CUI_WGL
 	((LDViewWindow*)parentWindow)->setStatusText(hStatus, part, text, redraw);
+#endif
 }
 
 void ModelWindow::drawFPS(void)
 {
+#ifndef _LP3D_CUI_WGL
 	if (prefs->getShowsFPS())
 	{
 		if (((LDViewWindow*)parentWindow)->getFullScreen() || !hStatusBar)
@@ -2735,6 +2771,7 @@ void ModelWindow::drawFPS(void)
 	{
 		setStatusText(hStatusBar, 1, _UC(""));
 	}
+#endif
 }
 
 void ModelWindow::doPostPaint(void)
@@ -2754,7 +2791,12 @@ void ModelWindow::updateFPS(void)
 {
 	DWORD thisFrameTime;
 
+#ifdef _LP3D_CUI_WGL
+	return;
+#else
 	thisFrameTime = timeGetTime();
+#endif
+
 	numFramesSinceReference++;
 	if (firstFPSPass)
 	{
@@ -2934,7 +2976,9 @@ void ModelWindow::doPaint(void)
 	{
 		forceRedraw();
 	}
+#ifndef _LP3D_CUI_WGL
 	((LDViewWindow *)parentWindow)->showStatusLatLon();
+#endif
 }
 
 LRESULT ModelWindow::doNCDestroy(void)
@@ -4433,6 +4477,7 @@ void ModelWindow::updateSaveDigits(void)
 
 void ModelWindow::doSaveOptionsClick(void)
 {
+#ifndef _LP3D_CUI_WGL
 	switch (curSaveOp)
 	{
 	case LDPreferences::SOExport:
@@ -4467,6 +4512,7 @@ void ModelWindow::doSaveOptionsClick(void)
 		}
 		break;
 	}
+#endif
 }
 
 BOOL ModelWindow::doSaveClick(int controlId, HWND /*hControlWnd*/)
@@ -5513,5 +5559,7 @@ void ModelWindow::setSaveZoomToFit(bool value, bool commit /*= false*/)
 
 void ModelWindow::boundingBoxToggled(void)
 {
+#ifndef _LP3D_CUI_WGL
 	((LDViewWindow*)parentWindow)->boundingBoxToggled();
+#endif
 }
