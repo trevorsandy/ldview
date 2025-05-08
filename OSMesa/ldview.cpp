@@ -10,6 +10,10 @@
 #if defined (__APPLE__)
 #include <GLUT/glut.h>
 #else  // defined (__APPLE__)
+#include <EGL/egl.h>
+#define EGL_EGLEXT_PROTOTYPES
+#include <EGL/eglext.h>
+//#include <GLES3/gl32.h>
 #include <sstream>
 #include <stdexcept>
 #endif // defined (__APPLE__)
@@ -21,7 +25,9 @@
 #include <TCFoundation/TCAlertManager.h>
 #include <TCFoundation/TCProgressAlert.h>
 #include <TCFoundation/TCLocalStrings.h>
+#ifndef __USE_EGL
 #include <GL/osmesa.h>
+#endif
 //#define GL_GLEXT_PROTOTYPES
 #include <GL/glext.h>
 #include <TRE/TREMainModel.h>
@@ -226,33 +232,46 @@ std::string iniFileStatus(const char *iniPath )
 int setupDefaults(char *argv[])
 {
 	int retValue = 0;
+	bool iniFileSet = false;
 	TCUserDefaults::setCommandLine(argv);
-	// IniFile can be specified on the command line; if so, don't load a
-	// different one.
-	if (!TCUserDefaults::isIniFileSet())
+	// First, check if an IniFile is specified on command line...
+	std::string iniFile = TCUserDefaults::commandLineStringForKey("IniFile");
+	if (iniFile.size() > 0)
 	{
-		// Check if IniFile specified on command line ...
-		std::string iniFile = TCUserDefaults::commandLineStringForKey("IniFile");
-		if (iniFile.size() > 0 )
+		iniFileSet = TCUserDefaults::isIniFileSet();
+		if (!iniFileSet)
 		{
 			std::string fileMsg = iniFileStatus(iniFile.c_str());
 			printf("Could not set command line INI file. Returned message:\n"
 				   " - %s\n - ldview: Checking for user INI files...\n", fileMsg.c_str());
 		}
+	}
 
+	if (!iniFileSet)
+	{
 		char *homeDir = getenv("HOME");
+#ifdef WIN32
+		if (homeDir == NULL)
+			homeDir = getenv("USERPROFILE");
+		char *ldviewrc = copyString("\\ldview.ini");
+#else
+		char *ldviewrc = copyString("/.ldviewrc");
+#endif
+		char *rcFilename = NULL;
 
 		if (homeDir)
 		{
-			char *ldviewrc = copyString("/.ldviewrc");
-
-			char *rcFilename = copyString(homeDir, 128);
+			rcFilename = copyString(homeDir, 128);
 
 			strncat(rcFilename, ldviewrc, strlen(ldviewrc)+1);
 
 			char *rcFilename2 = copyString(homeDir, 128);
 
+#ifdef WIN32
+			ldviewrc = copyString("\\.config\\LDView\\ldview.ini");
+#else
 			ldviewrc = copyString("/.config/LDView/ldviewrc");
+#endif
 
 			strncat(rcFilename2, ldviewrc, strlen(ldviewrc)+1);
 
@@ -262,13 +281,36 @@ int setupDefaults(char *argv[])
 				printf("Error setting INI File to %s or %s\n", rcFilename,
 					rcFilename2);
 				retValue = 1;
-			}
+			} else iniFileSet = true;
 		}
 		else
 		{
 			printf("HOME environment variable not defined: cannot use "
 				"~/.ldviewrc.\n");
 			retValue = 1;
+		}
+
+		// Try to force the default ini at the executable root
+		if (!iniFileSet)
+		{
+			retValue = 1;
+			if (rcFilename)
+				printf("Error setting INI File to %s\n", rcFilename);
+#ifdef WIN32
+			ldviewrc = copyString("ldview.ini");
+#else
+			ldviewrc = copyString("ldviewrc");
+#endif
+			rcFilename = copyString(ldviewrc, 32);
+
+			iniFileSet = TCUserDefaults::setIniFile(ldviewrc);
+		}
+
+		if(iniFileSet)
+		{
+			retValue = 0;
+			if (TCUserDefaults::boolForKey("Info"))
+				printf("Using IniFile %s\n", rcFilename);
 		}
 	}
 
@@ -291,6 +333,134 @@ void assertOpenGLError(const std::string& msg)
 	}
 }
 
+#if !defined (__APPLE__)
+void assertEGLError(const std::string& msg)
+{
+	EGLint error = eglGetError();
+
+	if (error != EGL_SUCCESS)
+	{
+		std::stringstream ss;
+		ss << "EGL error - 0x" << std::hex << error << " at " << msg;
+		switch(error)
+		{
+		case EGL_BAD_ACCESS            : ss << " (EGL_BAD_ACCESS)"; break;
+		case EGL_BAD_ALLOC             : ss << " (EGL_BAD_ALLOC)"; break;
+		case EGL_BAD_ATTRIBUTE         : ss << " (EGL_BAD_ATTRIBUTE)"; break;
+		case EGL_BAD_CONFIG            : ss << " (EGL_BAD_CONFIG)"; break;
+		case EGL_BAD_CONTEXT           : ss << " (EGL_BAD_CONTEXT)"; break;
+		case EGL_BAD_CURRENT_SURFACE   : ss << " (EGL_BAD_CURRENT_SURFACE)"; break;
+		case EGL_BAD_DISPLAY           : ss << " (EGL_BAD_DISPLAY)"; break;
+		case EGL_BAD_MATCH             : ss << " (EGL_BAD_MATCH)"; break;
+		case EGL_BAD_NATIVE_PIXMAP     : ss << " (EGL_BAD_NATIVE_PIXMAP)"; break;
+		case EGL_BAD_NATIVE_WINDOW     : ss << " (EGL_BAD_NATIVE_WINDOW)"; break;
+		case EGL_BAD_PARAMETER         : ss << " (EGL_BAD_PARAMETER)"; break;
+		case EGL_BAD_SURFACE           : ss << " (EGL_BAD_SURFACE)"; break;
+		case EGL_NON_CONFORMANT_CONFIG : ss << " (EGL_NON_CONFORMANT_CONFIG)"; break;
+		case EGL_NOT_INITIALIZED       : ss << " (EGL_NOT_INITIALIZED)"; break;
+		}
+		throw std::runtime_error(ss.str());
+	}
+}
+
+void setupEGL(EGLDisplay& display, EGLContext& context, EGLSurface& surface, EGLConfig& config)
+{
+	int width = TCUserDefaults::longForKey("TileWidth", TileWidth, false);
+	int height = TCUserDefaults::longForKey("TileHeight", TileHeight, false);
+	EGLint configNum = 0, eglMajor = 0, eglMinor = 0;
+	const EGLint configAttribs[] = {
+		EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
+		EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
+		EGL_COLOR_BUFFER_TYPE, EGL_RGB_BUFFER,
+		EGL_RED_SIZE, 8,
+		EGL_GREEN_SIZE, 8,
+		EGL_BLUE_SIZE, 8,
+		EGL_ALPHA_SIZE, 8,
+		EGL_DEPTH_SIZE, 24,
+		EGL_STENCIL_SIZE, 8,
+		EGL_BUFFER_SIZE, 24,
+		EGL_NONE,
+	};
+	const EGLint surfaceAttribs[] = {
+		EGL_WIDTH, width,
+		EGL_HEIGHT, height,
+		EGL_NONE,
+	};
+	const EGLint contextAttribs[] = {
+		EGL_NONE,
+	};
+
+	eglBindAPI(EGL_OPENGL_ES_API);
+	assertEGLError("eglBindAPI");
+
+	display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+	assertEGLError("eglGetDisplay");
+	if (display == EGL_NO_DISPLAY)
+	{
+		throw std::runtime_error("EGL error - create a default display failed.");
+	}
+
+	EGLBoolean result = eglInitialize(display, &eglMajor, &eglMinor);
+	assertEGLError("eglInitialize");
+	if (!result)
+	{
+		throw std::runtime_error("EGL error - initialize the default display failed.");
+	}
+	//printf("Debug: EGL Version: v%d.%d\n", eglMajor, eglMinor);
+
+	/*
+	// Debug: Get number of all configs, having gotten display from EGL
+	GLInfo glinfo;
+	glinfo.printEGLConfigs(display);
+	//*/
+
+	result = eglChooseConfig(display, configAttribs, &config, 1, &configNum);
+	assertEGLError("eglChooseConfig");
+	if (!result)
+	{
+		throw std::runtime_error("EGL error - get a config for specified attributes failed.");
+	}
+	//printf("Debug: EGL chosen configuration %d\n", configNum);
+
+	surface = eglCreatePbufferSurface(display, config, surfaceAttribs);
+	assertEGLError("eglCreatePbufferSurface");
+	if (surface == EGL_NO_SURFACE)
+	{
+		throw std::runtime_error("EGL error - create a pixel buffer surface failed.");
+	}
+
+	context = eglCreateContext(display, config, EGL_NO_CONTEXT, contextAttribs);
+	assertEGLError("eglCreateContext");
+	if (context == EGL_NO_CONTEXT)
+	{
+		throw std::runtime_error("EGL error - create a display context failed.");
+	}
+
+	result = eglMakeCurrent(display, surface, surface, context);
+	assertEGLError("eglMakeCurrent");
+	if (!result)
+	{
+		throw std::runtime_error("EGL error - make display, surface and context current failed.");
+	}
+	else
+	{
+		//glViewport(0, 0, width, height);
+		//assertOpenGLError("glViewport");
+
+		GLint viewport[4] = {0};
+		glGetIntegerv(GL_VIEWPORT, viewport);
+		assertOpenGLError("glGetIntegerv");
+		if (viewport[2] != width || viewport[3] != height)
+		{
+			printf("EGL not working! GL_VIEWPORT: %d, %d, %d, %d\n",
+				  (int)viewport[0], (int)viewport[1], (int)viewport[2], (int)viewport[3]);
+			throw std::runtime_error("EGL error - initialize GL Viewport failed.");
+		}
+	}
+}
+#endif
+
+#ifndef __USE_EGL
 void *setupOSMesaContext(OSMesaContext &ctx)
 {
 	void *buffer = NULL;
@@ -316,9 +486,8 @@ void *setupOSMesaContext(OSMesaContext &ctx)
 		assertOpenGLError("glGetIntegerv");
 		if (viewport[2] != width || viewport[3] != height)
 		{
-			printf("OSMesa not working!\n");
-			printf("GL_VIEWPORT: %d, %d, %d, %d\n", (int)viewport[0],
-				(int)viewport[1], (int)viewport[2], (int)viewport[3]);
+			printf("OSMesa not working! GL_VIEWPORT: %d, %d, %d, %d\n",
+				  (int)viewport[0], (int)viewport[1], (int)viewport[2], (int)viewport[3]);
 			free(buffer);
 			buffer = NULL;
 		}
@@ -331,6 +500,7 @@ void *setupOSMesaContext(OSMesaContext &ctx)
 	}
 	return buffer;
 }
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -341,9 +511,19 @@ int main(int argc, char *argv[])
 	int retValue = 0;
 	// LPub3D Mod End
 	void *osmesaBuffer = NULL;
+#ifndef __USE_EGL
 	OSMesaContext ctx;
+#endif
 	int stringTableSize = sizeof(LDViewMessages_bytes);
 	char *stringTable = new char[sizeof(LDViewMessages_bytes) + 1];
+	bool useEGL = false;
+
+#if !defined (__APPLE__)
+	EGLConfig  config  = 0;
+	EGLDisplay display = NULL;
+	EGLContext context = NULL;
+	EGLSurface surface = NULL;
+#endif
 
 	memcpy(stringTable, LDViewMessages_bytes, stringTableSize);
 	stringTable[stringTableSize] = 0;
@@ -363,7 +543,28 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (setupOSMesaContext(ctx) != 0)
+#if !defined (__APPLE__)
+	try
+	{
+		setupEGL(display, context, surface, config);
+		useEGL = true;
+	}
+	catch (std::runtime_error const& e)
+	{
+		printf("%s\n", e.what());
+		useEGL = false;
+	}
+	catch (...)
+	{
+	}
+#endif
+
+#ifndef __USE_EGL
+	if (!useEGL)
+		osmesaBuffer = setupOSMesaContext(ctx);
+#endif
+
+	if (useEGL || osmesaBuffer)
 	{
 		//ProgressHandler *progressHandler = new ProgressHandler;
 		// LPub3D Mod - print Arguments and/or OpenGL Info
@@ -389,7 +590,12 @@ int main(int argc, char *argv[])
 			{
 				//get OpenGL info
 				GLInfo glinfo;
-				glinfo.printGLInfo();
+#if !defined (__APPLE__)
+				if (useEGL)
+					glinfo.printEGLInfo(display, config);
+				else
+#endif
+					glinfo.printGLInfo();
 			}
 		}
 		if (defaultsOK)
@@ -401,11 +607,21 @@ int main(int argc, char *argv[])
 		}
 		// LPub3D Mod End
 
-		if (osmesaBuffer)
+#if !defined (__APPLE__)
+		if (display != NULL)
+		{
+			eglDestroyContext(display, context);
+			eglDestroySurface(display, surface);
+			eglTerminate(display);
+		}
+#endif
+#ifndef __USE_EGL
+		if (!useEGL)
 		{
 			OSMesaDestroyContext(ctx);
 			free(osmesaBuffer);
 		}
+#endif
 		//TCObject::release(progressHandler);
 	}
 
