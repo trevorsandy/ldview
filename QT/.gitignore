@@ -41,3 +41,6 @@ resources.qrc.depends
 .obj*
 .qrc*
 .ui*
+LDViewMessages.h
+StudLogo.h
+LDViewMessages.ini
