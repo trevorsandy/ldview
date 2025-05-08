@@ -18,6 +18,7 @@
 # CONFIG+=CUI_QT             # build CUI using Qt OpenGL
 # CONFIG+=CUI_WGL            # build CUI using WGL OpenGL
 # CONFIG+=CUI_OSMESA         # build CUI using OSMesa OpenGL - this is the default behaviour
+# CONFIG+=USE_EGL            # only compile for EGL - used when libOSMesa is not present, e.g. Arch Linux
 # CONFIG+=USE_OSMESA_STATIC  # build static OSMesa libraray and use system LLVM library
 # CONFIG+=USE_OSMESA_LOCAL   # use local OSmesa and LLVM libraries - for OBS images w/o OSMesa stuff (e.g. RHEL)
 # CONFIG+=USE_SYSTEM_PNG     # override USE_3RD_PARTY_LIBS for libpng

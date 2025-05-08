@@ -307,7 +307,7 @@ LIBS_  += $${LIBS_PRI}
 msys: \
 LIBS_  += -lshlwapi -lws2_32 -lbz2
 
-LDLIBS += $${_LIBS} $${LIBS_} $${OSMESA_LDLIBS}
+LDLIBS += $${_LIBS} $${LIBS_} $${OSMESA_LDLIBS} $${EGL_LDLIBS}
 
 LIBS   += $${LIBDIRS} $${LIBS_DIR} $${LDLIBS}
 #message("~~~ DEBUG_INCLUDEPATHS: $$INCLUDEPATH ~~~")
