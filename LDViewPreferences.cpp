@@ -86,9 +86,9 @@ LDViewPreferences::LDViewPreferences(
 	, hBackgroundColorButton(NULL)
 	, hDefaultColorBitmap(NULL)
 	, hDefaultColorButton(NULL)
-	, hMouseOverButton(NULL)
-	, origButtonWindowProc(NULL)
 	, hButtonColorDC(NULL)
+	, hMouseOverButton(NULL)
+	, origButtonWindowProc(0)
 	, hLDrawPage(NULL)
 	, hExtraDirsToolbar(NULL)
 	, hExtraDirsImageList(NULL)
@@ -2222,8 +2222,8 @@ void LDViewPreferences::chooseColor(HWND hColorButton, HBITMAP hColorBitmap,
 		ldPrefs->getCustomColor(i, r, g, b);
 		customColors[i] = RGB(r, g, b);
 	}
-	memset(&chooseColor, 0, sizeof CHOOSECOLOR);
-	chooseColor.lStructSize = sizeof CHOOSECOLOR;
+	memset(&chooseColor, 0, sizeof(CHOOSECOLOR));
+	chooseColor.lStructSize = sizeof(CHOOSECOLOR);
 	chooseColor.hwndOwner = hPropSheet;
 	chooseColor.rgbResult = color;
 	chooseColor.lpCustColors = customColors;
@@ -5115,12 +5115,12 @@ BOOL LDViewPreferences::doDrawGroupCheckBox(HWND hWnd, HTHEME hTheme,
 		if (bIsDisabled)
 		{
 			CUIThemes::drawThemeText(hTheme, hDrawItemDC, BP_CHECKBOX, CBS_DISABLED,
-				title.c_str(), -1, textFlags, NULL, &textRect);
+				title.c_str(), -1, textFlags, 0, &textRect);
 		}
 		else
 		{
 			CUIThemes::drawThemeText(hTheme, hDrawItemDC, BP_GROUPBOX, GBS_NORMAL,
-				title.c_str(), -1, textFlags, NULL, &textRect);
+				title.c_str(), -1, textFlags, 0, &textRect);
 		}
 	}
 	return TRUE;
