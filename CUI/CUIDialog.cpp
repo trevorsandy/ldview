@@ -10,8 +10,8 @@ UINT CUIDialog::sm_messageForwardId = 0;
 
 CUIDialog::CUIDialog(void):
 m_curHWnd(NULL)
-, m_curLParam(0)
 , m_curMessage(0)
+, m_curLParam(0)
 , m_curWParam(0)
 {
 }
@@ -20,8 +20,8 @@ CUIDialog::CUIDialog(CUIWindow* parentWindow):
 CUIWindow(parentWindow, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
 	CW_USEDEFAULT)
 , m_curHWnd(NULL)
-, m_curLParam(0)
 , m_curMessage(0)
+, m_curLParam(0)
 , m_curWParam(0)
 {
 }
@@ -30,8 +30,8 @@ CUIDialog::CUIDialog(HINSTANCE hInstance, HWND hParentWindow):
 CUIWindow(hParentWindow, hInstance, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
 	CW_USEDEFAULT)
 , m_curHWnd(NULL)
-, m_curLParam(0)
 , m_curMessage(0)
+, m_curLParam(0)
 , m_curWParam(0)
 {
 }
@@ -53,8 +53,8 @@ INT_PTR CUIDialog::privateDialogProc(
 {
 	m_curHWnd = hDlg;
 	m_curMessage = message;
-	m_curWParam = wParam;
 	m_curLParam = lParam;
+	m_curWParam = wParam;
 	return dialogProc(hDlg, message, wParam, lParam);
 }
 

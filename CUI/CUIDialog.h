@@ -152,8 +152,8 @@ protected:
 
 	HWND m_curHWnd;
 	UINT m_curMessage;
-	WPARAM m_curWParam;
 	LPARAM m_curLParam;
+	WPARAM m_curWParam;
 	HWndSet m_controls;
 
 	static bool sm_haveMessageForwardId;

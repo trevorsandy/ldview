@@ -7,6 +7,8 @@
 #define new DEBUG_CLIENTBLOCK
 #endif
 
+typedef char *CHARPTR;
+
 CUIOGLWindow::CUIOGLWindow(void)
 			 :CUIWindow()
 {
@@ -15,18 +17,18 @@ CUIOGLWindow::CUIOGLWindow(void)
 
 CUIOGLWindow::CUIOGLWindow(CUCSTR windowTitle, HINSTANCE hInstance, int x,
 						   int y, int width, int height)
-			 :initializedGL(FALSE),
-			  hasParent(FALSE),
-			  CUIWindow(windowTitle, hInstance, x, y, width, height)
+			 :CUIWindow(windowTitle, hInstance, x, y, width, height),
+			 initializedGL(FALSE),
+			  hasParent(FALSE)
 {
 	init();
 }
 
 CUIOGLWindow::CUIOGLWindow(CUIWindow* parentWindow, int x, int y, int width,
 						   int height)
-			 :initializedGL(FALSE),
-			  hasParent(TRUE),
-			  CUIWindow(parentWindow, x, y, width, height)
+			 :CUIWindow(parentWindow, x, y, width, height),
+			  initializedGL(FALSE),
+			  hasParent(TRUE)
 {
 	init();
 }
@@ -83,33 +85,33 @@ BOOL CUIOGLWindow::setPixelFormat(int lpfIndex)
 
 const char *CUIOGLWindow::interpretGLError(GLenum errorCode)
 {
-	char* errorString;
+	CHARPTR errorString;
 
 	switch (errorCode)
 	{
 	case GL_NO_ERROR:
-		errorString = "GL_NO_ERROR";
+		errorString = (CHARPTR)"GL_NO_ERROR";
 		break;
 	case GL_INVALID_ENUM:
-		errorString = "GL_INVALID_ENUM";
+		errorString = (CHARPTR)"GL_INVALID_ENUM";
 		break;
 	case GL_INVALID_VALUE:
-		errorString = "GL_INVALID_VALUE";
+		errorString = (CHARPTR)"GL_INVALID_VALUE";
 		break;
 	case GL_INVALID_OPERATION:
-		errorString = "GL_INVALID_OPERATION";
+		errorString = (CHARPTR)"GL_INVALID_OPERATION";
 		break;
 	case GL_STACK_OVERFLOW:
-		errorString = "GL_STACK_OVERFLOW";
+		errorString = (CHARPTR)"GL_STACK_OVERFLOW";
 		break;
 	case GL_STACK_UNDERFLOW:
-		errorString = "GL_STACK_UNDERFLOW";
+		errorString = (CHARPTR)"GL_STACK_UNDERFLOW";
 		break;
 	case GL_OUT_OF_MEMORY:
-		errorString = "GL_OUT_OF_MEMORY";
+		errorString = (CHARPTR)"GL_OUT_OF_MEMORY";
 		break;
 	default:
-		errorString = "Unknown Error";
+		errorString = (CHARPTR)"Unknown Error";
 		break;
 	}
 	return errorString;
@@ -307,7 +309,7 @@ BOOL CUIOGLWindow::initWindow(void)
 		}
 		else
 		{
-			initFail("Could not set up rendering context.");
+			initFail((CHARPTR)"Could not set up rendering context.");
 		}
 	}
 	return FALSE;
