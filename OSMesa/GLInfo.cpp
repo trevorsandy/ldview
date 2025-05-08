@@ -12,6 +12,7 @@
 // CREATED: 2005-10-04
 // UPDATED: 2013-03-06
 // UPDATED: 2017-06-20 by Trevor SANDY (add fbo support details, additional tracked parameters)
+// UPDATED: 2025-05-03 by Trevor SANDY (add EGL support)
 //
 // Copyright (c) 2005-2013 Song Ho Ahn
 ///////////////////////////////////////////////////////////////////////////////
@@ -290,6 +291,275 @@ void GLInfo::getGLInfo(unsigned int param)
 }
 
 
+
+///////////////////////////////////////////////////////////////////////////////
+// print OpenGL  EGL info to screen and save to a file
+// These functions must be called after GL EGL rendering context opened.
+///////////////////////////////////////////////////////////////////////////////
+#if defined (_OSMESA) && !defined (__APPLE__)
+static void assertEGLError(const std::string& msg)
+{
+    EGLint error = eglGetError();
+
+    if (error != EGL_SUCCESS)
+    {
+        std::stringstream ss;
+        ss << "EGL error - 0x" << std::hex << error << " at " << msg;
+        switch(error)
+        {
+            case  EGL_BAD_ATTRIBUTE : ss << " (EGL_BAD_ATTRIBUTE)"; break;
+            case  EGL_BAD_CONFIG : ss << " (EGL_BAD_CONFIG)"; break;
+        }
+        throw std::runtime_error(ss.str());
+    }
+}
+
+void GLInfo::printEGLConfigs(EGLDisplay &d)
+{
+    if (!d)
+    {
+        std::cout << "EGL error - display not provided.\nDone.\n" << std::endl;
+        return;
+    }
+    EGLint i;
+    EGLint numConfigs;
+    EGLConfig *configs = 0;
+    eglGetConfigs(d, NULL, 0, &numConfigs);
+    assertEGLError("eglGetConfigs");
+    configs = (EGLConfig*)malloc(sizeof(EGLConfig)*numConfigs);
+    eglGetConfigs(d,configs,numConfigs,&numConfigs);
+    assertEGLError("eglGetConfigs");
+
+    printf("Configurations:\n");
+    printf(" id - Config ID\n");
+    printf(" sz - Buffer Size\n");
+    printf("  l - Level\n");
+    printf("  b - Double Buffer\n");
+    printf(" ro - Stereo\n");
+    printf("  r - Colour Buffer Red\n");
+    printf("  g - Colour Buffer Green\n");
+    printf("  b - Colour Buffer Blue\n");
+    printf("  a - Colour Buffer Alpha\n");
+    printf(" th - Depth Buffer\n");
+    printf(" cl - Stencil Buffer\n");
+    printf("... - surfaces: Window(win), Pixel Buffer(pb), Pixmap(pix)\n");
+    printf("... - type: GL, ES, ES2, ES3, VC, XX (undefined)\n");
+    printf("Number of configurations %d\n", numConfigs);
+    printf("-------------------------------------------------------------\n");
+    printf("     bf lv d st colorbuffer dp st   supported    renderable  \n");
+    printf("  id sz  l b ro  r  g  b  a th cl   surfaces     type        \n");
+    printf("-------------------------------------------------------------\n");
+    for (i = 0; i < numConfigs; i++) {
+        EGLint id, size, level;
+        EGLint red, green, blue, alpha;
+        EGLint depth, stencil;
+        EGLint surfaces, renderable;
+        EGLint doubleBuf = 1, stereo = 0;
+        char surfString[100] = "";
+        char rndTypString[100] = "";
+
+        eglGetConfigAttrib(d, configs[i], EGL_CONFIG_ID, &id);
+        eglGetConfigAttrib(d, configs[i], EGL_BUFFER_SIZE, &size);
+        eglGetConfigAttrib(d, configs[i], EGL_LEVEL, &level);
+
+        eglGetConfigAttrib(d, configs[i], EGL_RED_SIZE, &red);
+        eglGetConfigAttrib(d, configs[i], EGL_GREEN_SIZE, &green);
+        eglGetConfigAttrib(d, configs[i], EGL_BLUE_SIZE, &blue);
+        eglGetConfigAttrib(d, configs[i], EGL_ALPHA_SIZE, &alpha);
+        eglGetConfigAttrib(d, configs[i], EGL_DEPTH_SIZE, &depth);
+        eglGetConfigAttrib(d, configs[i], EGL_STENCIL_SIZE, &stencil);
+        eglGetConfigAttrib(d, configs[i], EGL_SURFACE_TYPE, &surfaces);
+        eglGetConfigAttrib(d, configs[i], EGL_RENDERABLE_TYPE, &renderable);
+
+        if (surfaces & EGL_WINDOW_BIT)
+            strncat(surfString, "win,", 5);
+        if (surfaces & EGL_PBUFFER_BIT)
+            strncat(surfString, "pb,", 4);
+        if (surfaces & EGL_PIXMAP_BIT)
+            strncat(surfString, "pix,", 5);
+        if (strlen(surfString) > 0)
+            surfString[strlen(surfString) - 1] = 0;
+
+        if (renderable & EGL_OPENGL_BIT)
+            strncat(rndTypString, "gl,", 4);
+        if (renderable & EGL_OPENGL_ES_BIT)
+            strncat(rndTypString, "es,", 4);
+        if (renderable & EGL_OPENGL_ES2_BIT)
+            strncat(rndTypString, "es2,", 5);
+        if (renderable & EGL_OPENGL_ES3_BIT)
+            strncat(rndTypString, "es3,", 5);
+        if (renderable & EGL_OPENVG_BIT)
+            strncat(rndTypString, "vg,", 4);
+        if (strlen(rndTypString) == 0)
+            strncat(rndTypString, "xx,", 4);
+        if (strlen(rndTypString) > 0)
+            rndTypString[strlen(rndTypString) - 1] = 0;
+
+        printf("0x%02x %2d %2d %c  %c %2d %2d %2d %2d %2d %2d   %-12s %-19s\n",
+               id, size, level,
+               doubleBuf ? 'y' : '.',
+               stereo ? 'y' : '.',
+               red, green, blue, alpha,
+               depth, stencil, surfString,
+               rndTypString);
+    }
+    free(configs);
+    printf("Done.\n");
+}
+
+std::string longtostring(long value)
+{
+    char buf[32];
+
+    snprintf(buf, sizeof(buf), "%ld", value);
+    return buf;
+}
+
+void GLInfo::printEGLInfo(EGLDisplay& display, EGLConfig& config)
+{
+    EGLBoolean result;
+    EGLint value;
+
+    std::stringstream ss;
+    std::string failed("get attribute failed");
+
+    // EGL info
+    ss << std::endl; // blank line
+    ss << "OpenGL-ES Driver Info" << std::endl;
+    ss << "==========================" << std::endl;
+    if (!display)
+    {
+        ss << "EGL error - display not provided." << std::endl;
+        ss << std::endl; // blank line
+        std::cout << ss.str();
+        return;
+    }
+    // headers
+    std::string str, surftype;
+    str = eglQueryString(display, EGL_VENDOR);
+    this->vendor = str;
+    str = eglQueryString(display, EGL_VERSION);
+    this->version = str;
+    str = eglQueryString(display, EGL_CLIENT_APIS);
+    this->renderer = str;
+    str = eglQueryString(display, EGL_EXTENSIONS);
+    if(str.size() > 0)
+    {
+        char* str2 = new char[str.size() + 1];
+        strcpy(str2, str.c_str());
+        char* tok = strtok(str2, " ");
+        while(tok)
+        {
+            this->extensions.push_back(tok);
+            tok = strtok(0, " ");
+        }
+        delete [] str2;
+    }
+    // sort extensions
+    std::sort(this->extensions.begin(), this->extensions.end());
+
+    // print info
+    ss << "Vendor: " << this->vendor << std::endl;
+    ss << "Version: " << this->version << std::endl;
+    ss << "API: " << this->renderer << std::endl;
+    ss << std::endl; // blank line
+
+    // configuration attributes
+    if (config)
+    {
+        ss << "Configuration:" << std::endl;
+        ss << "--------------------------" << std::endl;
+        result = eglGetConfigAttrib(display,config,EGL_CONFIG_ID,&value);
+        assertEGLError("eglGetConfigAttrib EGL_CONFIG_ID");
+        ss << "EGL_CONFIG_ID " <<  (result ? longtostring(value) : failed) << std::endl;
+
+        result = eglGetConfigAttrib(display,config,EGL_RED_SIZE,&value);
+        assertEGLError("eglGetConfigAttrib EGL_RED_SIZE");
+        ss << "EGL_RED_SIZE " <<  (result ? longtostring(value) : failed) << std::endl;
+        result = eglGetConfigAttrib(display,config,EGL_GREEN_SIZE,&value);
+        assertEGLError("eglGetConfigAttrib EGL_GREEN_SIZE");
+        ss << "EGL_GREEN_SIZE " <<  (result ? longtostring(value) : failed) << std::endl;
+        result = eglGetConfigAttrib(display,config,EGL_BLUE_SIZE,&value);
+        assertEGLError("eglGetConfigAttrib EGL_BLUE_SIZE");
+        ss << "EGL_BLUE_SIZE " <<  (result ? longtostring(value) : failed) << std::endl;
+        result = eglGetConfigAttrib(display,config,EGL_ALPHA_SIZE,&value);
+        assertEGLError("eglGetConfigAttrib EGL_ALPHA_SIZE");
+        ss << "EGL_ALPHA_SIZE " <<  (result ? longtostring(value) : failed) << std::endl;
+        result = eglGetConfigAttrib(display,config,EGL_DEPTH_SIZE,&value);
+        assertEGLError("eglGetConfigAttrib EGL_DEPTH_SIZE");
+        ss << "EGL_DEPTH_SIZE " <<  (result ? longtostring(value) : failed) << std::endl;
+        result = eglGetConfigAttrib(display,config,EGL_STENCIL_SIZE,&value);
+        assertEGLError("eglGetConfigAttrib EGL_STENCIL_SIZE");
+        ss << "EGL_STENCIL_SIZE " <<  (result ? longtostring(value) : failed) << std::endl;
+        result = eglGetConfigAttrib(display,config,EGL_LEVEL,&value);
+        assertEGLError("eglGetConfigAttrib EGL_LEVEL");
+        ss << "EGL_LEVEL " <<  (result ? longtostring(value) : failed) << std::endl;
+        result = eglGetConfigAttrib(display,config,EGL_BUFFER_SIZE,&value);
+        assertEGLError("eglGetConfigAttrib EGL_BUFFER_SIZE");
+        ss << "EGL_BUFFER_SIZE " <<  (result ? longtostring(value) : failed) << std::endl;
+        result = eglGetConfigAttrib(display,config,EGL_SAMPLE_BUFFERS,&value);
+        assertEGLError("eglGetConfigAttrib EGL_SAMPLE_BUFFERS");
+        ss << "EGL_SAMPLE_BUFFERS " <<  (result ? longtostring(value) : failed) << std::endl;
+        result = eglGetConfigAttrib(display,config,EGL_SAMPLES,&value);
+        assertEGLError("eglGetConfigAttrib EGL_SAMPLES");
+        ss << "EGL_SAMPLES " <<  (result ? longtostring(value) : failed) << std::endl;
+        result = eglGetConfigAttrib(display,config,EGL_CONFIG_CAVEAT,&value);
+        assertEGLError("eglGetConfigAttrib EGL_CONFIG_CAVEAT");
+        if (result)
+            switch(value)
+            {
+                case  EGL_NONE : ss << "EGL_CONFIG_CAVEAT EGL_NONE" << std::endl; break;
+                case  EGL_SLOW_CONFIG : ss << "EGL_CONFIG_CAVEAT EGL_SLOW_CONFIG" << std::endl; break;
+            }
+        else
+            ss << "EGL_CONFIG_CAVEAT" << failed << std::endl;
+        result = eglGetConfigAttrib(display,config,EGL_MAX_PBUFFER_WIDTH,&value);
+        assertEGLError("eglGetConfigAttrib EGL_MAX_PBUFFER_WIDTH");
+        ss << "EGL_MAX_PBUFFER_WIDTH " <<  (result ? longtostring(value) : failed) << std::endl;
+        result = eglGetConfigAttrib(display,config,EGL_MAX_PBUFFER_HEIGHT,&value);
+        assertEGLError("eglGetConfigAttrib EGL_MAX_PBUFFER_HEIGHT");
+        ss << "EGL_MAX_PBUFFER_HEIGHT " <<  (result ? longtostring(value) : failed) << std::endl;
+        result = eglGetConfigAttrib(display,config,EGL_MAX_PBUFFER_PIXELS,&value);
+        assertEGLError("eglGetConfigAttrib EGL_MAX_PBUFFER_PIXELS");
+        ss << "EGL_MAX_PBUFFER_PIXELS " <<  (result ? longtostring(value) : failed) << std::endl;
+        result = eglGetConfigAttrib(display,config,EGL_NATIVE_RENDERABLE,&value);
+        assertEGLError("eglGetConfigAttrib EGL_NATIVE_RENDERABLE");
+        ss << "EGL_NATIVE_RENDERABLE " << (result ? (value ? "true" : "false") : failed) << std::endl;
+        result = eglGetConfigAttrib(display,config,EGL_NATIVE_VISUAL_ID,&value);
+        assertEGLError("eglGetConfigAttrib EGL_NATIVE_VISUAL_ID");
+        ss << "EGL_NATIVE_VISUAL_ID " <<  (result ? longtostring(value) : failed) << std::endl;
+        result = eglGetConfigAttrib(display,config,EGL_NATIVE_VISUAL_TYPE,&value);
+        assertEGLError("eglGetConfigAttrib EGL_NATIVE_VISUAL_TYPE");
+        ss << "EGL_NATIVE_VISUAL_TYPE " <<  (result ? longtostring(value) : failed) << std::endl;
+        result = eglGetConfigAttrib(display,config,EGL_SURFACE_TYPE,&value);
+        assertEGLError("eglGetConfigAttrib EGL_SURFACE_TYPE");
+        if (value & EGL_WINDOW_BIT)
+            surftype = "Window";
+        if (value & EGL_PBUFFER_BIT)
+            surftype = "Pixel Buffer";
+        if (value & EGL_PIXMAP_BIT)
+            surftype ="Pixmap";
+        ss << "EGL_SURFACE_TYPE " <<  (result ? surftype+" ("+longtostring(value)+")" : failed) << std::endl;
+        result = eglGetConfigAttrib(display,config,EGL_TRANSPARENT_TYPE,&value);
+        assertEGLError("eglGetConfigAttrib EGL_TRANSPARENT_TYPE");
+        ss << "EGL_TRANSPARENT_TYPE " <<  (result ? longtostring(value) : failed) << std::endl;
+        ss << std::endl; // blank line
+    } else {
+        ss << "EGL error - config not provided." << std::endl;
+        ss << std::endl; // blank line
+    }
+
+    // extensions
+    ss << "Extensions:" << std::endl;
+    ss << "Number of Extensions: " << this->extensions.size() << std::endl;
+    ss << "==========================" << std::endl;
+    for(unsigned int i = 0; i < this->extensions.size(); ++i)
+        ss << this->extensions.at(i) << std::endl;
+    ss << "==========================" << std::endl;
+
+    std::cout << ss.str();
+}
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // check if the video card support a certain extension
