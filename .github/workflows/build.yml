@@ -48,12 +48,12 @@ jobs:
       - name: Build LDView
         run: |
           if [ ! -d "${LDV_DIST_DIR_CREATE}" ]; then mkdir -p "${LDV_DIST_DIR_CREATE}" && echo "${LDV_DIST_DIR_CREATE} created."; fi
-          qmake -v; $(cd QT ; sed -i 's/kdelibs5-dev, //g' debian/control)
+          qmake -v
           qmake CONFIG+=3RD_PARTY_INSTALL=../${LDV_DIST_DIR} CONFIG+=release CONFIG+=BUILD_CUI_ONLY CONFIG+=USE_SYSTEM_LIBS CONFIG+=BUILD_CHECK LDView.pro
           make && make install
 
   build-windows:
-    # if: ${{ false }} # uncomment to disable
+    if: ${{ false }} # uncomment to disable
     runs-on: windows-2022
     steps:
       - name: Checkout
