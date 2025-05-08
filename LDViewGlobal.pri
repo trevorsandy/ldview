@@ -49,24 +49,30 @@ contains(DEFINES, _QT) {
     BUILD   += QT
 } else: contains(DEFINES, _OSMESA) {
     POSTFIX  = -osmesa
-    BUILD   += OSMESA
     QT      -= core
-
-    # same more funky stuff to get the local library prefix - all this just to build on OBS' RHEL
-    OSMESA_ARG = $$find(CONFIG, USE_OSMESA_LOCAL.*)
-    !isEmpty(OSMESA_ARG) {
-        CONFIG -= $$OSMESA_ARG
-        CONFIG += $$section(OSMESA_ARG, =, 0, 0)
-        isEmpty(OSMESA_LOCAL_PREFIX_): OSMESA_LOCAL_PREFIX_ = $$section(OSMESA_ARG, =, 1, 1)
-        !exists($${OSMESA_LOCAL_PREFIX_}): message("~~~ ERROR - OSMesa path not found ~~~")
-    }
-
-    USE_OSMESA_STATIC {
-        TARGET_VENDOR_VAR = $$(TARGET_VENDOR)
-        contains(HOST, Arch):PLATFORM = arch
-        else: contains(HOST, Fedora):PLATFORM = fedora
-        else:!isEmpty(TARGET_VENDOR_VAR):PLATFORM = $$lower($$TARGET_VENDOR_VAR)
-        else: message("~~~ ERROR - PLATFORM not defined ~~~")
+    USE_EGL {
+        DEFINES += __USE_EGL
+        #POSTFIX  = -egl
+        BUILD   += EGL
+    } else {
+        BUILD   += OSMESA
+        #POSTFIX  = -osmesa
+        # same more funky stuff to get the local library prefix - all this just to build on OBS' RHEL
+        OSMESA_ARG = $$find(CONFIG, USE_OSMESA_LOCAL.*)
+        !isEmpty(OSMESA_ARG) {
+            CONFIG -= $$OSMESA_ARG
+            CONFIG += $$section(OSMESA_ARG, =, 0, 0)
+            isEmpty(OSMESA_LOCAL_PREFIX_): OSMESA_LOCAL_PREFIX_ = $$section(OSMESA_ARG, =, 1, 1)
+            !exists($${OSMESA_LOCAL_PREFIX_}): message("~~~ ERROR - OSMesa path not found ~~~")
+        }
+    
+        USE_OSMESA_STATIC {
+            TARGET_VENDOR_VAR = $$(TARGET_VENDOR)
+            contains(HOST, Arch):PLATFORM = arch
+            else: contains(HOST, Fedora):PLATFORM = fedora
+            else:!isEmpty(TARGET_VENDOR_VAR):PLATFORM = $$lower($$TARGET_VENDOR_VAR)
+            else: message("~~~ ERROR - PLATFORM not defined ~~~")
+        }
     }
 } else:CUI_WGL {
     DEFINES += _LP3D_CUI_WGL
@@ -196,6 +202,8 @@ unix|msys {
         LIB_GLU    = GLU
         LIB_GL     = GL
     }
+    LIB_EGL        = EGL
+    LIB_GLEW       = glew32
     LIB_JPEG       = jpeg
     LIB_GL2PS      = gl2ps
     LIB_Z          = z
@@ -269,6 +277,8 @@ unix|msys {
     LIB_OSMESA    = osmesa
     LIB_GLU       = glu32
     LIB_GL        = opengl32
+    LIB_EGL       = EGL
+    LIB_GLEW      = glew32
     LIB_MINIZIP   = minizip
     LIB_GL2PS     = gl2ps
     LIB_TINYXML   = tinyxml_STL
@@ -314,10 +324,12 @@ MINIZIP_LIBDIR      = -L$${LIBDIR_}
 ZLIB_INC            = $${LIBINC_}
 ZLIB_LIBDIR         = -L$${LIBDIR_}
 
-OSMESA_INC          = $${LIBINC_}
-OSMESA_LIBDIR       = -L$${LIBDIR_}
-OSMESA_LDLIBS       = $${LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_S} \
+!USE_EGL {
+    OSMESA_INC      = $${LIBINC_}
+    OSMESA_LIBDIR   = -L$${LIBDIR_}
+    OSMESA_LDLIBS   = $${LIBDIR_}/lib$${LIB_OSMESA}.$${EXT_S} \
                       $${LIBDIR_}/lib$${LIB_GLU}.$${EXT_S}
+}
 
 # Update Libraries
 # ===============================
@@ -377,7 +389,7 @@ USE_3RD_PARTY_LIBS {
                 $${GL2PS_INC} \
                 $${ZLIB_INC}
 
-    contains(BUILD, OSMESA): LIBS_INC += $${OSMESA_INC}
+    contains(BUILD, OSMESA):!USE_EGL: LIBS_INC += $${OSMESA_INC}
 
     LIBS_DIR =  $${PNG_LIBDIR} \
                 $${JPEG_LIBDIR} \
@@ -387,7 +399,7 @@ USE_3RD_PARTY_LIBS {
                 $${GL2PS_LIBDIR} \
                 $${ZLIB_LIBDIR}
 
-    contains(BUILD, OSMESA): LIBS_DIR += $${OSMESA_LIBDIR}
+    contains(BUILD, OSMESA):!USE_EGL: LIBS_DIR += $${OSMESA_LIBDIR}
 }
 
 win32-msvc* {
@@ -466,6 +478,19 @@ unix|msys {
         SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/lib
     }
 
+    # always using system libEGL
+    !macx {
+        EGL_INC         = $${SYS_LIBINC_}
+        EGL_LIBDIR      = -L$${SYS_LIBDIR_}
+        !msys {
+            USE_EGL: \
+            EGL_LDLIBS += -l$${LIB_GLU}
+            EGL_LDLIBS += -l$${LIB_EGL}
+            USE_EGL: \
+            EGL_LDLIBS += -l$${LIB_GL}
+        }
+    }
+
     # ===============================
     USE_3RD_PARTY_LIBS {
         # detect system libraries
@@ -481,7 +506,7 @@ unix|msys {
         USE_SYSTEM_Z: exists($${SYS_LIBDIR_}/lib$${LIB_Z}.$${EXT_D}): USE_SYSTEM_Z_LIB = YES
 
         # override 3rd party library paths
-         contains(BUILD, OSMESA): contains(USE_SYSTEM_OSMESA_LIB, YES) {
+        contains(BUILD, OSMESA): contains(USE_SYSTEM_OSMESA_LIB, YES): !USE_EGL {
             # use sytem lib name
             LIB_OSMESA              = OSMesa
             # remove 3rdParty lib reference
@@ -616,11 +641,13 @@ unix|msys {
 
         # reset OSMESA library entries
         macx {
-            OSMESA_INC          = $${SYS_LIBINC_X11_}
-            OSMESA_LIBDIR       = -L$${SYS_LIBDIR_X11_}
-            OSMESA_LDLIBS       = $${SYS_LIBDIR_X11_}/lib$${LIB_OSMESA}.$${EXT_D} \
+            !USE_EGL {
+                OSMESA_INC      = $${SYS_LIBINC_X11_}
+                OSMESA_LIBDIR   = -L$${SYS_LIBDIR_X11_}
+                OSMESA_LDLIBS   = $${SYS_LIBDIR_X11_}/lib$${LIB_OSMESA}.$${EXT_D} \
                                   $${SYS_LIBDIR_X11_}/lib$${LIB_GLU}.$${EXT_D}
-        } else: contains(BUILD, OSMESA) {
+            }
+        } else: contains(BUILD, OSMESA):!USE_EGL {
             USE_OSMESA_STATIC {
                 OSMESA_INC      = $$system($${3RD_PREFIX}/mesa/$${PLATFORM}/osmesa-config --cflags)
                 isEmpty(OSMESA_INC): message("~~~ OSMESA - ERROR OSMesa include path not found ~~~")
@@ -738,12 +765,19 @@ unix|msys {
         }
     } # USE_SYSTEM_LIBS
 
-    # MSYS2 explicit <lib>.dll.a OSMesa lib paths
-    msys {
-        OSMESA_LDLIBS = -l$${LIB_GLU} \
-                        $${SYS_LIBDIR_}/$${LIB_OSMESA}.$${EXT_D}.$${EXT_S} \
-                        $${SYS_LIBDIR_}/$${LIB_GL}.$${EXT_D}.$${EXT_S} \
-                        -lgdi32
+    # MSYS2 explicit <lib>.dll.a OSMesa and EGL lib paths
+    msys: {
+        !USE_EGL:!USE_OSMESA_STATIC: \
+        OSMESA_LDLIBS = -l$${LIB_GLEW} \
+                        -l$${LIB_GLU} \
+                          $${SYS_LIBDIR_}/$${LIB_OSMESA}.$${EXT_D}.$${EXT_S} \
+                          $${SYS_LIBDIR_}/$${LIB_GL}.$${EXT_D}.$${EXT_S}
+        USE_EGL: \
+        EGL_LDLIBS   += -l$${LIB_GLU}
+        EGL_LDLIBS   +=   $${SYS_LIBDIR_}/lib$${LIB_EGL}.$${EXT_D}.$${EXT_S}
+        USE_EGL: \
+        EGL_LDLIBS   += -l$${LIB_GL}
+        EGL_LDLIBS   += -lgdi32
     }
 }
 
@@ -833,12 +867,12 @@ unix {
     # slurm is media.peeron.com
     OSTYPE = $$system(hostname)
     contains(OSTYPE, slurm): \
-    OSMESA_INC  += ../../Mesa-7.0.2/include
+    !USE_EGL: OSMESA_INC  += ../../Mesa-7.0.2/include
 
     OSTYPE = $$system(hostname | cut -d. -f2-)
     contains(OSTYPE, pair.com) {
         LIBS_INC    +=  /usr/local/include
-        OSMESA_INC  += $$_PRO_FILE_PWD_/../../Mesa-7.11/include
+        !USE_EGL: OSMESA_INC  += $$_PRO_FILE_PWD_/../../Mesa-7.11/include
         DEFINES += _GL_POPCOLOR_BROKEN
     }
 }
@@ -855,8 +889,7 @@ QMAKE_CFLAGS_WARN_ON = \
                      -Wno-sign-compare \
                      -Wno-uninitialized \
                      -Wno-unused-result \
-                     -Wno-implicit-fallthrough \
-                     -Wno-stringop-overflow
+                     -Wno-implicit-fallthrough
 CUI_WGL: \
 QMAKE_CFLAGS_WARN_ON += \
                      -Wno-missing-field-initializers \
@@ -885,9 +918,11 @@ QMAKE_CFLAGS_WARN_ON += \
                      -Wno-for-loop-analysis \
                      -Wno-int-conversion \
                      -Wno-reorder
+QMAKE_CXXFLAGS_WARN_ON += $${QMAKE_CFLAGS_WARN_ON}
 } else {
 QMAKE_CFLAGS_WARN_ON += \
+                     -Wno-stringop-overflow
                      -Wno-clobbered
-}
 QMAKE_CXXFLAGS_WARN_ON += $${QMAKE_CFLAGS_WARN_ON}
+}
 } # unix|msys
