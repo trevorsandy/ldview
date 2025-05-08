@@ -45,53 +45,54 @@ LDVExtensionsSetup *LDVExtensionsSetup::sm_extensionsSetup = NULL;
 LDVExtensionsSetup::LDVExtensionsSetupCleanup
 	LDVExtensionsSetup::sm_extensionsSetupCleanup;
 
+typedef char * CHARPTR;
 
 static char *pfIntAttribNames[] =
 {
-	"WGL_MAX_PBUFFER_WIDTH_ARB",
-	"WGL_DRAW_TO_WINDOW_ARB",
-	"WGL_DRAW_TO_BITMAP_ARB",
-	"WGL_ACCELERATION_ARB",
-	"WGL_NEED_PALETTE_ARB",
-	"WGL_NEED_SYSTEM_PALETTE_ARB",
-	"WGL_SWAP_LAYER_BUFFERS_ARB",
-	"WGL_SWAP_METHOD_ARB",
-	"WGL_NUMBER_OVERLAYS_ARB",
-	"WGL_NUMBER_UNDERLAYS_ARB",
-	"WGL_TRANSPARENT_ARB",
-	"WGL_TRANSPARENT_RED_VALUE_ARB",
-	"WGL_TRANSPARENT_GREEN_VALUE_ARB",
-	"WGL_TRANSPARENT_BLUE_VALUE_ARB",
-	"WGL_TRANSPARENT_ALPHA_VALUE_ARB",
-	"WGL_TRANSPARENT_INDEX_VALUE_ARB",
-	"WGL_SHARE_DEPTH_ARB",
-	"WGL_SHARE_STENCIL_ARB",
-	"WGL_SHARE_ACCUM_ARB",
-	"WGL_SUPPORT_GDI_ARB",
-	"WGL_SUPPORT_OPENGL_ARB",
-	"WGL_DOUBLE_BUFFER_ARB",
-	"WGL_STEREO_ARB",
-	"WGL_PIXEL_TYPE_ARB",
-	"WGL_COLOR_BITS_ARB",
-	"WGL_RED_BITS_ARB",
-	"WGL_RED_SHIFT_ARB",
-	"WGL_GREEN_BITS_ARB",
-	"WGL_GREEN_SHIFT_ARB",
-	"WGL_BLUE_BITS_ARB",
-	"WGL_BLUE_SHIFT_ARB",
-	"WGL_ALPHA_BITS_ARB",
-	"WGL_ALPHA_SHIFT_ARB",
-	"WGL_ACCUM_BITS_ARB",
-	"WGL_ACCUM_RED_BITS_ARB",
-	"WGL_ACCUM_GREEN_BITS_ARB",
-	"WGL_ACCUM_BLUE_BITS_ARB",
-	"WGL_ACCUM_ALPHA_BITS_ARB",
-	"WGL_DEPTH_BITS_ARB",
-	"WGL_STENCIL_BITS_ARB",
-	"WGL_AUX_BUFFERS_ARB",
-	"WGL_DRAW_TO_PBUFFER_ARB",
-	"WGL_SAMPLE_BUFFERS_EXT",
-	"WGL_SAMPLES_EXT",
+	(CHARPTR)"WGL_MAX_PBUFFER_WIDTH_ARB",
+	(CHARPTR)"WGL_DRAW_TO_WINDOW_ARB",
+	(CHARPTR)"WGL_DRAW_TO_BITMAP_ARB",
+	(CHARPTR)"WGL_ACCELERATION_ARB",
+	(CHARPTR)"WGL_NEED_PALETTE_ARB",
+	(CHARPTR)"WGL_NEED_SYSTEM_PALETTE_ARB",
+	(CHARPTR)"WGL_SWAP_LAYER_BUFFERS_ARB",
+	(CHARPTR)"WGL_SWAP_METHOD_ARB",
+	(CHARPTR)"WGL_NUMBER_OVERLAYS_ARB",
+	(CHARPTR)"WGL_NUMBER_UNDERLAYS_ARB",
+	(CHARPTR)"WGL_TRANSPARENT_ARB",
+	(CHARPTR)"WGL_TRANSPARENT_RED_VALUE_ARB",
+	(CHARPTR)"WGL_TRANSPARENT_GREEN_VALUE_ARB",
+	(CHARPTR)"WGL_TRANSPARENT_BLUE_VALUE_ARB",
+	(CHARPTR)"WGL_TRANSPARENT_ALPHA_VALUE_ARB",
+	(CHARPTR)"WGL_TRANSPARENT_INDEX_VALUE_ARB",
+	(CHARPTR)"WGL_SHARE_DEPTH_ARB",
+	(CHARPTR)"WGL_SHARE_STENCIL_ARB",
+	(CHARPTR)"WGL_SHARE_ACCUM_ARB",
+	(CHARPTR)"WGL_SUPPORT_GDI_ARB",
+	(CHARPTR)"WGL_SUPPORT_OPENGL_ARB",
+	(CHARPTR)"WGL_DOUBLE_BUFFER_ARB",
+	(CHARPTR)"WGL_STEREO_ARB",
+	(CHARPTR)"WGL_PIXEL_TYPE_ARB",
+	(CHARPTR)"WGL_COLOR_BITS_ARB",
+	(CHARPTR)"WGL_RED_BITS_ARB",
+	(CHARPTR)"WGL_RED_SHIFT_ARB",
+	(CHARPTR)"WGL_GREEN_BITS_ARB",
+	(CHARPTR)"WGL_GREEN_SHIFT_ARB",
+	(CHARPTR)"WGL_BLUE_BITS_ARB",
+	(CHARPTR)"WGL_BLUE_SHIFT_ARB",
+	(CHARPTR)"WGL_ALPHA_BITS_ARB",
+	(CHARPTR)"WGL_ALPHA_SHIFT_ARB",
+	(CHARPTR)"WGL_ACCUM_BITS_ARB",
+	(CHARPTR)"WGL_ACCUM_RED_BITS_ARB",
+	(CHARPTR)"WGL_ACCUM_GREEN_BITS_ARB",
+	(CHARPTR)"WGL_ACCUM_BLUE_BITS_ARB",
+	(CHARPTR)"WGL_ACCUM_ALPHA_BITS_ARB",
+	(CHARPTR)"WGL_DEPTH_BITS_ARB",
+	(CHARPTR)"WGL_STENCIL_BITS_ARB",
+	(CHARPTR)"WGL_AUX_BUFFERS_ARB",
+	(CHARPTR)"WGL_DRAW_TO_PBUFFER_ARB",
+	(CHARPTR)"WGL_SAMPLE_BUFFERS_EXT",
+	(CHARPTR)"WGL_SAMPLES_EXT",
 };
 static int pfIntAttribs[] =
 {
@@ -204,7 +205,7 @@ BOOL LDVExtensionsSetup::initWindow(void)
 		// extensions have the force flag set to true.  Otherwise, if the
 		// program starts with the ignore flag set, and it later gets cleared,
 		// the function pointers won't be loaded.
-		if (checkForWGLExtension("WGL_ARB_pixel_format", true))
+		if (checkForWGLExtension((CHARPTR)"WGL_ARB_pixel_format", true))
 		{
 			sm_wglGetPixelFormatAttribivARB = (PFNWGLGETPIXELFORMATATTRIBIVEXTPROC)
 				wglGetProcAddress("wglGetPixelFormatAttribivARB");
@@ -372,14 +373,14 @@ bool LDVExtensionsSetup::haveMultisampleExtension(bool force)
 	bool ignore = TCUserDefaults::longForKey(IGNORE_MULTISAMPLE_KEY, 0, false)
 		!= 0;
 
-	return (!ignore || force) && checkForWGLExtension("WGL_ARB_multisample");
+	return (!ignore || force) && checkForWGLExtension((CHARPTR)"WGL_ARB_multisample");
 }
 
 bool LDVExtensionsSetup::havePixelBufferExtension(bool force)
 {
 	bool ignore = TCUserDefaults::longForKey(IGNORE_PBUFFER_KEY, 0, false) != 0;
 
-	return (!ignore || force) && checkForWGLExtension("WGL_ARB_pbuffer", force);
+	return (!ignore || force) && checkForWGLExtension((CHARPTR)"WGL_ARB_pbuffer", force);
 }
 
 //bool LDVExtensionsSetup::haveVARExtension(bool force)
@@ -393,7 +394,7 @@ bool LDVExtensionsSetup::havePixelFormatExtension(bool force)
 	bool ignore = TCUserDefaults::longForKey(IGNORE_PIXEL_FORMAT_KEY, 0, false)
 		!= 0;
 
-	return (!ignore || force) && checkForWGLExtension("WGL_ARB_pixel_format");
+	return (!ignore || force) && checkForWGLExtension((CHARPTR)"WGL_ARB_pixel_format");
 }
 
 bool LDVExtensionsSetup::checkForWGLExtension(char* extension, bool force)
