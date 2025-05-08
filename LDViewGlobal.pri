@@ -196,6 +196,8 @@ unix|msys {
         LIB_GLU    = GLU
         LIB_GL     = GL
     }
+    LIB_EGL        = EGL
+    LIB_GLEW       = glew32
     LIB_JPEG       = jpeg
     LIB_GL2PS      = gl2ps
     LIB_Z          = z
@@ -269,6 +271,8 @@ unix|msys {
     LIB_OSMESA    = osmesa
     LIB_GLU       = glu32
     LIB_GL        = opengl32
+    LIB_EGL       = EGL
+    LIB_GLEW      = glew32
     LIB_MINIZIP   = minizip
     LIB_GL2PS     = gl2ps
     LIB_TINYXML   = tinyxml_STL
@@ -465,6 +469,12 @@ unix|msys {
     } else {                                                           # Arch, MSYS2
         SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/lib
     }
+
+    # always using system libEGL
+    EGL_INC             = $${SYS_LIBINC_}
+    EGL_LIBDIR          = -L$${SYS_LIBDIR_}
+    !msys: \
+    EGL_LDLIBS          = -l$${LIB_EGL}
 
     # ===============================
     USE_3RD_PARTY_LIBS {
@@ -738,12 +748,14 @@ unix|msys {
         }
     } # USE_SYSTEM_LIBS
 
-    # MSYS2 explicit <lib>.dll.a OSMesa lib paths
+    # MSYS2 explicit <lib>.dll.a OSMesa and EGL lib paths
     msys {
-        OSMESA_LDLIBS = -l$${LIB_GLU} \
+        OSMESA_LDLIBS = -l$${LIB_GLEW} \
+                        -l$${LIB_GLU} \
                         $${SYS_LIBDIR_}/$${LIB_OSMESA}.$${EXT_D}.$${EXT_S} \
                         $${SYS_LIBDIR_}/$${LIB_GL}.$${EXT_D}.$${EXT_S} \
                         -lgdi32
+        EGL_LDLIBS    = $${SYS_LIBDIR_}/lib$${LIB_EGL}.$${EXT_D}.$${EXT_S}
     }
 }
 
