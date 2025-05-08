@@ -247,11 +247,9 @@ int setupDefaults(char *argv[])
 
 		if(iniFileSet)
 		{
-			// Init settings
-			char *configPath = directoryFromPath(rcFilename);
 			QSettings::setDefaultFormat(QSettings::IniFormat);
-			QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, configPath);
-			printf("Using IniFile %s\n.", rcFilename);
+			if (TCUserDefaults::boolForKey("Info"))
+				printf("Using IniFile %s\n.", rcFilename);
 		}
 	}
 
