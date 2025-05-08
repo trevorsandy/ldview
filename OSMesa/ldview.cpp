@@ -10,6 +10,10 @@
 #if defined (__APPLE__)
 #include <GLUT/glut.h>
 #else  // defined (__APPLE__)
+#include <EGL/egl.h>
+#define EGL_EGLEXT_PROTOTYPES
+#include <EGL/eglext.h>
+//#include <GLES3/gl32.h>
 #include <sstream>
 #include <stdexcept>
 #endif // defined (__APPLE__)
@@ -292,6 +296,125 @@ void assertOpenGLError(const std::string& msg)
 	}
 }
 
+#if !defined (__APPLE__)
+void assertEGLError(const std::string& msg)
+{
+	EGLint error = eglGetError();
+
+	if (error != EGL_SUCCESS)
+	{
+		std::stringstream ss;
+		ss << "EGL error - 0x" << std::hex << error << " at " << msg;
+		switch(error)
+		{
+			case  EGL_BAD_ATTRIBUTE : ss << " (EGL_BAD_ATTRIBUTE)"; break;
+			case  EGL_BAD_CONFIG : ss << " (EGL_BAD_CONFIG)"; break;
+			case  EGL_BAD_DISPLAY : ss << " (EGL_BAD_DISPLAY)"; break;
+			case  EGL_BAD_SURFACE : ss << " (EGL_BAD_SURFACE)"; break;
+			case  EGL_BAD_CONTEXT : ss << " (EGL_BAD_CONTEXT)"; break;
+		}
+		throw std::runtime_error(ss.str());
+	}
+}
+
+void setupEGL(EGLDisplay& display, EGLContext& context, EGLSurface& surface, EGLConfig& config)
+{
+	int width = TCUserDefaults::longForKey("TileWidth", TileWidth, false);
+	int height = TCUserDefaults::longForKey("TileHeight", TileHeight, false);
+	EGLint configNum = 0, eglMajor = 0, eglMinor = 0;
+	const EGLint configAttribs[] = {
+		EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
+		EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
+		EGL_COLOR_BUFFER_TYPE, EGL_RGB_BUFFER,
+		EGL_RED_SIZE, 8,
+		EGL_GREEN_SIZE, 8,
+		EGL_BLUE_SIZE, 8,
+		EGL_ALPHA_SIZE, 8,
+		EGL_DEPTH_SIZE, 24,
+		EGL_STENCIL_SIZE, 8,
+		EGL_BUFFER_SIZE, 24,
+		EGL_NONE,
+	};
+	const EGLint surfaceAttribs[] = {
+		EGL_WIDTH, width,
+		EGL_HEIGHT, height,
+		EGL_NONE,
+	};
+	const EGLint contextAttribs[] = {
+		EGL_NONE,
+	};
+
+	eglBindAPI(EGL_OPENGL_ES_API);
+	assertEGLError("eglBindAPI");
+
+	display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+	assertEGLError("eglGetDisplay");
+	if (display == EGL_NO_DISPLAY)
+	{
+		throw std::runtime_error("EGL error - create a default display failed.");
+	}
+
+	EGLBoolean result = eglInitialize(display, &eglMajor, &eglMinor);
+	assertEGLError("eglInitialize");
+	if (!result)
+	{
+		throw std::runtime_error("EGL error - initialize the default display failed.");
+	}
+	//printf("Debug: EGL Version: v%d.%d\n", eglMajor, eglMinor);
+
+	/*
+	// Debug: Get number of all configs, having gotten display from EGL
+	GLInfo glinfo;
+	glinfo.printEGLConfigs(display);
+	//*/
+
+	result = eglChooseConfig(display, configAttribs, &config, 1, &configNum);
+	assertEGLError("eglChooseConfig");
+	if (!result)
+	{
+		throw std::runtime_error("EGL error - get a config for specified attributes failed.");
+	}
+	//printf("Debug: EGL chosen configuration %d\n", configNum);
+
+	surface = eglCreatePbufferSurface(display, config, surfaceAttribs);
+	assertEGLError("eglCreatePbufferSurface");
+	if (surface == EGL_NO_SURFACE)
+	{
+		throw std::runtime_error("EGL error - create a pixel buffer surface failed.");
+	}
+
+	context = eglCreateContext(display, config, EGL_NO_CONTEXT, contextAttribs);
+	assertEGLError("eglCreateContext");
+	if (context == EGL_NO_CONTEXT)
+	{
+		throw std::runtime_error("EGL error - create a display context failed.");
+	}
+
+	result = eglMakeCurrent(display, surface, surface, context);
+	assertEGLError("eglMakeCurrent");
+	if (!result)
+	{
+		throw std::runtime_error("EGL error - make display, surface and context current failed.");
+	}
+	else
+	{
+		//glViewport(0, 0, width, height);
+		//assertOpenGLError("glViewport");
+
+		GLint viewport[4] = {0};
+		glGetIntegerv(GL_VIEWPORT, viewport);
+		assertOpenGLError("glGetIntegerv");
+		if (viewport[2] != width || viewport[3] != height)
+		{
+			printf("EGL not working!\n");
+			printf("GL_VIEWPORT: %d, %d, %d, %d\n", (int)viewport[0],
+				(int)viewport[1], (int)viewport[2], (int)viewport[3]);
+			throw std::runtime_error("EGL error - initialize GL Viewport failed.");
+		}
+	}
+}
+#endif
+
 void *setupOSMesaContext(OSMesaContext &ctx)
 {
 	void *buffer = NULL;
@@ -345,6 +468,14 @@ int main(int argc, char *argv[])
 	OSMesaContext ctx;
 	int stringTableSize = sizeof(LDViewMessages_bytes);
 	char *stringTable = new char[sizeof(LDViewMessages_bytes) + 1];
+	bool useEGL = false;
+
+#if !defined (__APPLE__)
+	EGLConfig  config  = 0;
+	EGLDisplay display = NULL;
+	EGLContext context = NULL;
+	EGLSurface surface = NULL;
+#endif
 
 	memcpy(stringTable, LDViewMessages_bytes, stringTableSize);
 	stringTable[stringTableSize] = 0;
@@ -364,7 +495,25 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (setupOSMesaContext(ctx) != 0)
+#if !defined (__APPLE__)
+	try
+	{
+		setupEGL(display, context, surface, config);
+		useEGL = true;
+	}
+	catch (std::runtime_error const& e)
+	{
+		printf("%s\n", e.what());
+	}
+	catch (...)
+	{
+	}
+#endif
+
+	if (!useEGL)
+		osmesaBuffer = setupOSMesaContext(ctx);
+
+	if (useEGL || osmesaBuffer)
 	{
 		//ProgressHandler *progressHandler = new ProgressHandler;
 		// LPub3D Mod - print Arguments and/or OpenGL Info
@@ -390,7 +539,12 @@ int main(int argc, char *argv[])
 			{
 				//get OpenGL info
 				GLInfo glinfo;
-				glinfo.printGLInfo();
+#if !defined (__APPLE__)
+				if (useEGL)
+					glinfo.printEGLInfo(display, config);
+				else
+#endif
+					glinfo.printGLInfo();
 			}
 		}
 		if (defaultsOK)
@@ -402,7 +556,15 @@ int main(int argc, char *argv[])
 		}
 		// LPub3D Mod End
 
-		if (osmesaBuffer)
+#if !defined (__APPLE__)
+		if (display != NULL)
+		{
+			eglDestroyContext(display, context);
+			eglDestroySurface(display, surface);
+			eglTerminate(display);
+		}
+#endif
+		if (!useEGL)
 		{
 			OSMesaDestroyContext(ctx);
 			free(osmesaBuffer);

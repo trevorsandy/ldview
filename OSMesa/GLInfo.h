@@ -11,6 +11,7 @@
 // CREATED: 2005-10-04
 // UPDATED: 2013-03-06
 // UPDATED: 2017-06-20 by Trevor SANDY (add fbo support details, additional tracked parameters)
+// UPDATED: 2025-05-03 by Trevor SANDY (add EGL support)
 //
 // Copyright (c) 2005-2013 Song Ho Ahn
 ///////////////////////////////////////////////////////////////////////////////
@@ -20,6 +21,9 @@
 
 #include <string>
 #include <vector>
+#if defined (_OSMESA) && !defined (__APPLE__)
+#include <EGL/egl.h>
+#endif
 
 // struct variable to store OpenGL info
 struct GLInfo
@@ -57,7 +61,11 @@ struct GLInfo
 
     void getGLInfo(unsigned int param=0);                // extract info
     void printGLInfo();                                  // print itself
-    bool isExtensionSupported(const std::string& ext); // check if a extension is supported
+#if defined (_OSMESA) && !defined (__APPLE__)
+    void printEGLInfo(EGLDisplay& d, EGLConfig& c);
+    void printEGLConfigs(EGLDisplay& d);
+#endif
+    bool isExtensionSupported(const std::string& ext);   // check if a extension is supported
 };
 
 #endif
