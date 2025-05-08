@@ -48,7 +48,7 @@ void createConsole(void)
 		HANDLE hStdOut;
 		SECURITY_ATTRIBUTES securityAttributes;
 
-		securityAttributes.nLength = sizeof SECURITY_ATTRIBUTES;
+		securityAttributes.nLength = sizeof(SECURITY_ATTRIBUTES);
 		securityAttributes.lpSecurityDescriptor = NULL;
 		securityAttributes.bInheritHandle = TRUE;
 		hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -424,7 +424,7 @@ static bool setupUserDefaults(
 	bool removableDrive)
 {
 	// LPub3D Mod - ini file	
-	char *appName = "Travis Cobbs/LDView - LPub3D Edition";
+	char *appName = (char*)"Travis Cobbs/LDView - LPub3D Edition";
 	// LPub3D Mod - end
 	char *sessionName;
 	bool retValue = true;
@@ -472,7 +472,7 @@ static bool setupUserDefaults(
 		UCSTR ldrawDir =
 			TCUserDefaults::stringForKeyUC(LDRAWDIR_KEY, NULL, false);
 
-		appName = "Travis Cobbs/LDView Screen Saver";
+		appName = (char*)"Travis Cobbs/LDView Screen Saver";
 		TCUserDefaults::setAppName(appName);
 		if (ldrawDir)
 		{
@@ -580,12 +580,12 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE /*hPrevInstance
 	int retValue;
 	STARTUPINFO startupInfo;
 
-	debugOut("Command Line: <<%ls>>\n", lpCmdLine);
+	debugOut((char*)"Command Line: <<%ls>>\n", lpCmdLine);
 	std::string utf8CmdLine;
 	ucstringtoutf8(utf8CmdLine, lpCmdLine);
 	bool udok = setupUserDefaults(utf8CmdLine.c_str(), screenSaver,
 		isRemovableDrive(hInstance));
-	debugOut("Command Line: <<%ls>>\n", lpCmdLine);
+	debugOut((char*)"Command Line: <<%ls>>\n", lpCmdLine);
 #ifdef _DEBUG
 	int _debugFlag = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
 	_debugFlag |= _CRTDBG_LEAK_CHECK_DF;
