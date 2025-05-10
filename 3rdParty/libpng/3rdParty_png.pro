@@ -5,7 +5,7 @@
 TARGET = png16
 include(../../3rdParty.pri)
 
-message("~~~ libpng.a LIBRARY $${BUILD} ~~~")
+message("~~~ lib$${TARGET}.$${EXT_S} LIBRARY - $${BUILD} ~~~")
 
 # link libpng to libpng16
 #PNG_COMMAND = ln -s $$DESTDIR/libpng16.a $$DESTDIR/libpng.a

@@ -179,7 +179,7 @@ void TCUserDefaults::initAppPath(void)
 	HMODULE hModule = GetModuleHandle(NULL);
 	char programPath[2048];
 
-#ifdef __MINGW64__
+#if defined(__MINGW64__) || defined (_LP3D_CUI_WGL) || defined (_QT)
 	if (GetModuleFileNameA(hModule, programPath, sizeof(programPath)) > 0)
 #else
 	if (GetModuleFileName(hModule, programPath, sizeof(programPath)) > 0)

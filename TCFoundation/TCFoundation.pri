@@ -3,27 +3,31 @@
 ######################################################################
 
 TEMPLATE = lib
-QT 	+= core
-QT 	+= opengl
-QT 	-= gui
-CONFIG 	+= qt
-CONFIG 	+= opengl
-CONFIG	+= thread
+TARGET   = TCFoundation
+QT      -= core
+QT      -= opengl
+QT      -= gui
+CONFIG  -= qt
+CONFIG  -= opengl
+CONFIG  += thread
+CONFIG  += warn_on
 CONFIG  += staticlib
-CONFIG 	+= warn_on
+contains(DEFINES, _QT) {
+QT      += core
+QT      += opengl
+CONFIG  += qt
+CONFIG  += opengl
+}
 
 include(../LDViewGlobal.pri)
 
-message("~~~ libTCFoundation$$POSTFIX.a MODULE $$BUILD ~~~")
+TARGET   = TCFoundation$$POSTFIX
 
-TARGET = TCFoundation$$POSTFIX
+message("~~~ lib$${TARGET}.$${EXT_S} LIBRARY - $$BUILD ~~~")
 
-INCLUDEPATH         += $${PNG_INC}
-INCLUDEPATH         += $${JPEG_INC}
+DEFINES     += HAVE_MINIZIP
 
-DEFINES             += HAVE_MINIZIP
-
-contains(DEFINES, HAVE_MINIZIP): INCLUDEPATH += $${MINIZIP_INC}
+INCLUDEPATH  = . .. $${LIBS_INC}
 
 # Input
 HEADERS += $$PWD/ConvertUTF.h \

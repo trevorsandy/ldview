@@ -5,13 +5,7 @@
 TARGET = minizip
 include(../../3rdParty.pri)
 
-message("~~~ libminizip.a LIBRARY $${BUILD} ~~~")
-
-!USE_SYSTEM_ZLIB {
-	INCLUDEPATH  += $$_PRO_FILE_PWD_/../zlib
-} else {
-    INCLUDEPATH  += $$_PRO_FILE_PWD_/../../include   # for zlib.h and zconf.h
-}
+message("~~~ lib$${TARGET}.$${EXT_S} LIBRARY - $${BUILD} ~~~")
 
 # MacOSX is a flavour of unix.
 macx: DEFINES     += unix
@@ -30,5 +24,5 @@ SOURCES += $$PWD/miniunz.c \
            $$PWD/unzip.c \
            $$PWD/zip.c
 
-win32: SOURCES += $$$PWD/iowin32.c
+win32: SOURCES += $$PWD/iowin32.c
 else:  SOURCES += $$PWD/ioapi.c

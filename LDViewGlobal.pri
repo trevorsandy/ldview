@@ -1,27 +1,3 @@
-# qmake Configuration settings
-# CONFIG+=BUILD_CHECK
-# CONFIG+=BUILD_FLATPAK
-# CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_linux_3rdparty
-# CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_macos_3rdparty
-# CONFIG+=3RD_PARTY_INSTALL=../../lpub3d_windows_3rdparty
-# CONFIG+=USE_3RD_PARTY_LIBS
-# CONFIG+=USE_3RD_PARTY_PREBUILT_3DS     # override USE_3RD_PARTY_3DS to use static pre-built lib3ds.a
-# CONFIG+=USE_3RD_PARTY_PREBUILT_MINIZIP # override USE_3RD_PARTY_MINIZIP to use static pre-built libminizip.a
-# CONFIG+=USE_SYSTEM_LIBS
-# CONFIG+=BUILD_PNG          # override USE_SYSTEM_LIBS for libpng
-# CONFIG+=BUILD_GL2P         # override USE_SYSTEM_LIBS for libgl2ps
-# CONFIG+=BUILD_TINYXML      # override USE_SYSTEM_LIBS for libtinyxml
-# CONFIG+=BUILD_MINIZIP      # override USE_SYSTEM_LIBS for libminizip
-# CONFIG+=BUILD_GUI_ONLY
-# CONFIG+=BUILD_CUI_ONLY
-# CONFIG+=USE_OSMESA_STATIC  # build static OSMesa libraray and use system LLVM library
-# CONFIG+=USE_OSMESA_LOCAL   # use local OSmesa and LLVM libraries - for OBS images w/o OSMesa stuff (e.g. RHEL)
-# CONFIG+=USE_SYSTEM_PNG     # override USE_3RD_PARTY_LIBS for libpng
-# CONFIG+=USE_SYSTEM_JPEG    # override USE_3RD_PARTY_LIBS for libjpeg
-# CONFIG+=USE_SYSTEM_Z       # override USE_3RD_PARTY_LIBS for libz
-# CONFIG+=USE_SYSTEM_OSMESA  # override USE_3RD_PARTY_LIBS for OSMesa
-# CONFIG+=USE_SYSTEM_MINIZIP # override USE_3RD_PARTY_LIBS for libminizip
-
 # LDView global directives
 
 # Get fine-grained host identification
@@ -30,34 +6,72 @@ unix:!macx:HOST = $$system(. /etc/os-release 2>/dev/null; [ -n \"$PRETTY_NAME\" 
 macx:HOST = $$system(echo `sw_vers -productName` `sw_vers -productVersion`)
 isEmpty(HOST):HOST = UNKNOWN HOST
 
+# The ABI version.
+VER_MAJ = 4
+VER_MIN = 5
+VER_PAT = 0
+VER_BLD = 0
+win32: VERSION = $$VER_MAJ"."$$VER_MIN"."$$VER_PAT"."$$VER_BLD  # major.minor.patch.build
+else:  VERSION = $$VER_MAJ"."$$VER_MIN"."$$VER_PAT              # major.minor.patch
+DEFINES += VERSION_INFO=\\\"$$VER_MAJ"."$$VER_MIN"."$$VER_PAT\\\"
+
+static|staticlib { 
+    BUILD  = STATIC 
+} else { 
+    BUILD  = SHARED 
+}
+
 # some funky processing to get the install prefix passed in on the command line
 3RD_ARG = $$find(CONFIG, 3RD_PARTY_INSTALL.*)
 !isEmpty(3RD_ARG): CONFIG -= $$3RD_ARG
 CONFIG += $$section(3RD_ARG, =, 0, 0)
 isEmpty(3RD_PREFIX): 3RD_PREFIX = $$_PRO_FILE_PWD_/$$section(3RD_ARG, =, 1, 1)
-!exists($${3RD_PREFIX}): !BUILD_FLATPAK {
-    message("~~~ ERROR - 3rd party repository path was not found ~~~")
-    message("~~~  DEBUG - 3rd Path: $${3RD_PREFIX} ~~~")
-    message("~~~  DEBUG - Pro Path: $$_PRO_FILE_PWD_ ~~~")
-    message("~~~  DEBUG - Out Path: $$OUT_PWD ~~~")
-    message("~~~  DEBUG - PWD Path: $$PWD ~~~")
+CUI_WGL:!equals(PWD, $${OUT_PWD}): _3RD_PREFIX = ../$${3RD_PREFIX}
+else: _3RD_PREFIX = $${3RD_PREFIX}
+!exists($${_3RD_PREFIX}): !BUILD_FLATPAK {
+    message("~~~  ERROR_$$upper($${TARGET}) - 3rd party repository path was not found ~~~")
+    message("~~~  DEBUG_$$upper($${TARGET})_3RD_PATH: $${3RD_PREFIX} ~~~")
+    message("~~~  DEBUG_$$upper($${TARGET})_PRO_PATH: $$_PRO_FILE_PWD_ ~~~")
+    message("~~~  DEBUG_$$upper($${TARGET})_OUT_PATH: $$OUT_PWD ~~~")
+    message("~~~  DEBUG_$$upper($${TARGET})_PWD_PATH: $$PWD ~~~")
 }
 
-# same more funky stuff to get the local library prefix - all this just to build on OBS' RHEL
-OSMESA_ARG = $$find(CONFIG, USE_OSMESA_LOCAL.*)
-!isEmpty(OSMESA_ARG) {
-    CONFIG -= $$OSMESA_ARG
-    CONFIG += $$section(OSMESA_ARG, =, 0, 0)
-    isEmpty(OSMESA_LOCAL_PREFIX_): OSMESA_LOCAL_PREFIX_ = $$section(OSMESA_ARG, =, 1, 1)
-    !exists($${OSMESA_LOCAL_PREFIX_}): message("~~~ ERROR - OSMesa path not found ~~~")
+# Qt/OSMesa library identifiers
+contains(DEFINES, _QT) {
+    POSTFIX  = -qt$${QT_MAJOR_VERSION}
+    BUILD    = QT
+} else: contains(DEFINES, _OSMESA) {
+    POSTFIX  = -osmesa
+    BUILD    = OSMESA
+    QT      -= core
+
+    # same more funky stuff to get the local library prefix - all this just to build on OBS' RHEL
+    OSMESA_ARG = $$find(CONFIG, USE_OSMESA_LOCAL.*)
+    !isEmpty(OSMESA_ARG) {
+        CONFIG -= $$OSMESA_ARG
+        CONFIG += $$section(OSMESA_ARG, =, 0, 0)
+        isEmpty(OSMESA_LOCAL_PREFIX_): OSMESA_LOCAL_PREFIX_ = $$section(OSMESA_ARG, =, 1, 1)
+        !exists($${OSMESA_LOCAL_PREFIX_}): message("~~~ ERROR - OSMesa path not found ~~~")
+    }
+
+    USE_OSMESA_STATIC {
+        TARGET_VENDOR_VAR = $$(TARGET_VENDOR)
+        contains(HOST, Arch):PLATFORM = arch
+        else: contains(HOST, Fedora):PLATFORM = fedora
+        else:!isEmpty(TARGET_VENDOR_VAR):PLATFORM = $$lower($$TARGET_VENDOR_VAR)
+        else: message("~~~ ERROR - PLATFORM not defined ~~~")
+    }
 }
 
-USE_OSMESA_STATIC {
-    TARGET_VENDOR_VAR = $$(TARGET_VENDOR)
-    contains(HOST, Arch):PLATFORM = arch
-    else: contains(HOST, Fedora):PLATFORM = fedora
-    else:!isEmpty(TARGET_VENDOR_VAR):PLATFORM = $$lower($$TARGET_VENDOR_VAR)
-    else: message("~~~ ERROR - PLATFORM not defined ~~~")
+# Except for MSVC (use pre-built), always build 3rd party lib3ds
+win32-msvc* {
+    CONFIG += BUILD_MINIZIP BUILD_GL2PS BUILD_TINYXML
+} else {
+    !USE_3RD_PARTY_PREBUILT_3DS: CONFIG += BUILD_3DS
+}
+
+BUILD_3DS {
+    USE_3RD_PARTY_3DS = YES
 }
 
 # Open Build Service overrides
@@ -78,16 +92,12 @@ if (contains(HOST, Ubuntu):contains(HOST, 14.04.5):USE_SYSTEM_LIBS|BUILD_PNG) {
     USE_3RD_PARTY_PNG = YES
 }
 
-# system lib3ds does not appear to have lib3ds.h - so always use 3rd party version pre or demand built
-!USE_3RD_PARTY_PREBUILT_3DS: USE_3RD_PARTY_3DS = YES
-
-# GUI/CUI switch
-contains(DEFINES, _QT):     CONFIG += _QT_GUI
-contains(DEFINES, _OSMESA): CONFIG += _OSM_CUI
-
 # for aarch64, QT_ARCH = arm64, for arm7l, QT_ARCH = arm
-!contains(QT_ARCH,unknown):  BUILD_ARCH = $$QT_ARCH
-else: isEmpty(BUILD_ARCH):   BUILD_ARCH = $$(TARGET_CPU)
+BUILD_ARCH = $$(TARGET_CPU)
+isEmpty(BUILD_ARCH): \
+!contains(QT_ARCH, unknown): \
+BUILD_ARCH = $$QT_ARCH
+else: isEmpty(BUILD_ARCH): BUILD_ARCH = $$(TARGET_CPU)
 if (contains(BUILD_ARCH,x86_64)|contains(BUILD_ARCH,arm64)|contains(BUILD_ARCH,aarch64)) {
     ARCH     = 64
     LIB_ARCH = 64
@@ -98,26 +108,24 @@ if (contains(BUILD_ARCH,x86_64)|contains(BUILD_ARCH,arm64)|contains(BUILD_ARCH,a
 
 # build type
 CONFIG(debug, debug|release) {
-    BUILD = DEBUG
+    BUILD += DEBUG
     DESTDIR = $$join(ARCH,,,bit_debug)
 } else {
-    BUILD = RELEASE
+    BUILD += RELEASE
     DESTDIR = $$join(ARCH,,,bit_release)
 }
-
-# GUI/CUI environment identifiers
-_QT_GUI {
-    POSTFIX  = -qt$${QT_MAJOR_VERSION}
-    BUILD   += QT
-} else: _OSM_CUI {
-    POSTFIX  = -osmesa
-    BUILD   += OSMESA
-}
 BUILD += BUILD ON $$upper($$HOST)
+
+CONFIG += incremental
 
 # 3ds
 !freebsd: DEFINES   += EXPORT_3DS
 else:     DEFINES   -= EXPORT_3DS
+
+if (win32|static|staticlib) {
+    DEFINES += _TC_STATIC
+    CONFIG  -= shared
+}
 
 # Basically, this project include file is set up to allow some options for selecting your LDView libraries.
 # The default is to select the pre-defined libraries in ../lib and headers in ../include.
@@ -137,27 +145,39 @@ else:     DEFINES   -= EXPORT_3DS
 # for default settings, place headers in ../include/..
 # place required pre-compiled static libs in ../lib/..
 # You may also set alternative locations for your libraries and headers
-unix {
+unix|msys {
     # System libraries - on Unix, change to or add /usr/local if you want
-    SYSTEM_PREFIX_ = /usr
+    msys: \
+    SYSTEM_PREFIX_ = $${PREFIX}
+    else: \
+    SYSTEM_PREFIX_ = $${PREFIX}/usr
 
     # Static library extension
     EXT_S          = a
 
-    # pre-compiled libraries heaers location
-    LIBINC_        = $$_PRO_FILE_PWD_/../include       # zlib.h and zconf.h, glext and wglext headers
-
     # base names
     USE_SYSTEM_LIBS {
         LIB_PNG    = png
+        msys: \
+        LIB_OSMESA = osmesa
+        else: \
         LIB_OSMESA = OSMesa
     } else {
+        # MSYS2 always uses system libs
         LIB_PNG    = png16
+        msys: \
+        LIB_OSMESA = osmesa
+        else: \
         LIB_OSMESA = OSMesa32
     }
+    msys {
+        LIB_GLU    = glu32
+        LIB_GL     = opengl32
+    } else {
+        LIB_GLU    = GLU
+        LIB_GL     = GL
+    }
     LIB_JPEG       = jpeg
-    LIB_GLU        = GLU
-    LIB_GL         = GL
     LIB_GL2PS      = gl2ps
     LIB_Z          = z
     LIB_TINYXML    = tinyxml
@@ -169,38 +189,73 @@ unix {
         LIBDIR_     = $$_PRO_FILE_PWD_/../lib/MacOSX
         # dynamic library extension
         EXT_D       = dylib
-
         # frameworks
         OSX_FRAMEWORKS_CORE = -framework CoreFoundation -framework CoreServices
-
     } else {
-        # pre-compiled libraries location
-        equals(ARCH, 64): LIBDIR_ = $$_PRO_FILE_PWD_/../lib/Linux/x86_64
-        else:             LIBDIR_ = $$_PRO_FILE_PWD_/../lib
-
         # dynamic library extension
-        EXT_D        = so
+        msys: \
+        EXT_D       = dll
+        else: \
+        EXT_D       = so
+
+        !msys {
+            # pre-compiled libraries location
+            equals(ARCH, 64): LIBDIR_ = $$_PRO_FILE_PWD_/../lib/Linux/x86_64
+            else:             LIBDIR_ = $$_PRO_FILE_PWD_/../lib
+        }
     }
 
-} else {
-    # Windows MinGW stuff...
-    SYSTEM_PREFIX_  = C:/Program Files
+    # library names
+    LIB_CUI          = libCUI$${POSTFIX}.$${EXT_S}
+    LIB_LDLIB        = libLDLib$${POSTFIX}.$${EXT_S}
+    LIB_LDEXPORTER   = libLDExporter$${POSTFIX}.$${EXT_S}
+    LIB_LDLOADER     = libLDLoader$${POSTFIX}.$${EXT_S}
+    LIB_TRE          = libTRE$${POSTFIX}.$${EXT_S}
+    LIB_TCFOUNDATION = libTCFoundation$${POSTFIX}.$${EXT_S}
+
+} else:win32-msvc* {
+    # Windows MSVC stuff...
+    SYSTEM_PREFIX_ = $${PREFIX}
+
+    BUILD_WORKER_VERSION = $$(LP3D_VSVERSION)
+    isEmpty(BUILD_WORKER_VERSION): BUILD_WORKER_VERSION = 2019
+    lessThan(BUILD_WORKER_VERSION, 2019) {
+        VSVER=vs2015
+    } else {
+        contains(QT_ARCH,i386): VSVER=vs2017
+        else: VSVER=vs2019
+    }
+
+    LIB_REL_PATH = $$_PRO_FILE_PWD_/../lib
+    equals(ARCH, 64): \
+    LIBDIR_      = $${LIB_REL_PATH}/x64
+    else: \
+    LIBDIR_      = $${LIB_REL_PATH}
+
+    # static library extensions
+    EXT_S           = lib
     # dynamic library extensions
     EXT_D           = dll
-    # static library extensions
-    EXT_S           = a
 
     # base names
-    LIB_PNG       = png16
-    LIB_JPEG      = jpeg
-    LIB_OSMESA    = OSMesa32
-    LIB_GLU       = GLU
-    LIB_GL        = GL
-    LIB_GL2PS     = gl2ps
-    LIB_Z         = z
-    LIB_TINYXML   = tinyxml
-    LIB_3DS       = 3ds
+    LIB_OSMESA    = osmesa
+    LIB_GLU       = glu32
+    LIB_GL        = opengl32
     LIB_MINIZIP   = minizip
+    LIB_GL2PS     = gl2ps
+    LIB_TINYXML   = tinyxml_STL
+    LIB_3DS       = lib3ds-$${VSVER}
+    LIB_PNG       = libpng16-$${VSVER}
+    LIB_JPEG      = libjpeg-$${VSVER}
+    LIB_Z         = zlib-$${VSVER}
+
+    # library names
+    LIB_CUI          = CUI$${POSTFIX}.$${EXT_S}
+    LIB_LDLIB        = LDLib$${POSTFIX}.$${EXT_S}
+    LIB_LDEXPORTER   = LDExporter$${POSTFIX}.$${EXT_S}
+    LIB_LDLOADER     = LDLoader$${POSTFIX}.$${EXT_S}
+    LIB_TRE          = TRE$${POSTFIX}.$${EXT_S}
+    LIB_TCFOUNDATION = TCFoundation$${POSTFIX}.$${EXT_S}
 }
 
 # pre-compiled libraries
@@ -210,8 +265,6 @@ unix {
 LIBS_INC            = $${LIBINC_}
 LIBS_DIR            = -L$${LIBDIR_}
 # -------------------------------
-WHICH_LIBS          = PRE-COMPILED
-
 PNG_INC             = $${LIBINC_}
 PNG_LIBDIR          = -L$${LIBDIR_}
 
@@ -248,24 +301,22 @@ LIBS_PRI            = -l$${LIB_PNG} \
                       -l$${LIB_TINYXML} \
                       -l$${LIB_Z}
 
-unix: USE_OSMESA_STATIC: \
+# conditional libraries
+contains(DEFINES, EXPORT_3DS): \
+LIBS_PRI           += -l$${LIB_3DS}
+
+unix: \
+USE_OSMESA_STATIC: \
 USE_SYSTEM_LIBS {
     OSMESA_LDFLAGS = $$system($${3RD_PREFIX}/mesa/$${PLATFORM}/osmesa-config --ldflags)
     !isEmpty(OSMESA_LDFLAGS): LIBS_PRI += $${OSMESA_LDFLAGS}
     else: message("~~~ OSMESA - ERROR OSMesa ldflags not defined ~~~")
 }
 
-# conditional libraries
-contains(DEFINES, EXPORT_3DS) {
-    LIBS_PRI += -l$${LIB_3DS}
-}
-
 # 3rd party libreries - compiled from source
 # Be careful not to move this chunk. moving it will affect to overall logic flow.
 # ===============================
 USE_3RD_PARTY_LIBS {
-    WHICH_LIBS      = 3RD PARTY
-
     # headers and static compiled libs
     GL2PS_INC       = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/gl2ps
     GL2PS_LIBDIR    = -L$${3RD_PARTY_PREFIX_}/gl2ps/$$DESTDIR
@@ -298,7 +349,7 @@ USE_3RD_PARTY_LIBS {
                 $${GL2PS_INC} \
                 $${ZLIB_INC}
 
-    _OSM_CUI: LIBS_INC += $${OSMESA_INC}
+    contains(BUILD, OSMESA): LIBS_INC += $${OSMESA_INC}
 
     LIBS_DIR =  $${PNG_LIBDIR} \
                 $${JPEG_LIBDIR} \
@@ -308,11 +359,64 @@ USE_3RD_PARTY_LIBS {
                 $${GL2PS_LIBDIR} \
                 $${ZLIB_LIBDIR}
 
-    _OSM_CUI: LIBS_DIR += $${OSMESA_LIBDIR}
+    contains(BUILD, OSMESA): LIBS_DIR += $${OSMESA_LIBDIR}
 }
 
-unix {
-    # Be careful not to move these chunks. moving it will affect to overall logic flow.
+win32-msvc* {
+    # Be careful not to move this chunk. Moving it will affect to overall logic flow.
+
+    3DS_LDLIBS  = $${LIBDIR_}/lib3ds-$${VSVER}.lib
+    PNG_LDLIBS  = $${LIBDIR_}/libpng16-$${VSVER}.lib
+    JPEG_LDLIBS = $${LIBDIR_}/libjpeg-$${VSVER}.lib
+    ZLIB_LDLIBS = $${LIBDIR_}/zlib-$${VSVER}.lib
+
+    # override pre-compiled libraries with 3rd party demand built library paths as specified
+    contains(USE_3RD_PARTY_MINIZIP, YES) {
+        # remove lib reference
+        LIBS_PRI           -= -l$${LIB_MINIZIP}
+        # update base name
+        LIB_MINIZIP         = minizip
+        # reset individual library entry
+        MINIZIP_INC         = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}
+        USE_3RD_PARTY_PREBUILT_MINIZIP {
+            MINIZIP_LIBDIR  = -L$${LIBDIR_}
+            MINIZIP_LDLIBS  = $${LIBDIR_}/lib$${LIB_3DS}.$${EXT_S}
+        } else {
+            MINIZIP_LIBDIR  = -L$${3RD_PARTY_PREFIX_}/minizip/$$DESTDIR
+            MINIZIP_LDLIBS  = $${3RD_PARTY_PREFIX_}/minizip/$$DESTDIR/$${LIB_MINIZIP}.$${EXT_S}
+        }
+        # update libs path
+        LIBS_INC           += $${MINIZIP_INC}
+        DEFINES            += HAVE_MINIZIP
+    }
+    contains(USE_3RD_PARTY_GL2PS, YES) {
+        # remove lib reference
+        LIBS_PRI           -= -l$${LIB_GL2PS}
+        # update base name
+        LIB_GL2PS           = gl2ps
+        # reset individual library entry
+        GL2PS_INC           = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/libgl2ps
+        GL2PS_LIBDIR        = -L$${3RD_PARTY_PREFIX_}/gl2ps/$$DESTDIR
+        GL2PS_LDLIBS        = $${3RD_PARTY_PREFIX_}/gl2ps/$$DESTDIR/$${LIB_GL2PS}.$${EXT_S}
+        # update libs path
+        LIBS_INC           += $${GL2PS_INC}
+    }
+    contains(USE_3RD_PARTY_TINYXML, YES) {
+        # remove lib reference
+        LIBS_PRI           -= -l$${LIB_TINYXML}
+        # update base name
+        LIB_TINYXML         = tinyxml_STL
+        # reset individual library entry
+        TINYXML_INC         = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/tinyxml
+        TINYXML_LIBDIR      = -L$${3RD_PARTY_PREFIX_}/tinyxml/$$DESTDIR
+        TINYXML_LDLIBS      = $${3RD_PARTY_PREFIX_}/tinyxml/$$DESTDIR/$${LIB_TINYXML}.$${EXT_S}
+        # update libs path
+        LIBS_INC           += $${TINYXML_INC}
+    }
+}
+
+unix|msys {
+    # Be careful not to move this chunk. Moving it will affect to overall logic flow.
 
     # detect system libraries paths
     SYS_LIBINC_         = $${SYSTEM_PREFIX_}/include
@@ -330,23 +434,26 @@ unix {
         SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/lib/$$QT_ARCH-linux-gnu
     } else: exists($${SYSTEM_PREFIX_}/lib$${LIB_ARCH}) {               # RedHat, Arch - lIB_ARCH is empyt for 32bit
         SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/lib$${LIB_ARCH}
-    } else {                                                           # Arch - acutally should never get here
+    } else {                                                           # Arch, MSYS2
         SYS_LIBDIR_     = $${SYSTEM_PREFIX_}/lib
     }
 
     # ===============================
     USE_3RD_PARTY_LIBS {
         # detect system libraries
+        msys: \
+        _LIB_OSMESA = osmesa
+        else: \
         _LIB_OSMESA = OSMesa
         _LIB_PNG    = png
-        USE_SYSTEM_OSMESA: exists($${SYS_LIBDIR_}/lib$${_LIB_OSMESA}.$${EXT_D}): _OSM_CUI: USE_SYSTEM_OSMESA_LIB = YES
+        USE_SYSTEM_OSMESA: exists($${SYS_LIBDIR_}/lib$${_LIB_OSMESA}.$${EXT_D}): contains(BUILD, OSMESA): USE_SYSTEM_OSMESA_LIB = YES
         USE_SYSTEM_PNG: !USE_3RD_PARTY_PNG: exists($${SYS_LIBDIR_}/lib$${_LIB_PNG}.$${EXT_D}): USE_SYSTEM_PNG_LIB = YES
         USE_SYSTEM_JPEG: exists($${SYS_LIBDIR_}/lib$${LIB_JPEG}.$${EXT_D}): USE_SYSTEM_JPEG_LIB = YES
         USE_SYSTEM_MINIZIP: exists($${SYS_LIBDIR_}/lib$${LIB_MINIZIP}.$${EXT_D}): USE_SYSTEM_MINIZIP_LIB = YES
         USE_SYSTEM_Z: exists($${SYS_LIBDIR_}/lib$${LIB_Z}.$${EXT_D}): USE_SYSTEM_Z_LIB = YES
 
         # override 3rd party library paths
-        contains(USE_SYSTEM_OSMESA_LIB, YES): _OSM_CUI {
+         contains(BUILD, OSMESA): contains(USE_SYSTEM_OSMESA_LIB, YES) {
             # use sytem lib name
             LIB_OSMESA              = OSMesa
             # remove 3rdParty lib reference
@@ -360,7 +467,7 @@ unix {
                 OSMESA_LIBDIR       = -L$${SYS_LIBDIR_X11_}
                 OSMESA_LDLIBS       = $${SYS_LIBDIR_X11_}/lib$${LIB_OSMESA}.$${EXT_D} \
                                       $${SYS_LIBDIR_X11_}/lib$${LIB_GLU}.$${EXT_D}
-            } else {
+            } else:!msys {
                 OSMESA_INC          = $${SYS_LIBINC_}
                 OSMESA_LIBDIR       = -L$${SYS_LIBDIR_}
                 OSMESA_LDLIBS       = -l$${LIB_OSMESA} \
@@ -432,13 +539,14 @@ unix {
             ZLIB_LIBDIR   = -L$${SYS_LIBDIR_}
             ZLIB_LDLIBS   = $${SYS_LIBDIR_}/lib$${LIB_Z}.$${EXT_D}
         }
-    }
+    } # USE_3RD_PARTY_LIBS
 
     # ===============================
     USE_SYSTEM_LIBS {
-        WHICH_LIBS          = SYSTEM
-
         # update base names
+        msys: \
+        LIB_OSMESA          = osmesa
+        else: \
         LIB_OSMESA          = OSMesa
         LIB_PNG             = png
 
@@ -478,13 +586,13 @@ unix {
         ZLIB_INC            = $${SYS_LIBINC_}
         ZLIB_LIBDIR         = -L$${SYS_LIBDIR_}
 
-        # reset individual library entry
+        # reset OSMESA library entries
         macx {
             OSMESA_INC          = $${SYS_LIBINC_X11_}
             OSMESA_LIBDIR       = -L$${SYS_LIBDIR_X11_}
             OSMESA_LDLIBS       = $${SYS_LIBDIR_X11_}/lib$${LIB_OSMESA}.$${EXT_D} \
                                   $${SYS_LIBDIR_X11_}/lib$${LIB_GLU}.$${EXT_D}
-        } else {
+        } else: contains(BUILD, OSMESA) {
             USE_OSMESA_STATIC {
                 OSMESA_INC      = $$system($${3RD_PREFIX}/mesa/$${PLATFORM}/osmesa-config --cflags)
                 isEmpty(OSMESA_INC): message("~~~ OSMESA - ERROR OSMesa include path not found ~~~")
@@ -501,6 +609,7 @@ unix {
             } else {
                 OSMESA_INC      = $${SYS_LIBINC_}
                 OSMESA_LIBDIR   = -L$${SYS_LIBDIR_}
+                !msys: \
                 OSMESA_LDLIBS   = -l$${LIB_OSMESA} \
                                   -l$${LIB_GLU} \
                                   -l$${LIB_GL}
@@ -599,30 +708,37 @@ unix {
             # update libs path
             !contains(LIBS_INC, $${3DS_INC}): LIBS_INC += $${3DS_INC}
         }
+    } # USE_SYSTEM_LIBS
+
+    # MSYS2 explicit <lib>.dll.a OSMesa lib paths
+    msys {
+        OSMESA_LDLIBS = -l$${LIB_GLU} \
+                        $${SYS_LIBDIR_}/$${LIB_OSMESA}.$${EXT_D}.$${EXT_S} \
+                        $${SYS_LIBDIR_}/$${LIB_GL}.$${EXT_D}.$${EXT_S} \
+                        -lgdi32
     }
 }
 
-message("~~~ USING $${WHICH_LIBS} LIBS ~~~")
-isEmpty(USE_3RD_PARTY_3DS):message("~~~ USING STATIC PRE-BUILT 3DS LIB ~~~")
+!win32-msvc*:isEmpty(USE_3RD_PARTY_3DS):message("~~~ USING STATIC PRE-BUILT 3DS LIB ~~~")
 
-DEPENDPATH  += .
 INCLUDEPATH += . ..
-USE_3RD_PARTY_LIBS | BUILD_GL2PS {
+USE_3RD_PARTY_LIBS|BUILD_GL2PS: \
 INCLUDEPATH += $${3RD_PARTY_PREFIX_}/gl2ps
-}
 
 # USE GNU_SOURCE
-unix:!macx: DEFINES += _GNU_SOURCE
+unix|msys:!macx: DEFINES += _GNU_SOURCE
 
 # USE CPP 11
-contains(USE_CPP11,NO) {
-    message("~~~ DO NOT USE CPP11 SPECIFIED ~~~")
-} else {
-    DEFINES += USE_CPP11
-}
+contains(USE_CPP11,NO): \
+message("~~~ DO NOT USE CPP11 SPECIFIED ~~~")
+else: \
+DEFINES += USE_CPP11
 
 contains(QT_VERSION, ^5\\..*) {
-    unix:!macx {
+    win32-msvc* {
+        QMAKE_CXXFLAGS += /std:c++17
+    }
+    unix|msys:!macx {
         GCC_VERSION = $$system(g++ -dumpversion)
         greaterThan(GCC_VERSION, 4.8) {
             QMAKE_CXXFLAGS += -std=c++11
@@ -639,7 +755,7 @@ contains(QT_VERSION, ^6\\..*) {
     macx {
         QMAKE_CXXFLAGS+= -std=c++17
     }
-    unix:!macx {
+    unix|msys:!macx {
         GCC_VERSION = $$system(g++ -dumpversion)
         greaterThan(GCC_VERSION, 5) {
             QMAKE_CXXFLAGS += -std=c++17
@@ -649,33 +765,47 @@ contains(QT_VERSION, ^6\\..*) {
     }
 }
 
+# Windows doesn't have /dev/null but has NUL
+win32: NULL_DEVICE = NUL
+else:  NULL_DEVICE = /dev/null
 
 # Boost
 !contains(CONFIG, USE_BOOST): {
     DEFINES     += _NO_BOOST
-} else {
+} else:!msys {
     INCLUDEPATH += $$_PRO_FILE_PWD_/../boost/include
     LIBS        += -L$$_PRO_FILE_PWD_/../boost/lib
 }
 
 # dirs
-OBJECTS_DIR        = $$DESTDIR/.obj$${POSTFIX}
-win32 {
-    CONFIG        += windows
-    QMAKE_EXT__OBJ = .obj
-}
+OBJECTS_DIR      = $$DESTDIR/.obj$${POSTFIX}
 
 # Platform-specific
-unix {
-    freebsd {
-        LIBS_INC  +=  /usr/local/include
+win32 {
+    QMAKE_EXT_OBJ = .obj
+
+    win32-msvc* {
+        DEFINES += \
+            _CRT_SECURE_NO_WARNINGS \
+            _CRT_NONSTDC_NO_WARNINGS=1
+        QMAKE_CXXFLAGS += \
+            /FI winsock2.h /FI winsock.h \
+            /wd4675
     }
+    _LIBS_  += -lshlwapi -ladvapi32 -luser32 -lws2_32 \
+               -lglu32 -lopengl32 -lgdi32
+    CUI_QT: \
+    _LIBS_  += $$QMAKE_LIBS_OPENGL
+}
+
+unix {
+    freebsd: \
+    LIBS_INC    +=  /usr/local/include
 
     # slurm is media.peeron.com
     OSTYPE = $$system(hostname)
-    contains(OSTYPE, slurm) {
-        OSMESA_INC  += ../../Mesa-7.0.2/include
-    }
+    contains(OSTYPE, slurm): \
+    OSMESA_INC  += ../../Mesa-7.0.2/include
 
     OSTYPE = $$system(hostname | cut -d. -f2-)
     contains(OSTYPE, pair.com) {
@@ -683,33 +813,47 @@ unix {
         OSMESA_INC  += $$_PRO_FILE_PWD_/../../Mesa-7.11/include
         DEFINES += _GL_POPCOLOR_BROKEN
     }
-
-    exists (/usr/include/qt3) {
-        LIBS_INC    +=    += /usr/include/qt3
-    }
 }
 
 # suppress warnings
-QMAKE_CFLAGS_WARN_ON =  -Wall -W \
-                        -Wno-unused-parameter \
-                        -Wno-parentheses \
-                        -Wno-unused-variable \
-                        -Wno-deprecated-declarations \
-                        -Wno-return-type \
-                        -Wno-sign-compare \
-                        -Wno-uninitialized \
-                        -Wno-unused-result
+unix|msys {
+QMAKE_CFLAGS_WARN_ON = \
+                     -Wall -W \
+                     -Wno-unused-parameter \
+                     -Wno-parentheses \
+                     -Wno-unused-variable \
+                     -Wno-deprecated-declarations \
+                     -Wno-return-type \
+                     -Wno-sign-compare \
+                     -Wno-uninitialized \
+                     -Wno-unused-result \
+                     -Wno-implicit-fallthrough \
+                     -Wno-stringop-overflow
+msys {
+QMAKE_CFLAGS_WARN_ON += \
+                     -Wno-attributes \
+                     -Wno-unknown-pragmas \
+                     -Wno-type-limits \
+                     -Wno-cast-function-type \
+                     -Wno-implicit-fallthrough \
+                     -Wno-stringop-truncation \
+                     -Wno-calloc-transposed-args \
+                     -Wno-template-id-cdtor
+}
 macx {
-QMAKE_CFLAGS_WARN_ON += -Wno-implicit-function-declaration \
-                        -Wno-incompatible-pointer-types-discards-qualifiers \
-                        -Wno-incompatible-pointer-types \
-                        -Wno-undefined-bool-conversion \
-                        -Wno-invalid-source-encoding \
-                        -Wno-mismatched-new-delete \
-                        -Wno-for-loop-analysis \
-                        -Wno-int-conversion \
-                        -Wno-reorder
+QMAKE_CFLAGS_WARN_ON += \
+                     -Wno-implicit-function-declaration \
+                     -Wno-incompatible-pointer-types-discards-qualifiers \
+                     -Wno-incompatible-pointer-types \
+                     -Wno-undefined-bool-conversion \
+                     -Wno-invalid-source-encoding \
+                     -Wno-mismatched-new-delete \
+                     -Wno-for-loop-analysis \
+                     -Wno-int-conversion \
+                     -Wno-reorder
 } else {
-QMAKE_CFLAGS_WARN_ON += -Wno-clobbered
+QMAKE_CFLAGS_WARN_ON += \
+                     -Wno-clobbered
 }
 QMAKE_CXXFLAGS_WARN_ON = $${QMAKE_CFLAGS_WARN_ON}
+} # unix|msys

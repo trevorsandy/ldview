@@ -3,28 +3,29 @@
 ######################################################################
 
 TEMPLATE = lib
-QT 	+= core
-QT 	-= opengl
-QT 	-= gui
-CONFIG 	+= qt
-CONFIG 	-= opengl
-CONFIG	+= thread
-CONFIG  += staticlib
+TARGET   = LDExporter
+QT      -= core
+QT      -= opengl
+QT      -= gui
+CONFIG 	-= qt
+CONFIG  -= opengl
+CONFIG  += thread
 CONFIG 	+= warn_on
+CONFIG  += staticlib
+contains(DEFINES, _QT) {
+QT      += core
+CONFIG  += qt
+}
 
 include(../LDViewGlobal.pri)
 
-message("~~~ libLDExporter$$POSTFIX.a MODULE $$BUILD ~~~")
+TARGET   = LDExporter$$POSTFIX
 
-TARGET =  LDExporter$$POSTFIX
+message("~~~ lib$${TARGET}.$${EXT_S} LIBRARY - $$BUILD ~~~")
 
-DEFINES 	+= TIXML_USE_STL
+DEFINES += TIXML_USE_STL
 
-INCLUDEPATH     += $${TINYXML_INC}
-
-contains(DEFINES, EXPORT_3DS): INCLUDEPATH += $${3DS_INC}
-
-contains(DEFINES, _OSMESA): INCLUDEPATH += $${OSMESA_INC}
+INCLUDEPATH  = . .. $${LIBS_INC}
 
 # Input
 HEADERS += $$PWD/LD3dsExporter.h \
