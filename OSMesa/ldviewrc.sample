@@ -1,4 +1,14 @@
 [General]
+AutoCrop=1
+BackgroundColor3=00a9b4d8
+CameraGlobe=0.0,0.0,4106503
+ConditionalHighlights=1
+Seams=1
+CurveQuality=4
+UseQualityStuds=1
+EdgeThickness=1
+LineSmoothing=1
+HFOV=0.00999999977648258209228516
 LDrawDir=/usr/share/ldraw
 LDrawZip=/usr/share/ldraw/complete.zip
 
