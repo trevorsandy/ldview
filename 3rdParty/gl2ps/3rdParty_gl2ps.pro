@@ -5,7 +5,7 @@
 TARGET = gl2ps
 include(../../3rdParty.pri)
 
-message("~~~ libgl2ps.a LIBRARY $${BUILD} ~~~")
+message("~~~ lib$${TARGET}.$${EXT_S} LIBRARY - $${BUILD} ~~~")
 
 DEFINES += GL2PS_HAVE_ZLIB \
            GL2PS_HAVE_LIBPNG

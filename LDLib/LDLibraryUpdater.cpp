@@ -280,7 +280,7 @@ void LDLibraryUpdater::scanDir(const std::string &dir, StringList &dirList)
 #ifdef WIN32
 	path += dir + "/";
 	std::string findString = path + "*.dat";
-#ifdef __MINGW64__
+#if defined(__MINGW64__)
 	std::wstring wfindString;
 	utf8towstring(wfindString, findString);
 	LPCWSTR lpfindString = (LPCWSTR)wfindString.c_str();
@@ -294,7 +294,7 @@ void LDLibraryUpdater::scanDir(const std::string &dir, StringList &dirList)
 	if (hFind != INVALID_HANDLE_VALUE)
 	{
 		std::string fileName;
-#ifdef __MINGW64__
+#if defined(__MINGW64__)
 		wstringtoutf8(fileName, ffd.cFileName);
 #else
 		fileName = ffd.cFileName;
@@ -1146,7 +1146,7 @@ void LDLibraryUpdater::extractUpdate(const char *filename)
 		// filenames in the executable path or the working directory path.
 		// LPub3D Mod - Enable MSYS2 build
 		len =
-#ifndef __MINGW64__
+#if !defined (__MINGW64__) && !defined (_LP3D_CUI_WGL) && !defined (_QT)
 			GetShortPathName(filename, shortFilename, sizeof(shortFilename));
 #else
 			GetShortPathNameA(filename, shortFilename, sizeof(shortFilename));
@@ -1159,7 +1159,7 @@ void LDLibraryUpdater::extractUpdate(const char *filename)
 		}
 		// LPub3D Mod - Enable MSYS2 build
 		len =
-#ifndef __MINGW64__
+#if !defined (__MINGW64__) && !defined (_LP3D_CUI_WGL) && !defined (_QT)
 			GetShortPathName(m_ldrawDirParent, startupDir,
 				sizeof(startupDir));
 #else
@@ -1186,7 +1186,7 @@ void LDLibraryUpdater::extractUpdate(const char *filename)
 		startupInfo.cb = sizeof(STARTUPINFO);
 		startupInfo.dwFlags = STARTF_USESHOWWINDOW;
 		startupInfo.wShowWindow = SW_SHOWMINNOACTIVE;
-#ifndef __MINGW64__
+#if !defined (__MINGW64__)
 		if (CreateProcess(shortFilename, commandLine, NULL, NULL, FALSE,
 			DETACHED_PROCESS | NORMAL_PRIORITY_CLASS, NULL, startupDir,
 			&startupInfo, &processInfo))

@@ -3,22 +3,27 @@
 ######################################################################
 
 TEMPLATE = lib
-QT 	+= core
-QT 	-= opengl
-QT 	-= gui
-CONFIG 	+= qt
-CONFIG 	-= opengl
-CONFIG	+= thread
-CONFIG  += staticlib
+TARGET   = LDLoader
+QT      -= core
+QT      -= opengl
+QT      -= gui
+CONFIG 	-= qt
+CONFIG  -= opengl
+CONFIG  += thread
 CONFIG 	+= warn_on
+CONFIG  += staticlib
+contains(DEFINES, _QT) {
+QT      += core
+CONFIG  += qt
+}
 
 include(../LDViewGlobal.pri)
 
-message("~~~ libLDLoader$$POSTFIX.a MODULE $$BUILD ~~~")
+TARGET   = LDLoader$$POSTFIX
 
-TARGET = LDLoader$$POSTFIX
+message("~~~ lib$${TARGET}.$${EXT_S} LIBRARY - $$BUILD ~~~")
 
-macx: INCLUDEPATH += $${LIBS_INC}
+INCLUDEPATH = . .. $${LIBS_INC}
 
 # Input
 HEADERS += $$PWD/LDLActionLine.h \

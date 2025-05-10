@@ -1333,7 +1333,7 @@ void LDLModel::initCheckDirs()
 	}
 #ifdef WIN32
 	char buf[1024];
-#ifdef __MINGW64__
+#if defined(__MINGW64__) || defined (_LP3D_CUI_WGL) || defined (_QT)
 	if (GetPrivateProfileStringA("LDraw", "BaseDirectory", "", buf, 1024,
 		"ldraw.ini"))
 #else

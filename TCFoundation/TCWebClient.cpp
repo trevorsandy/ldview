@@ -678,7 +678,7 @@ bool TCWebClient::receiveHeader(void)
 				int lerrorNumber = WSAGetLastError();
 				char errorBuf[1024];
 
-#ifdef __MINGW64__
+#if defined(__MINGW64__) || defined (_LP3D_CUI_WGL) || defined (_QT)
 				FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM |
 					FORMAT_MESSAGE_IGNORE_INSERTS, NULL, lerrorNumber, 0,
 					errorBuf, sizeof(errorBuf), NULL);
@@ -2641,7 +2641,7 @@ int TCWebClient::createDirectory(const char* directory, int *errorNumber)
 			if (errno == ENOENT)
 			{
 #ifdef WIN32
-#ifdef __MINGW64__
+#if defined(__MINGW64__) || defined (_LP3D_CUI_WGL) || defined (_QT)
 				if (!CreateDirectoryA(directory, NULL))
 #else
 				if (!CreateDirectory(directory, NULL))
@@ -2846,7 +2846,7 @@ int TCWebClient::setNonBlock(void)
 		int lerrorNumber = WSAGetLastError();
 		char buf[1024];
 
-#ifdef __MINGW64__
+#if defined(__MINGW64__) || defined (_LP3D_CUI_WGL) || defined (_QT)
 		FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM |
 			FORMAT_MESSAGE_IGNORE_INSERTS, NULL, lerrorNumber, 0, buf, 1024,
 			NULL);

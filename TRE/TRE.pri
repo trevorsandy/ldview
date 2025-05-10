@@ -3,25 +3,27 @@
 ######################################################################
 
 TEMPLATE = lib
-TARGET   =
-QT 	+= core
-QT 	+= opengl
-QT 	-= gui
-CONFIG 	+= qt
-CONFIG 	+= opengl
-CONFIG	+= thread
-CONFIG  += staticlib
+TARGET   = TRE
+QT      -= core
+QT      -= opengl
+QT      -= gui
+CONFIG 	-= qt
+CONFIG  -= opengl
+CONFIG  += thread
 CONFIG 	+= warn_on
+CONFIG  += staticlib
+contains(DEFINES, _QT) {
+QT      += core
+CONFIG  += qt
+}
 
 include(../LDViewGlobal.pri)
 
-message("~~~ libTRE$$POSTFIX.a MODULE $$BUILD ~~~")
+TARGET   = TRE$$POSTFIX
 
-TARGET = TRE$$POSTFIX
+message("~~~ lib$${TARGET}.$${EXT_S} LIBRARY - $$BUILD ~~~")
 
-INCLUDEPATH      += $${GL2PS_INC}
-
-contains(DEFINES, _OSMESA): INCLUDEPATH += $${OSMESA_INC}
+INCLUDEPATH = . .. $${LIBS_INC}
 
 # Input
 HEADERS += $$PWD/TREColoredShapeGroup.h \

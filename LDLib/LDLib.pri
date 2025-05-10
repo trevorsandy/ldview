@@ -3,26 +3,32 @@
 ######################################################################
 
 TEMPLATE = lib
-QT 	+= core
-QT 	-= opengl
-QT 	-= gui
-CONFIG 	+= qt
-CONFIG 	-= opengl
-CONFIG	+= thread
-CONFIG  += staticlib
+TARGET   = LDLib
+QT      -= core
+QT      -= opengl
+QT      -= gui
+CONFIG 	-= qt
+CONFIG  -= opengl
+CONFIG  += thread
 CONFIG 	+= warn_on
+CONFIG  += staticlib
+contains(DEFINES, _QT) {
+QT      += core
+QT      += opengl
+CONFIG  += qt
+CONFIG  += opengl
+}
 
 include(../LDViewGlobal.pri)
 
-message("~~~ libLDraw$$POSTFIX.a MODULE $$BUILD ~~~")
+TARGET   = LDLib$$POSTFIX
 
-TARGET = LDraw$$POSTFIX
+message("~~~ lib$${TARGET}.$${EXT_S} LIBRARY - $$BUILD ~~~")
 
-INCLUDEPATH += $${GL2PS_INC}
+win32-msvc*: \
+DEFINES     -= UNICODE
 
-contains(DEFINES, _OSMESA): INCLUDEPATH += $${OSMESA_INC}
-
-INCLUDEPATH += ../TCFoundation
+INCLUDEPATH  = . .. $${LIBS_INC}
 
 # Input
 HEADERS += $$PWD/LDConsoleAlertHandler.h \
