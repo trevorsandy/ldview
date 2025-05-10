@@ -8,7 +8,7 @@ rem LDView distributions and package the build contents (exe, doc and
 rem resources ) as LPub3D 3rd Party components.
 rem --
 rem  Trevor SANDY <trevor.sandy@gmail.com>
-rem  Last Update: November 29, 2024
+rem  Last Update: May 10, 2025
 rem  Copyright (c) 2019 - 2025 by Trevor SANDY
 rem --
 rem This script is distributed in the hope that it will be useful,
@@ -117,7 +117,7 @@ SET INI_POV_FILE=%PWD%\OSMesa\ldviewPOV.ini
 SET OfficialCONTENT=complete.zip
 
 SET PACKAGE=LDView
-SET VERSION=4.5
+SET VERSION=4.6
 SET PROJECT=LDView.vcxproj
 Rem SET PROJECT=LDView.sln
 SET CONFIGURATION=Release
