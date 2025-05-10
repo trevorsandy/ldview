@@ -8,7 +8,7 @@ isEmpty(HOST):HOST = UNKNOWN HOST
 
 # The ABI version.
 VER_MAJ = 4
-VER_MIN = 5
+VER_MIN = 6
 VER_PAT = 0
 VER_BLD = 0
 win32: VERSION = $$VER_MAJ"."$$VER_MIN"."$$VER_PAT"."$$VER_BLD  # major.minor.patch.build
