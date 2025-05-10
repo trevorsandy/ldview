@@ -43,7 +43,7 @@ char LDViewVersion[] = VERSION_INFO " (" ARCH ")      ";
 char LDViewVersion[] = VERSION_INFO "      ";
 #endif
 #else
-char LDViewVersion[] = "4.5.0      ";
+char LDViewVersion[] = "4.6.0      ";
 #endif
 // LPub3D Mod End
 
