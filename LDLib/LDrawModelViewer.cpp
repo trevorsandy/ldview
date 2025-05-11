@@ -4170,8 +4170,8 @@ void LDrawModelViewer::findFileAlertCallback(LDLFindFileAlert *alert)
 	// below).
 	std::string lfilename = alert->getFilename();
 	std::string url;
-	std::string partOutputFilename = LDLModel::lDrawDir();
-	std::string primOutputFilename = LDLModel::lDrawDir();
+	std::string partOutputFilename = LDLModel::unofficialDir();
+	std::string primOutputFilename = LDLModel::unofficialDir();
 	bool primitive = false;
 	bool part = false;
 	std::string partUrlBase = libraryUrl("library/unofficial/parts/");
@@ -4181,8 +4181,8 @@ void LDrawModelViewer::findFileAlertCallback(LDLFindFileAlert *alert)
 
 	replaceStringCharacter(partOutputFilename, '\\', '/');
 	replaceStringCharacter(primOutputFilename, '\\', '/');
-	partOutputFilename += "/Unofficial/parts/";
-	primOutputFilename += "/Unofficial/p/";
+	partOutputFilename += "/parts/";
+	primOutputFilename += "/p/";
 	convertStringToLower(lfilename);
 	replaceStringCharacter(lfilename, '\\', '/');
 	if (stringHasPrefix(lfilename, "48/"))
