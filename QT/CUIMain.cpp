@@ -50,7 +50,7 @@ char LDViewVersion[] = VERSION_INFO " (" ARCH ")      ";
 char LDViewVersion[] = VERSION_INFO "      ";
 #endif
 #else
-char LDViewVersion[] = "4.6.0      ";
+char LDViewVersion[] = "4.6.1      ";
 #endif
 
 static bool debugToFile = false;
