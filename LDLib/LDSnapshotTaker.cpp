@@ -1457,7 +1457,12 @@ bool LDSnapshotTaker::writeImage(
 	// LPub3D Mod - Information header
 	if (TCUserDefaults::boolForKey("Info"))
 	{
-		printf("\nLDView 4.6 - LPub3D Edition Image Output\n");
+#ifdef VERSION_INFO
+		const char LDViewVersion[] = VERSION_INFO " -";
+#else
+		const char LDViewVersion[] = "-";
+#endif
+		printf("\nLDView %s LPub3D Edition Image Output\n", LDViewVersion);
 		printf("=========================================\n");
 		printf("Write %s image %s\n\n", formatName, filename);
 	}
