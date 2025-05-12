@@ -20,6 +20,11 @@ DEFINES        -= _OSMESA
 DEFINES        += _QT
 QT             += core
 CONFIG         += qt
+} else: CUI_WGL {
+contains(DEFINES, _OSMESA): \
+DEFINES        -= _OSMESA
+contains(DEFINES, _QT): \
+DEFINES        -= _QT
 } else {
 contains(DEFINES, _QT): \
 DEFINES        -= _QT
