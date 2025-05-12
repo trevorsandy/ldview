@@ -16,6 +16,7 @@
 # CONFIG+=BUILD_GUI_ONLY     # only build Graphic User Interface package
 # CONFIG+=BUILD_CUI_ONLY     # only build Console User Interface package
 # CONFIG+=CUI_QT             # build CUI using Qt OpenGL
+# CONFIG+=CUI_WGL            # build CUI using WGL OpenGL
 # CONFIG+=CUI_OSMESA         # build CUI using OSMesa OpenGL - this is the default behaviour
 # CONFIG+=USE_OSMESA_STATIC  # build static OSMesa libraray and use system LLVM library
 # CONFIG+=USE_OSMESA_LOCAL   # use local OSmesa and LLVM libraries - for OBS images w/o OSMesa stuff (e.g. RHEL)
@@ -30,6 +31,7 @@
 # /LDView
 #  |
 #  |--- LDView.pro                         Subdirs project file - structures GUI and CUI subdirs
+#  |--- LDView_CUI_WGL.pro                 Executable WGL CUI project file - declatations and dirctivies - consumes LDViewGlobal.pri
 #  |--- LDViewGlobal.pri                   Global declarations and directives project include
 #  |--- LDViewTest.pri                     Executable test project include file - sets up the .ldviewrc and runs a simple rendering test
 #  |--- 3rdParty.pri                       3rdParty library declarations and directives project include
@@ -46,6 +48,10 @@
 #  |     |--- LDLib.pri                    Library declarations and directives project include - consumes LDViewGlobal.pri
 #  |     |--- LDLib_QT.pro                 Library Qt project file - consumes LDLib.pri
 #  |     |--- LDLib_OSMesa.pro             Library OSMesa project file - consumes LDLib.pri
+#  |
+#  `--- /CUI
+#  |     |--- CUI.pri                      Library declarations and directives project include - consumes LDViewGlobal.pri
+#  |     |--- CUI_WGL.pro                  Library OSMesa project file - consumes CUI.pri
 #  |
 #  `--- /TRE
 #  |     |--- TRE.pri                      Library declarations and directives project include - consumes LDViewGlobal.pri
@@ -295,9 +301,13 @@ contains(BUILD_CUI, YES) {
     # Qt/OSMesa library identifiers
     CUI_QT: \
     POSTFIX  = QT
+    else: CUI_WGL: \
+    POSTFIX  = WGL
     else: \
     POSTFIX  = OSMesa
 
+    contains(POSTFIX,WGL): \
+    SUBDIRS += CUI_$${POSTFIX}
     SUBDIRS += LDLib_$${POSTFIX} \
                TRE_$${POSTFIX} \
                TCFoundation_$${POSTFIX} \
@@ -306,6 +316,11 @@ contains(BUILD_CUI, YES) {
                Headerize_CUI \
                LGEOTables_CUI \
                LDView_CUI_$${POSTFIX}
+
+    CUI_$${POSTFIX}.file     = $$PWD/CUI/CUI_$${POSTFIX}.pro
+    CUI_$${POSTFIX}.makefile = Makefile-cui.$$lower($${POSTFIX})
+    CUI_$${POSTFIX}.target   = sub-CUI_$${POSTFIX}
+    CUI_$${POSTFIX}.depends  =
 
     LDLib_$${POSTFIX}.file     = $$PWD/LDLib/LDLib_$${POSTFIX}.pro
     LDLib_$${POSTFIX}.makefile = Makefile-ldlib.$$lower($${POSTFIX})
@@ -352,7 +367,11 @@ contains(BUILD_CUI, YES) {
     LGEOTables_CUI.depends  = 3rdParty_tinyxml
 
     # Main
-    LDView_CUI_$${POSTFIX}.file      = $$PWD/$${POSTFIX}/LDView_CUI_$${POSTFIX}.pro
+    contains(POSTFIX,WGL): \
+    PROJECT_FILE = $$PWD/LDView_CUI_$${POSTFIX}.pro
+    else: \
+    PROJECT_FILE = $$PWD/$${POSTFIX}/LDView_CUI_$${POSTFIX}.pro
+    LDView_CUI_$${POSTFIX}.file      = $${PROJECT_FILE}
     LDView_CUI_$${POSTFIX}.makefile  = Makefile.$$lower($${POSTFIX})
     LDView_CUI_$${POSTFIX}.target    = sub-LDView_CUI_$${POSTFIX}
     LDView_CUI_$${POSTFIX}.depends   = LDLib_$${POSTFIX}
@@ -360,6 +379,8 @@ contains(BUILD_CUI, YES) {
     LDView_CUI_$${POSTFIX}.depends  += TCFoundation_$${POSTFIX}
     LDView_CUI_$${POSTFIX}.depends  += LDLoader_$${POSTFIX}
     LDView_CUI_$${POSTFIX}.depends  += LDExporter_$${POSTFIX}
+    contains(POSTFIX,WGL): \
+    LDView_CUI_$${POSTFIX}.depends  += CUI_$${POSTFIX}
     LDView_CUI_$${POSTFIX}.depends  += Headerize_CUI
     contains(USE_3RD_PARTY_PNG, YES): \
     LDView_CUI_$${POSTFIX}.depends  += 3rdParty_png

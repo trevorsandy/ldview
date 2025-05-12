@@ -25,24 +25,31 @@ static|staticlib {
 3RD_ARG = $$find(CONFIG, 3RD_PARTY_INSTALL.*)
 !isEmpty(3RD_ARG): CONFIG -= $$3RD_ARG
 CONFIG += $$section(3RD_ARG, =, 0, 0)
-isEmpty(3RD_PREFIX): 3RD_PREFIX = $$_PRO_FILE_PWD_/$$section(3RD_ARG, =, 1, 1)
-CUI_WGL:!equals(PWD, $${OUT_PWD}): _3RD_PREFIX = ../$${3RD_PREFIX}
-else: _3RD_PREFIX = $${3RD_PREFIX}
-!exists($${_3RD_PREFIX}): !BUILD_FLATPAK {
-    message("~~~  ERROR_$$upper($${TARGET}) - 3rd party repository path was not found ~~~")
-    message("~~~  DEBUG_$$upper($${TARGET})_3RD_PATH: $${3RD_PREFIX} ~~~")
-    message("~~~  DEBUG_$$upper($${TARGET})_PRO_PATH: $$_PRO_FILE_PWD_ ~~~")
-    message("~~~  DEBUG_$$upper($${TARGET})_OUT_PATH: $$OUT_PWD ~~~")
-    message("~~~  DEBUG_$$upper($${TARGET})_PWD_PATH: $$PWD ~~~")
+isEmpty(_3RD_PREFIX): _3RD_PREFIX = $$section(3RD_ARG, =, 1, 1)
+CUI_WGL {
+    _3RD_PREFIX = $$replace(_3RD_PREFIX, \\\, /)
+    _3RD_PREFIX = $$replace(_3RD_PREFIX, ../../, ../)
+    !equals(TARGET, LDView): \
+    3RD_PREFIX = $$_PRO_FILE_PWD_/../$${_3RD_PREFIX}
+    else: \
+    3RD_PREFIX = $$_PRO_FILE_PWD_/$${_3RD_PREFIX}
+} else: \
+3RD_PREFIX = $$_PRO_FILE_PWD_/$${_3RD_PREFIX}
+!exists($${3RD_PREFIX}): !BUILD_FLATPAK {
+    message("~~~ ERROR_$$upper($${TARGET}) - 3rd party repository path was not found ~~~")
+    message("~~~ DEBUG_$$upper($${TARGET})_3RD_PATH: $${3RD_PREFIX} ~~~")
+    message("~~~ DEBUG_$$upper($${TARGET})_PRO_PATH: $$_PRO_FILE_PWD_ ~~~")
+    message("~~~ DEBUG_$$upper($${TARGET})_OUT_PATH: $$OUT_PWD ~~~")
+    message("~~~ DEBUG_$$upper($${TARGET})_PWD_PATH: $$PWD ~~~")
 }
 
-# Qt/OSMesa library identifiers
+# Qt/OSMesa/WGL library identifiers
 contains(DEFINES, _QT) {
     POSTFIX  = -qt$${QT_MAJOR_VERSION}
-    BUILD    = QT
+    BUILD   += QT
 } else: contains(DEFINES, _OSMESA) {
     POSTFIX  = -osmesa
-    BUILD    = OSMESA
+    BUILD   += OSMESA
     QT      -= core
 
     # same more funky stuff to get the local library prefix - all this just to build on OBS' RHEL
@@ -61,6 +68,11 @@ contains(DEFINES, _QT) {
         else:!isEmpty(TARGET_VENDOR_VAR):PLATFORM = $$lower($$TARGET_VENDOR_VAR)
         else: message("~~~ ERROR - PLATFORM not defined ~~~")
     }
+} else:CUI_WGL {
+    DEFINES += _LP3D_CUI_WGL
+    POSTFIX  = -wgl
+    BUILD   += WGL
+    QT      -= core
 }
 
 # Except for MSVC (use pre-built), always build 3rd party lib3ds
@@ -139,7 +151,14 @@ if (win32|static|staticlib) {
 # option, be sure to set SYSTEM_PREFIX_ below along with the directive CONFIG+=USE_SYSTEM_LIBS
 
 # 3rdParty libraries - compiled from source during build (some, not all)
-3RD_PARTY_PREFIX_  = ../3rdParty
+CUI_WGL:equals(TARGET, LDView) {
+    3RD_PARTY_PREFIX_  = 3rdParty
+    LIBINC_            = $$_PRO_FILE_PWD_/include
+} else {
+    3RD_PARTY_PREFIX_  = ../3rdParty
+    # pre-compiled libraries heaers location
+    LIBINC_            = $$_PRO_FILE_PWD_/../include       # zlib.h and zconf.h, glext and wglext headers
+}
 
 # You can modify library paths below to match your system
 # for default settings, place headers in ../include/..
@@ -200,8 +219,13 @@ unix|msys {
 
         !msys {
             # pre-compiled libraries location
-            equals(ARCH, 64): LIBDIR_ = $$_PRO_FILE_PWD_/../lib/Linux/x86_64
-            else:             LIBDIR_ = $$_PRO_FILE_PWD_/../lib
+            CUI_WGL:equals(TARGET, LDView) {
+                equals(ARCH, 64): LIBDIR_ = $$_PRO_FILE_PWD_/lib/Linux/x86_64
+                else:             LIBDIR_ = $$_PRO_FILE_PWD_/lib
+            } else {
+                equals(ARCH, 64): LIBDIR_ = $$_PRO_FILE_PWD_/../lib/Linux/x86_64
+                else:             LIBDIR_ = $$_PRO_FILE_PWD_/../lib
+            }
         }
     }
 
@@ -226,6 +250,10 @@ unix|msys {
         else: VSVER=vs2019
     }
 
+    # pre-compiled libraries location
+    CUI_WGL:equals(TARGET, LDView): \
+    LIB_REL_PATH = $$_PRO_FILE_PWD_/lib
+    else: \
     LIB_REL_PATH = $$_PRO_FILE_PWD_/../lib
     equals(ARCH, 64): \
     LIBDIR_      = $${LIB_REL_PATH}/x64
@@ -829,6 +857,11 @@ QMAKE_CFLAGS_WARN_ON = \
                      -Wno-unused-result \
                      -Wno-implicit-fallthrough \
                      -Wno-stringop-overflow
+CUI_WGL: \
+QMAKE_CFLAGS_WARN_ON += \
+                     -Wno-missing-field-initializers \
+                     -Wno-unused-but-set-variable \
+                     -Wno-switch
 msys {
 QMAKE_CFLAGS_WARN_ON += \
                      -Wno-attributes \
