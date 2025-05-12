@@ -20,3 +20,6 @@ Makefile
 .vs
 tests
 .DS_Store
+LDViewCUIMessages.ini
+LDViewCUIMessages.h
+StudLogo.h
