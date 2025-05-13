@@ -5,9 +5,10 @@
 // functions and store them glInfo struct variable
 //
 // To get valid OpenGL infos, OpenGL rendering context (RC) must be opened
-// before calling glInfo::getInfo(). Otherwise it returns false.
+// before calling GLInfo::getGLInfo(). Otherwise it returns false.
 //
 //  AUTHOR: Song Ho Ahn (song.ahn@gmail.com)
+//          https://www.songho.ca/opengl/index.html
 // CREATED: 2005-10-04
 // UPDATED: 2013-03-06
 // UPDATED: 2017-06-20 by Trevor SANDY (add fbo support details, additional tracked parameters)
@@ -28,10 +29,10 @@
 #    include <OpenGL/gl.h>
 #    include "../include/GL/glext.h"
 #  endif // _OSMESA
-#else	// __APPLE__
+#else   // __APPLE__
 #  include <GL/gl.h>
 #  include <GL/glext.h>
-#endif	// __APPLE__
+#endif  // __APPLE__
 #include <iostream>
 #include <sstream>
 #include <iomanip>
@@ -42,7 +43,7 @@
 
 // WGL specific extensions for v3.0+ //////////////////////////////////////////
 #ifdef _WIN32
-#include <windows.h>
+//#include <windows.h>
 #ifndef WGLGETEXTENSIONSSTRINGARB_DEF
 #define WGLGETEXTENSIONSSTRINGARB_DEF
 typedef const char* (WINAPI * PFNWGLGETEXTENSIONSSTRINGARBPROC)(HDC hdc);
@@ -113,13 +114,13 @@ PFNWGLGETSWAPINTERVALEXTPROC pwglGetSwapIntervalEXT = 0;
 // version 2.0 or greater
 #define GL_SHADING_LANGUAGE_VERSION       0x8B8C
 
-
+#define INT2HDCPTR(i) (HDC)(uintptr_t)(i)
 
 ///////////////////////////////////////////////////////////////////////////////
 // extract openGL info
 // This function must be called after GL rendering context opened.
 ///////////////////////////////////////////////////////////////////////////////
-void glInfo::getInfo(unsigned int param)
+void GLInfo::getGLInfo(unsigned int param)
 {
     std::string str;
 
@@ -175,7 +176,7 @@ void glInfo::getInfo(unsigned int param)
     wglGetExtensionsStringARB = (PFNWGLGETEXTENSIONSSTRINGARBPROC)wglGetProcAddress("wglGetExtensionsStringARB");
     if(wglGetExtensionsStringARB && param)
     {
-        str = (const char*)wglGetExtensionsStringARB((HDC)param);
+        str = (const char*)wglGetExtensionsStringARB(INT2HDCPTR(param));
         if(str.size() > 0)
         {
             char* str2 = new char[str.size() + 1];
@@ -293,7 +294,7 @@ void glInfo::getInfo(unsigned int param)
 ///////////////////////////////////////////////////////////////////////////////
 // check if the video card support a certain extension
 ///////////////////////////////////////////////////////////////////////////////
-bool glInfo::isExtensionSupported(const std::string& ext)
+bool GLInfo::isExtensionSupported(const std::string& ext)
 {
     // search corresponding extension
     std::vector<std::string>::const_iterator iter = this->extensions.begin();
@@ -309,13 +310,13 @@ bool glInfo::isExtensionSupported(const std::string& ext)
     return false;
 }
 
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // print OpenGL info to screen and save to a file
 ///////////////////////////////////////////////////////////////////////////////
-void glInfo::printSelf()
+void GLInfo::printGLInfo()
 {
+    getGLInfo();
+
     std::stringstream ss;
 
     ss << std::endl; // blank line
