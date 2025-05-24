@@ -480,10 +480,12 @@ unix|msys {
 
     # always using system libEGL
     !macx {
-        EGL_INC             = $${SYS_LIBINC_}
-        EGL_LIBDIR          = -L$${SYS_LIBDIR_}
+        EGL_INC         = $${SYS_LIBINC_}
+        EGL_LIBDIR      = -L$${SYS_LIBDIR_}
         !msys: \
-        EGL_LDLIBS          = -l$${LIB_EGL}
+        EGL_LDLIBS      = -l$${LIB_GLU} \
+                          -l$${LIB_EGL} \
+                          -l$${LIB_GL}
     }
 
     # ===============================
@@ -762,14 +764,17 @@ unix|msys {
 
     # MSYS2 explicit <lib>.dll.a OSMesa and EGL lib paths
     msys: {
-        !USE_EGL {
-            OSMESA_LDLIBS = -l$${LIB_GLEW} \
-                            -l$${LIB_GLU} \
-                            $${SYS_LIBDIR_}/$${LIB_OSMESA}.$${EXT_D}.$${EXT_S} \
-                            $${SYS_LIBDIR_}/$${LIB_GL}.$${EXT_D}.$${EXT_S} \
-                            -lgdi32
-        }
-        EGL_LDLIBS = $${SYS_LIBDIR_}/lib$${LIB_EGL}.$${EXT_D}.$${EXT_S}
+        !USE_EGL: \
+        OSMESA_LDLIBS = -l$${LIB_GLEW} \
+                        -l$${LIB_GLU} \
+                          $${SYS_LIBDIR_}/$${LIB_OSMESA}.$${EXT_D}.$${EXT_S} \
+                          $${SYS_LIBDIR_}/$${LIB_GL}.$${EXT_D}.$${EXT_S}
+        USE_EGL: \
+        EGL_LDLIBS   += -l$${LIB_GLU}
+        EGL_LDLIBS   +=   $${SYS_LIBDIR_}/lib$${LIB_EGL}.$${EXT_D}.$${EXT_S}
+        USE_EGL: \
+        EGL_LDLIBS   += -l$${LIB_GL}
+        EGL_LDLIBS   += -lgdi32
     }
 }
 
