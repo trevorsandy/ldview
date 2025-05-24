@@ -228,10 +228,6 @@ int setupDefaults(char *argv[])
 			ldviewrc = copyString("ldviewrc");
 #endif
 			iniFileSet = TCUserDefaults::setIniFile(ldviewrc);
-			if (iniFileSet)
-			{
-				retValue = 0;
-			}
 		}
 
 		if (!iniFileSet && !TCUserDefaults::longForKey("IniFailureShown", 0, 0))
@@ -247,9 +243,10 @@ int setupDefaults(char *argv[])
 
 		if(iniFileSet)
 		{
+			retValue = 0;
 			QSettings::setDefaultFormat(QSettings::IniFormat);
 			if (TCUserDefaults::boolForKey("Info"))
-				printf("Using IniFile %s\n.", rcFilename);
+				printf("Using IniFile %s\n", rcFilename);
 		}
 	}
 
