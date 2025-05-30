@@ -307,11 +307,12 @@ LIBS_  += $${LIBS_PRI}
 msys: \
 LIBS_  += -lshlwapi -lws2_32 -lbz2
 
-LDLIBS += $${_LIBS} $${LIBS_} $${OSMESA_LDLIBS} $${EGL_LDLIBS}
+LDLIBS += $${_LIBS} $${LIBS_} $${OSMESA_LDLIBS} $${EGL_LDLIBS} $${OSMESA_LDFLAGS}
 
 LIBS   += $${LIBDIRS} $${LIBS_DIR} $${LDLIBS}
 #message("~~~ DEBUG_INCLUDEPATHS: $$INCLUDEPATH ~~~")
 #message("~~~ DEBUG_OSMESA_LDLIBS: $$OSMESA_LDLIBS ~~~")
+#message("~~~ DEBUG_OSMESA_LDFLAGS: $$OSMESA_LDFLAGS ~~~")
 #message("~~~ DEBUG_LIBS: $$LIBS ~~~")
 
 mingw:ide_qtcreator: \
