@@ -271,8 +271,8 @@ unix {
 }
 
 USE_OSMESA_STATIC {
-    NO_GALLIUM {
-        message("~~~ LLVM not needed - Gallium driver not used ~~~")
+    OSMESA_NO_LLVM {
+        message("~~~ LLVM not needed for specified OSMesa configuration ~~~")
     } else {
         isEmpty(LLVM_PREFIX_): LLVM_PREFIX_ = $${SYSTEM_PREFIX_}
         exists($${LLVM_PREFIX_}/bin/llvm-config) {
