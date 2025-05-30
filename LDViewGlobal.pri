@@ -345,14 +345,6 @@ LIBS_PRI            = -l$${LIB_PNG} \
 contains(DEFINES, EXPORT_3DS): \
 LIBS_PRI           += -l$${LIB_3DS}
 
-unix: \
-USE_OSMESA_STATIC: \
-USE_SYSTEM_LIBS {
-    OSMESA_LDFLAGS = $$system($${3RD_PREFIX}/mesa/$${PLATFORM}/osmesa-config --ldflags)
-    !isEmpty(OSMESA_LDFLAGS): LIBS_PRI += $${OSMESA_LDFLAGS}
-    else: message("~~~ OSMESA - ERROR OSMesa ldflags not defined ~~~")
-}
-
 # 3rd party libreries - compiled from source
 # Be careful not to move this chunk. moving it will affect to overall logic flow.
 # ===============================
@@ -648,11 +640,14 @@ unix|msys {
                                   $${SYS_LIBDIR_X11_}/lib$${LIB_GLU}.$${EXT_D}
             }
         } else: contains(BUILD, OSMESA):!USE_EGL {
+            # OSMesa static libraries (libOSMesa, libGLU, libstd) built from source
             USE_OSMESA_STATIC {
                 OSMESA_INC      = $$system($${3RD_PREFIX}/mesa/$${PLATFORM}/osmesa-config --cflags)
                 isEmpty(OSMESA_INC): message("~~~ OSMESA - ERROR OSMesa include path not found ~~~")
-                OSMESA_LDLIBS   = $$system($${3RD_PREFIX}/mesa/$${PLATFORM}/osmesa-config --libs)
+                OSMESA_LDLIBS   = $$system($${3RD_PREFIX}/mesa/$${PLATFORM}/osmesa-config --libs-explicit)
                 isEmpty(OSMESA_LDLIBS): message("~~~ OSMESA - ERROR OSMesa library not defined ~~~")
+                OSMESA_LDFLAGS  = $$system($${3RD_PREFIX}/mesa/$${PLATFORM}/osmesa-config --ldflags)
+                isEmpty(OSMESA_LDFLAGS): message("~~~ OSMESA - ERROR OSMesa ldflags not found ~~~")
                 LIBS_INC       += $${OSMESA_INC}
             } else: USE_OSMESA_LOCAL {
                 OSMESA_INC      = $${OSMESA_LOCAL_PREFIX_}/include
