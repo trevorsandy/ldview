@@ -427,7 +427,7 @@ win32-msvc* {
         # update base name
         LIB_GL2PS           = gl2ps
         # reset individual library entry
-        GL2PS_INC           = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/libgl2ps
+        GL2PS_INC           = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/gl2ps
         GL2PS_LIBDIR        = -L$${3RD_PARTY_PREFIX_}/gl2ps/$$DESTDIR
         GL2PS_LDLIBS        = $${3RD_PARTY_PREFIX_}/gl2ps/$$DESTDIR/$${LIB_GL2PS}.$${EXT_S}
         # update libs path
@@ -685,7 +685,7 @@ unix|msys {
             # update base name
             LIB_GL2PS         = gl2ps
             # reset individual library entry
-            GL2PS_INC         = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/libgl2ps
+            GL2PS_INC         = $$_PRO_FILE_PWD_/$${3RD_PARTY_PREFIX_}/gl2ps
             GL2PS_LIBDIR      = -L$${3RD_PARTY_PREFIX_}/gl2ps/$$DESTDIR
             GL2PS_LDLIBS      = $${3RD_PARTY_PREFIX_}/gl2ps/$$DESTDIR/lib$${LIB_GL2PS}.$${EXT_S}
             # update libs path
@@ -779,8 +779,6 @@ unix|msys {
 !win32-msvc*:isEmpty(USE_3RD_PARTY_3DS):message("~~~ USING STATIC PRE-BUILT 3DS LIB ~~~")
 
 INCLUDEPATH += . ..
-USE_3RD_PARTY_LIBS|BUILD_GL2PS: \
-INCLUDEPATH += $${3RD_PARTY_PREFIX_}/gl2ps
 
 # USE GNU_SOURCE
 unix|msys:!macx: DEFINES += _GNU_SOURCE
