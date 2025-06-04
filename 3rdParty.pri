@@ -115,6 +115,7 @@ QMAKE_EXT_OBJ = .obj
 unix|msys {
 QMAKE_CFLAGS_WARN_ON = \
                      -Wall -W \
+                     -Wno-format-security \
                      -Wno-unused-parameter \
                      -Wno-parentheses \
                      -Wno-unused-variable \
