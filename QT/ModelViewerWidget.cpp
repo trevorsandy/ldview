@@ -1092,12 +1092,15 @@ bool ModelViewerWidget::installLDraw(void)
 	{
 		char *ldrawParentDir = getLDrawDir();
 		char *ldrawDir = copyString(ldrawParentDir, 255);
+		char *ldrawZip = copyString(ldrawParentDir, 255);
+
 		QDir originalDir = QDir::current();
 		bool progressDialogClosed = false;
 
 		libraryUpdateFinished = false;
 		strcat(ldrawDir, "/ldraw");
-		
+		strcat(ldrawZip, "/ldraw/complete.zip");
+
 		QDir dir(ldrawDir);
 		if (!dir.exists())
 		{
@@ -1157,8 +1160,11 @@ bool ModelViewerWidget::installLDraw(void)
 		{
 			LDLModel::setLDrawDir(ldrawDir);
 			preferences->setLDrawDir(ldrawDir);
+			LDLModel::setLDrawZipPath(ldrawZip);
+			preferences->setLDrawZipPath(ldrawZip);
 		}
 		delete ldrawDir;
+		delete ldrawZip;
 		return libraryUpdateFinished;
 	}
 #endif // _NO_BOOST
