@@ -6,17 +6,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <map>
-#include <GL/gl.h>
-#if defined (__APPLE__)
-#include <GLUT/glut.h>
-#else  // defined (__APPLE__)
-#include <EGL/egl.h>
-#define EGL_EGLEXT_PROTOTYPES
-#include <EGL/eglext.h>
-//#include <GLES3/gl32.h>
-#include <sstream>
-#include <stdexcept>
-#endif // defined (__APPLE__)
 #include <TCFoundation/TCUserDefaults.h>
 #include <TCFoundation/mystring.h>
 #include <LDLib/LDSnapshotTaker.h>
@@ -25,22 +14,36 @@
 #include <TCFoundation/TCAlertManager.h>
 #include <TCFoundation/TCProgressAlert.h>
 #include <TCFoundation/TCLocalStrings.h>
+// LPub3D Mod - Main includes
+#if defined (__APPLE__)
+#include <GLUT/glut.h>
+#else  // !defined (__APPLE__)
+#ifdef EGL
+#include <sstream>
+#include <stdexcept>
+#include <EGL/egl.h>
+#include <GL/gl.h>
+#endif // EGL
+#endif // defined (__APPLE__)
+#ifndef GLAPIENTRY
+#define GLAPIENTRY
+#endif // GLAPIENTRY
 #ifndef __USE_EGL
 #include <GL/osmesa.h>
-#endif
-//#define GL_GLEXT_PROTOTYPES
-#include <GL/glext.h>
+#endif // __USE_EGL
+// LPub3D Mod End
 #include <TRE/TREMainModel.h>
+// LPub3D Mod - Main includes
+#include "GLInfo.h"
+// LPub3D Mod End
 #include "StudLogo.h"
 #include "LDViewMessages.h"
-#include "GLInfo.h"
+// LPub3D Mod - Main includes
 #ifdef __USE_GNU
 #include <errno.h>
 #include <stdlib.h>
-#endif // !__USE_GNU
-#ifndef GLAPIENTRY
-#define GLAPIENTRY
-#endif
+#endif // __USE_GNU
+// LPub3D Mod End
 // LPub3D Mod - version info
 #ifdef VERSION_INFO
 #ifdef ARCH
@@ -333,7 +336,7 @@ void assertOpenGLError(const std::string& msg)
 	}
 }
 
-#if !defined (__APPLE__)
+#ifdef EGL
 void assertEGLError(const std::string& msg)
 {
 	EGLint error = eglGetError();
@@ -518,7 +521,7 @@ int main(int argc, char *argv[])
 	char *stringTable = new char[sizeof(LDViewMessages_bytes) + 1];
 	bool useEGL = false;
 
-#if !defined (__APPLE__)
+#ifdef EGL
 	EGLConfig  config  = 0;
 	EGLDisplay display = NULL;
 	EGLContext context = NULL;
@@ -543,7 +546,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-#if !defined (__APPLE__)
+#ifdef EGL
 	try
 	{
 		setupEGL(display, context, surface, config);
@@ -551,8 +554,8 @@ int main(int argc, char *argv[])
 	}
 	catch (std::runtime_error const& e)
 	{
-		printf("%s\n", e.what());
-		useEGL = false;
+		if (TCUserDefaults::boolForKey("Info"))
+			printf("%s\n", e.what());
 	}
 	catch (...)
 	{
@@ -590,7 +593,7 @@ int main(int argc, char *argv[])
 			{
 				//get OpenGL info
 				GLInfo glinfo;
-#if !defined (__APPLE__)
+#ifdef EGL
 				if (useEGL)
 					glinfo.printEGLInfo(display, config);
 				else
@@ -607,7 +610,7 @@ int main(int argc, char *argv[])
 		}
 		// LPub3D Mod End
 
-#if !defined (__APPLE__)
+#ifdef EGL
 		if (display != NULL)
 		{
 			eglDestroyContext(display, context);
