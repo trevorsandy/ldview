@@ -21,7 +21,7 @@
 
 #include <string>
 #include <vector>
-#if defined (_OSMESA) && !defined (__APPLE__)
+#ifdef EGL
 #include <EGL/egl.h>
 #endif
 
@@ -61,7 +61,7 @@ struct GLInfo
 
     void getGLInfo(unsigned int param=0);                // extract info
     void printGLInfo();                                  // print itself
-#if defined (_OSMESA) && !defined (__APPLE__)
+#ifdef EGL
     void printEGLInfo(EGLDisplay& d, EGLConfig& c);
     void printEGLConfigs(EGLDisplay& d);
 #endif

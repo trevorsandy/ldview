@@ -291,12 +291,11 @@ void GLInfo::getGLInfo(unsigned int param)
 }
 
 
-
+#ifdef EGL
 ///////////////////////////////////////////////////////////////////////////////
 // print OpenGL  EGL info to screen and save to a file
 // These functions must be called after GL EGL rendering context opened.
 ///////////////////////////////////////////////////////////////////////////////
-#if defined (_OSMESA) && !defined (__APPLE__)
 static void assertEGLError(const std::string& msg)
 {
     EGLint error = eglGetError();
