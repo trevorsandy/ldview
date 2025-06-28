@@ -50,6 +50,8 @@ contains(DEFINES, _QT) {
 } else: contains(DEFINES, _OSMESA) {
     POSTFIX  = -osmesa
     QT      -= core
+    !macx:!contains(DEFINES, EGL): \
+    DEFINES += EGL
     USE_EGL {
         DEFINES += __USE_EGL
         #POSTFIX  = -egl
