@@ -134,7 +134,7 @@ BuildRequires: mesa-libGLU-devel
 #Source0: LDView.tar.gz
 
 %if 0%{?fedora}
-BuildRequires: libjpeg-turbo-devel, tinyxml-devel, gl2ps-devel, minizip-compat-devel
+BuildRequires: libjpeg-turbo-devel, gl2ps-devel, minizip-compat-devel
 %endif
 
 %if 0%{?centos_version} || 0%{?scientificlinux_version} || 0%{?oraclelinux}

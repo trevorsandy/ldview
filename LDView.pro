@@ -119,9 +119,13 @@ TEMPLATE=subdirs
 # This tells Qt to compile the following SUBDIRS in order
 CONFIG  += ordered
 
+# Always build tinyxml
+!contains(CONFIG, BUILD_TINYXML): \
+CONFIG += BUILD_TINYXML
+
 # Except for MSVC (use pre-built), always build 3rd party lib3ds
 win32-msvc* {
-    CONFIG += BUILD_MINIZIP BUILD_GL2PS BUILD_TINYXML
+    CONFIG += BUILD_MINIZIP BUILD_GL2PS
 } else {
     !USE_3RD_PARTY_PREBUILT_3DS: CONFIG += BUILD_3DS
 }

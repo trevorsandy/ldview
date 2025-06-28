@@ -64,9 +64,10 @@ LIBDIRS        += -L../LDLoader/$$DESTDIR
 
 LIBDIRS        += -L../TCFoundation/$$DESTDIR
 
+LIBDIRS        += $${TINYXML_LIBDIR}
+
 win32-msvc*: \
-LIBDIRS        += $${TINYXML_LIBDIR} \
-                  $${MINIZIP_LIBDIR}
+LIBDIRS        += $${MINIZIP_LIBDIR}
 
 LDLIBS          = -lLDLoader$${POSTFIX} -lTCFoundation$${POSTFIX} -l$${LIB_TINYXML}
 
