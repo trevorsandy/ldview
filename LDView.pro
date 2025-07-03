@@ -409,7 +409,31 @@ OTHER_FILES += $$PWD/LDViewMessages.ini \
                $$PWD/.github/workflows/build.yml \
                $$PWD/.github/workflows/codeql.yml \
                $$PWD/build.cmd \
-               $$PWD/ImageInfo.bat
+               $$PWD/ImageInfo.bat \
+               $$PWD/QT/PKGBUILD \
+               $$PWD/QT/APKBUILD \
+               $$PWD/QT/builddmg.sh \
+               $$PWD/QT/LDView.spec \
+               $$PWD/QT/CMakeLists.txt \
+               $$PWD/QT/OBS/_service \
+               $$PWD/QT/OBS/_service_obs_scm \
+               $$PWD/QT/OBS/appimage.yml \
+               $$PWD/QT/OBS/backup.sh \
+               $$PWD/QT/OBS/flatpak.yaml \
+               $$PWD/QT/OBS/LDView.dsc \
+               $$PWD/QT/OBS/LDView-qt5.dsc \
+               $$PWD/QT/OBS/LDView-qt6.dsc \
+               $$PWD/QT/debian/control \
+               $$PWD/QT/debian/rules \
+               $$PWD/QT/debian/source/local-options \
+               $$PWD/QT/docker/compile.sh \
+               $$PWD/QT/docker/docker.sh \
+               $$PWD/QT/docker/docker-compose.yml \
+               $$PWD/QT/docker/docker-desktop.sh \
+               $$PWD/QT/docker/install-devel-packages.sh \
+               $$PWD/QT/docker/os-report.sh \
+               $$PWD/QT/docker/query-package.sh
+
 
 BUILD_ARCH = $$(TARGET_CPU)
 isEmpty(BUILD_ARCH): \
