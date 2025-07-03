@@ -8,7 +8,7 @@ rem LDView distributions and package the build contents (exe, doc and
 rem resources ) as LPub3D 3rd Party components.
 rem --
 rem  Trevor SANDY <trevor.sandy@gmail.com>
-rem  Last Update: May 10, 2025
+rem  Last Update: July 03, 2025
 rem  Copyright (c) 2019 - 2025 by Trevor SANDY
 rem --
 rem This script is distributed in the hope that it will be useful,
@@ -137,7 +137,7 @@ rem Verify 1st input flag options
 IF NOT [%1]==[] (
   IF NOT "%1"=="x86" (
     IF NOT "%1"=="x86_64" (
-      IF NOT "%1"=="-all" (
+      IF NOT "%1"=="-all_amd" (
         IF NOT "%1"=="-help" GOTO :PLATFORM_ERROR
       )
     )
@@ -146,7 +146,7 @@ IF NOT [%1]==[] (
 
 rem Parse platform input flag
 IF [%1]==[] (
-  SET PLATFORM_ARCH=-all
+  SET PLATFORM_ARCH=-all_amd
   GOTO :SET_CONFIGURATION
 )
 IF /I "%1"=="x86" (
@@ -157,8 +157,8 @@ IF /I "%1"=="x86_64" (
   SET PLATFORM_ARCH=x64
   GOTO :SET_CONFIGURATION
 )
-IF /I "%1"=="-all" (
-  SET PLATFORM_ARCH=-all
+IF /I "%1"=="-all_amd" (
+  SET PLATFORM_ARCH=-all_amd
   GOTO :SET_CONFIGURATION
 )
 IF /I "%1"=="-help" (
@@ -264,7 +264,7 @@ rem If check specified, update inifile with ldraw directory path
 CALL :UPDATE_INI_POV_FILE
 
 rem Check if build all platforms
-IF /I "%PLATFORM_ARCH%"=="-all" (
+IF /I "%PLATFORM_ARCH%"=="-all_amd" (
   GOTO :BUILD_ALL
 )
 
@@ -882,35 +882,35 @@ ECHO.
 ECHO ----------------------------------------------------------------
 ECHO Usage:
 ECHO  build [ -help]
-ECHO  build [ x86 ^| x86_64 ^| -all ] [ -ins ^| -chk ] [ -chk ]
+ECHO  build [ x86 ^| x86_64 ^| -all_amd ] [ -ins ^| -chk ] [ -chk ]
 ECHO.
 ECHO ----------------------------------------------------------------
-ECHO Build 64bit, Release and perform build check
+ECHO Build AMD 64bit, Release and perform build check
 ECHO build x86_64 -chk
 ECHO.
-ECHO Build 32bit, Release and perform build check
+ECHO Build AMD 32bit, Release and perform build check
 ECHO build x86 -chk
 ECHO.
-ECHO Build 32bit, Release and perform build check, output only build errors
+ECHO Build AMD 32bit, Release and perform build check, output only build errors
 ECHO build x86 -chk -minlog
 ECHO.
-ECHO Build 64bit and32bit, Release and perform build check
-ECHO build -all -chk
+ECHO Build AMD 64bit and32bit, Release and perform build check
+ECHO build -all_amd -chk
 ECHO.
-ECHO Build 64bit and32bit, Release, perform install and build check
-ECHO build -all -ins -chk
+ECHO Build AMD 64bit and32bit, Release, perform install and build check
+ECHO build -all_amd -ins -chk
 ECHO.
-ECHO Build 64bit and32bit, Release, perform install and build check, output only build errors
-ECHO build -all -ins -chk -minlog
+ECHO Build AMD 64bit and32bit, Release, perform install and build check, output only build errors
+ECHO build -all_amd -ins -chk -minlog
 ECHO.
 ECHO Flags:
 ECHO ----------------------------------------------------------------
 ECHO ^| Flag    ^| Pos ^| Type             ^| Description
 ECHO ----------------------------------------------------------------
 ECHO  -help......1......Useage flag         [Default=Off] Display useage.
-ECHO  x86........1......Platform flag       [Default=Off] Build 32bit architecture.
-ECHO  x86_64.....1......Platform flag       [Default=Off] Build 64bit architecture.
-ECHO  -all.......1......Configuraiton flag  [Default=On ] Build both  32bit and 64bit architectures
+ECHO  x86........1......Platform flag       [Default=Off] Build AMD 32bit architecture.
+ECHO  x86_64.....1......Platform flag       [Default=Off] Build AMD 64bit architecture.
+ECHO  -all_amd...1......Configuraiton flag  [Default=On ] Build both AMD 32bit and 64bit architectures
 ECHO  -ins.......2......Project flag        [Default=Off] Install distribution as LPub3D 3rd party installation
 ECHO  -chk.......2,3....Project flag        [Default=On ] Perform a quick image redering check using command line ini file
 ECHO  -minlog....4,3....Project flag        [Default=Off] Minimum build logging - only display build errors
@@ -919,7 +919,7 @@ ECHO Be sure the set your LDraw directory in the variables section above if you 
 ECHO.
 ECHO Flags are case sensitive, use lowere case.
 ECHO.
-ECHO If no flag is supplied, 64bit platform, Release Configuration built by default.
+ECHO If no flag is supplied, AMD 64bit platform, Release Configuration built by default.
 ECHO ----------------------------------------------------------------
 EXIT /b
 
