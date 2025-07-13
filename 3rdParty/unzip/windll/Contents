@@ -1,0 +1,40 @@
+Contents of the "windll" subdirectory for UnZip 6.0 and later:
+
+  Contents       this file
+  decs.h         Exported function declarations.
+  structs.h      header file, used by both the DLL and by calling applications,
+                 defines the structures used in the DLL interface
+  unziplib.def   definition file for 32-bit UnZip library
+  windll32.def   definition file for 32-bit UnZip DLL
+  windllgcc.def  definition file for 32-bit UnZip DLL, variant for GCC tools
+  windll_lc.def  definition file for 32-bit UnZip DLL, variant for LCC tools
+  windll.c       contains the entry point for the DLL, "fake" printing,
+                 sound, rename, replace and password functions
+  windll.h       header file for both 16- and 32-bit DLLs
+  windll.rc      resource file for both 16- and 32-bit DLLs
+  windll.txt     simplistic explanation of how to use DLL
+  uzexampl.c     a very simplistic example of how to load the DLL and make
+                 a call into it
+  uzexampl.h     header file for uzexampl.c
+  
+
+The source file uzexampl.c contains a short example showing how to call the
+Win32 UnZip DLL from C. This code should work with all C compiler environments
+that allow to build a >>working<< unzip32.dll binary.  This has been verified
+with Microsoft Visual C++ (Version 8.0 [2005]) as well as the
+free MinGW GCC compiler implementation.  The example code is a simple
+console application that calls the UnZip dll to extract files from a Zip
+archive.  The code assumes that the unzip32.dll binary is available somewhere
+on the execution path.
+
+If you want to build the UnZip DLL, or the WinDLL usage example
+from the command line, you may use the MSC Makefile supplied in the
+subdirectory of the Win32 command line port.
+
+In the default setup, the UnZip DLL is linked against the shared C runtime
+dll.  This configuration is most feasible for multi-module C/C++ based
+programs.  For usage with non-C projects (e.g. Visual Basic or MS .NET
+managed code), a statically linked UnZip DLL might be more appropiate.
+Both the Visual Studio projects and the MSC Makefile in the win32/ subdir
+support statically linked builds through specific configurations (MSVC projects)
+or a configuration switch (for details look into ../win32/Makefile).
