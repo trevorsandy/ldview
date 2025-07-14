@@ -66,7 +66,7 @@ contains(QT_VERSION, ^5\\..*) {
 }
 
 contains(QT_VERSION, ^6\\..*) {
-    win32-msvc* {
+    win32-arm64-msvc|win32-msvc* {
         QMAKE_CXXFLAGS += /std:c++17
     }
     macx {
@@ -92,7 +92,7 @@ unix|msys {
     EXT_D = so
 }
 
-win32-msvc* {
+win32-arm64-msvc|win32-msvc* {
     DEFINES += \
         _CRT_SECURE_NO_WARNINGS \
         _CRT_SECURE_NO_DEPRECATE=1 \

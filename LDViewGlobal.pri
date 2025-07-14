@@ -88,7 +88,7 @@ contains(DEFINES, _QT) {
 CONFIG += BUILD_TINYXML
 
 # Except for MSVC (use pre-built), always build 3rd party lib3ds
-win32-msvc* {
+win32-arm64-msvc|win32-msvc* {
     CONFIG += BUILD_MINIZIP BUILD_GL2PS
 } else {
     !USE_3RD_PARTY_PREBUILT_3DS: CONFIG += BUILD_3DS
@@ -251,7 +251,7 @@ unix|msys {
     LIB_TRE          = libTRE$${POSTFIX}.$${EXT_S}
     LIB_TCFOUNDATION = libTCFoundation$${POSTFIX}.$${EXT_S}
 
-} else:win32-msvc* {
+} else:win32-arm64-msvc|win32-msvc* {
     # Windows MSVC stuff...
     SYSTEM_PREFIX_ = $${PREFIX}
 
@@ -400,7 +400,7 @@ USE_3RD_PARTY_LIBS {
     contains(BUILD, OSMESA):!USE_EGL: LIBS_DIR += $${OSMESA_LIBDIR}
 }
 
-win32-msvc* {
+win32-arm64-msvc|win32-msvc* {
     # Be careful not to move this chunk. Moving it will affect to overall logic flow.
 
     3DS_LDLIBS  = $${LIBDIR_}/lib3ds-$${VSVER}.lib
@@ -782,7 +782,7 @@ unix|msys {
     }
 }
 
-!win32-msvc*:isEmpty(USE_3RD_PARTY_3DS):message("~~~ USING STATIC PRE-BUILT 3DS LIB ~~~")
+!win32-arm64-msvc:!win32-msvc*:isEmpty(USE_3RD_PARTY_3DS):message("~~~ USING STATIC PRE-BUILT 3DS LIB ~~~")
 
 INCLUDEPATH += . ..
 
@@ -796,7 +796,7 @@ else: \
 DEFINES += USE_CPP11
 
 contains(QT_VERSION, ^5\\..*) {
-    win32-msvc* {
+    win32-arm64-msvc|win32-msvc* {
         QMAKE_CXXFLAGS += /std:c++17
     }
     unix|msys:!macx {
@@ -810,7 +810,7 @@ contains(QT_VERSION, ^5\\..*) {
 }
 
 contains(QT_VERSION, ^6\\..*) {
-    win32-msvc* {
+    win32-arm64-msvc|win32-msvc* {
         QMAKE_CXXFLAGS += /std:c++17
     }
     macx {
@@ -845,7 +845,7 @@ OBJECTS_DIR      = $$DESTDIR/.obj$${POSTFIX}
 win32 {
     QMAKE_EXT_OBJ = .obj
 
-    win32-msvc* {
+    win32-arm64-msvc|win32-msvc* {
         DEFINES += \
             _CRT_SECURE_NO_WARNINGS \
             _CRT_NONSTDC_NO_WARNINGS=1

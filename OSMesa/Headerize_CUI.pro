@@ -46,7 +46,7 @@ win32 {
     RC_ICONS = "../Icons/LDViewIcon.ico"
     msys: \
     QMAKE_LFLAGS += -Wl,--allow-multiple-definition
-    win32-msvc* {
+    win32-arm64-msvc|win32-msvc* {
     QMAKE_LFLAGS += -NODEFAULTLIB:LIBCMT
     QMAKE_LFLAGS_WINDOWS += /IGNORE:4099
     }

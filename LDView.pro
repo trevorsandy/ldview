@@ -124,7 +124,7 @@ CONFIG  += ordered
 CONFIG += BUILD_TINYXML
 
 # Except for MSVC (use pre-built), always build 3rd party lib3ds
-win32-msvc* {
+win32-arm64-msvc|win32-msvc* {
     CONFIG += BUILD_MINIZIP BUILD_GL2PS
 } else {
     !USE_3RD_PARTY_PREBUILT_3DS: CONFIG += BUILD_3DS
@@ -199,6 +199,20 @@ USE_3RD_PARTY_LIBS {
 }
 
 USE_SYSTEM_LIBS {
+    contains(USE_3RD_PARTY_ZLIB, YES) {
+        SUBDIRS = 3rdParty_zlib
+        3rdParty_zlib.file       = $$PWD/3rdParty/zlib/3rdParty_zlib.pro
+        3rdParty_zlib.makefile   = Makefile.zlib
+        3rdParty_zlib.target     = sub-3rdParty_zlib
+        3rdParty_zlib.depends    =
+    }
+    contains(USE_3RD_PARTY_JPEG, YES) {
+        SUBDIRS += 3rdParty_jpeg
+        3rdParty_jpeg.file       = $$PWD/3rdParty/libjpeg/3rdParty_jpeg.pro
+        3rdParty_jpeg.makefile   = Makefile.jpeg
+        3rdParty_jpeg.target     = sub-3rdParty_jpeg
+        3rdParty_jpeg.depends    =
+    }
     # always built unless prebuilt instance specified...
     contains(USE_3RD_PARTY_3DS, YES) {
         SUBDIRS = 3rdParty_3ds

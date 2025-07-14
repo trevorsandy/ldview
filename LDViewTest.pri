@@ -1,5 +1,5 @@
 unix|win32 {
-    msys|win32-msvc* {
+    msys|win32-arm64-msvc|win32-msvc* {
         LDVIEW_INI           = ldview.ini
         LDVIEW_EXE           = $${TARGET}.exe
         LDV_RC_FILE          = $${LDVIEW_INI}
@@ -9,7 +9,7 @@ unix|win32 {
         LDV_RC_FILE          = .ldviewrc
     }
 
-    if (mingw:ide_qtcreator)|win32-msvc* {
+    if (mingw:ide_qtcreator)|win32-arm64-msvc|win32-msvc* {
         LDV_TEST_TYPE        = Basic
         LDV_COPY_CMD         = copy /v /y
         LDV_DEL_CMD          = del /q
