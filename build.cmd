@@ -8,7 +8,7 @@ rem LDView distributions and package the build contents (exe, doc and
 rem resources ) as LPub3D 3rd Party components.
 rem --
 rem  Trevor SANDY <trevor.sandy@gmail.com>
-rem  Last Update: July 03, 2025
+rem  Last Update: August 03, 2025
 rem  Copyright (c) 2019 - 2025 by Trevor SANDY
 rem --
 rem This script is distributed in the hope that it will be useful,
@@ -99,28 +99,53 @@ IF NOT EXIST "%LP3D_VCVARSALL_DIR%" (
   GOTO :ERROR_END
 )
 
+rem https://learn.microsoft.com/en-us/cpp/overview/compiler-versions
 rem Visual C++ 2012 -vcvars_ver=11.0 Toolset v110 VSVersion 11.0    _MSC_VER 1700
 rem Visual C++ 2013 -vcvars_ver=12.0 Toolset v120 VSVersion 12.0    _MSC_VER 1800
 rem Visual C++ 2015 -vcvars_ver=14.0 Toolset v140 VSVersion 14.0    _MSC_VER 1900
 rem Visual C++ 2017 -vcvars_ver=14.1 Toolset v141 VSVersion 15.9    _MSC_VER 1916
 rem Visual C++ 2019 -vcvars_ver=14.2 Toolset v142 VSVersion 16.11.3 _MSC_VER 1929
-rem Visual C++ 2022 -vcvars_ver=14.4 Toolset v143 VSVersion 17.11.3 _MSC_VER 1941 - (-vcvars_ver set to 14.4 since VSVersion 17.10)
-IF "%LP3D_MSC_VER%" == "" SET LP3D_MSC_VER=1941
-IF "%LP3D_VCSDKVER%" == "" SET LP3D_VCSDKVER=8.1
-IF "%LP3D_VCTOOLSET%" == "" SET LP3D_VCTOOLSET=v141
-IF "%LP3D_VCVARSALL_VER%" == "" SET LP3D_VCVARSALL_VER=-vcvars_ver=14.1
+rem Visual C++ 2022 -vcvars_ver=14.4 Toolset v143 VSVersion 17.14.0 _MSC_VER 1944
+IF "%LP3D_MSC32_VER%" == "" SET LP3D_MSC32_VER=1941
+IF "%LP3D_VC32SDKVER%" == "" SET LP3D_VC32SDKVER=8.1
+IF "%LP3D_VC32TOOLSET%" == "" SET LP3D_VC32TOOLSET=v141
+IF "%LP3D_VC32VARSALL_VER%" == "" SET LP3D_VC32VARSALL_VER=-vcvars_ver=14.1
 
-IF "%LP3D_VALID_7ZIP%" =="" SET LP3D_VALID_7ZIP=0
-IF "%LP3D_7ZIP_WIN64%" == "" SET "LP3D_7ZIP_WIN64=%ProgramFiles%\7-zip\7z.exe"
+IF "%LP3D_MSC64_VER%" == "" SET LP3D_MSC64_VER=1944
+IF "%LP3D_VC64SDKVER%" == "" SET LP3D_VC64SDKVER=10.0
+IF "%LP3D_VC64TOOLSET%" == "" SET LP3D_VC64TOOLSET=v143
+IF "%LP3D_VC64VARSALL_VER%" == "" SET LP3D_VC64VARSALL_VER=-vcvars_ver=14.4
+
+IF "%LP3D_MSCARM64_VER%" == "" SET LP3D_MSCARM64_VER=1944
+IF "%LP3D_VCARM64SDKVER%" == "" SET LP3D_VCARM64SDKVER=10.0
+IF "%LP3D_VCARM64TOOLSET%" == "" SET LP3D_VCARM64TOOLSET=v143
+IF "%LP3D_VCARM64VARSALL_VER%" == "" SET LP3D_VCARM64VARSALL_VER=-vcvars_ver=14.4
+
+IF "%LP3D_VALID_TAR%" == "" SET LP3D_VALID_TAR=0
+IF "%LP3D_SYS_DIR%" == "" (
+  SET LP3D_SYS_DIR=%WINDIR%\System32
+)
+IF "%LP3D_WIN_TAR%" == "" (
+  SET LP3D_WIN_TAR=%LP3D_SYS_DIR%\Tar.exe
+)
+IF NOT EXIST "%LP3D_WIN_TAR%" (
+  SET LP3D_WIN_TAR=
+  SET LP3D_WIN_TAR_MSG=Not Found
+) ELSE (
+  SET LP3D_VALID_TAR=1 
+  SET LP3D_WIN_TAR_MSG=%LP3D_WIN_TAR%
+)
 
 SET INI_POV_FILE=%PWD%\OSMesa\ldviewPOV.ini
 SET OfficialCONTENT=complete.zip
+SET LP3D_AMD64_ARM64_CROSS=0
 
 SET PACKAGE=LDView
 SET VERSION=4.6
 SET PROJECT=LDView.vcxproj
 Rem SET PROJECT=LDView.sln
-SET CONFIGURATION=Release
+IF "%CONFIGURATION%" == "" SET CONFIGURATION=Release
+IF %CONFIGURATION% EQU Debug SET d=d
 
 SET MINIMUM_LOGGING=unknown
 SET THIRD_INSTALL=unknown
@@ -135,10 +160,12 @@ ECHO -Start %PACKAGE% %~nx0 with commandline args: [%*].
 
 rem Verify 1st input flag options
 IF NOT [%1]==[] (
-  IF NOT "%1"=="x86" (
-    IF NOT "%1"=="x86_64" (
-      IF NOT "%1"=="-all_amd" (
-        IF NOT "%1"=="-help" GOTO :PLATFORM_ERROR
+  IF /I NOT "%1"=="x86" (
+    IF /I NOT "%1"=="x86_64" (
+      IF /I NOT "%1"=="arm64" (
+        IF /I NOT "%1"=="-all_amd" (
+          IF /I NOT "%1"=="-help" GOTO :PLATFORM_ERROR
+        )
       )
     )
   )
@@ -161,6 +188,10 @@ IF /I "%1"=="-all_amd" (
   SET PLATFORM_ARCH=-all_amd
   GOTO :SET_CONFIGURATION
 )
+IF /I "%1"=="arm64" (
+  SET PLATFORM_ARCH=ARM64
+  GOTO :SET_CONFIGURATION
+)
 IF /I "%1"=="-help" (
   GOTO :USAGE
 )
@@ -168,23 +199,30 @@ rem If we get here display invalid command message.
 GOTO :COMMAND_ERROR
 
 :SET_CONFIGURATION
+rem Set ARM64 cross compilation
+IF /I "%PLATFORM_ARCH%" == "ARM64" (
+  IF /I "%PROCESSOR_ARCHITECTURE%" == "AMD64" (
+    SET LP3D_AMD64_ARM64_CROSS=1
+  )
+)
+
 rem Verify 2nd input flag options
 IF NOT [%2]==[] (
-  IF NOT "%2"=="-ins" (
-    IF NOT "%2"=="-chk" GOTO :CONFIGURATION_ERROR
+  IF /I NOT "%2"=="-ins" (
+    IF /I NOT "%2"=="-chk" GOTO :CONFIGURATION_ERROR
   )
 )
 
 rem Verify 3rd input flag options
 IF NOT [%3]==[] (
-  IF NOT "%3"=="-chk" (
-    IF NOT "%3"=="-minlog" GOTO :CONFIGURATION_ERROR
+  IF /I NOT "%3"=="-chk" (
+    IF /I NOT "%3"=="-minlog" GOTO :CONFIGURATION_ERROR
   )
 )
 
 rem Verify 4th input flag options
 IF NOT [%4]==[] (
-  IF NOT "%4"=="-minlog" GOTO :CONFIGURATION_ERROR
+  IF /I NOT "%4"=="-minlog" GOTO :CONFIGURATION_ERROR
 )
 
 rem Set third party install as default behaviour
@@ -236,6 +274,13 @@ ECHO   WORKING_DIR............[%PWD%]
 ECHO   DIST_DIRECTORY.........[%DIST_DIR%]
 ECHO   LDRAW_DIR..............[%LDRAW_DIR%]
 ECHO.  LDRAW_DOWNLOAD_DIR.....[%LDRAW_DOWNLOAD_DIR%]
+ECHO   LP3D_WIN_TAR...........[%LP3D_WIN_TAR_MSG%]
+IF /I "%PLATFORM_ARCH%" == "ARM64" (
+  ECHO   PROCESSOR_ARCH.........[%PROCESSOR_ARCHITECTURE%]
+  IF %LP3D_AMD64_ARM64_CROSS% EQU 1 (
+    ECHO   COMPILATION............[ARM64 on AMD64 host]
+  )
+)
 
 rem Perform build check
 IF /I "%3"=="-chk" (
@@ -282,8 +327,9 @@ ECHO -Build Command: %COMMAND_LINE%
 rem Launch msbuild
 %COMMAND_LINE%
 rem Check build status
-IF %PLATFORM_ARCH%==Win32 (SET EXE=Build\%CONFIGURATION%\%PACKAGE%.exe)
-IF %PLATFORM_ARCH%==x64 (SET EXE=Build\%CONFIGURATION%64\%PACKAGE%64.exe)
+IF %PLATFORM_ARCH%==Win32 (SET EXE=Build\%CONFIGURATION%\%PACKAGE%%d%.exe)
+IF %PLATFORM_ARCH%==x64 (SET EXE=Build\%CONFIGURATION%64\%PACKAGE%64%d%.exe)
+IF %PLATFORM_ARCH%==ARM64 (SET EXE=Build\%CONFIGURATION%ARM64\%PACKAGE%64%d%.exe)
 IF NOT EXIST "%EXE%" (
   ECHO.
   ECHO "-ERROR - %EXE% was not successfully built."
@@ -295,6 +341,7 @@ rem Package 3rd party install content
 IF %THIRD_INSTALL%==1 (
   IF %PLATFORM_ARCH%==Win32 (SET INSTALL_32BIT=1)
   IF %PLATFORM_ARCH%==x64 (SET INSTALL_64BIT=1)
+  IF %PLATFORM_ARCH%==ARM64 (SET INSTALL_64BIT=1)
   CALL :3RD_PARTY_INSTALL
 )
 rem Restore ini file
@@ -315,8 +362,8 @@ FOR %%P IN ( Win32, x64 ) DO (
   SET COMMAND_LINE=msbuild /m /p:Configuration=%CONFIGURATION% /p:Platform=%%P /p:WindowsTargetPlatformVersion=!LP3D_VCSDKVER! /p:PlatformToolset=!LP3D_VCTOOLSET! %PROJECT% %LOGGING_FLAGS%
   ECHO -Build Command: !COMMAND_LINE!
   !COMMAND_LINE!
-  IF %%P==Win32 (SET EXE=Build\%CONFIGURATION%\%PACKAGE%.exe)
-  IF %%P==x64 (SET EXE=Build\%CONFIGURATION%64\%PACKAGE%64.exe)
+  IF %%P==Win32 (SET EXE=Build\%CONFIGURATION%\%PACKAGE%%d%.exe)
+  IF %%P==x64 (SET EXE=Build\%CONFIGURATION%64\%PACKAGE%64%d%.exe)
   IF NOT EXIST "!EXE!" (
     ECHO.
     ECHO "-ERROR - !EXE! was not successfully built."
@@ -336,17 +383,25 @@ GOTO :END
 :CONFIGURE_VCTOOLS
 ECHO.
 ECHO -Set MSBuild platform toolset...
-IF %1==x64 (
+IF %1==x86_64 (
   IF "%LP3D_CONDA_BUILD%" NEQ "True" (
-    SET LP3D_MSC_VER=1941
-    SET LP3D_VCSDKVER=10.0
-    SET LP3D_VCTOOLSET=v143
-    SET LP3D_VCVARSALL_VER=-vcvars_ver=14.4
+    SET LP3D_MSC_VER=%LP3D_MSC64_VER%
+    SET LP3D_VCSDKVER=%LP3D_VC64SDKVER%
+    SET LP3D_VCTOOLSET=%LP3D_VC64TOOLSET%
+    SET LP3D_VCVARSALL_VER%LP3D_VC64VARSALL_VER%
   )
 ) ELSE (
-  SET LP3D_VCSDKVER=8.1
-  SET LP3D_VCTOOLSET=v141
-  SET LP3D_VCVARSALL_VER=-vcvars_ver=14.1
+  IF %1==ARM64 (
+    SET LP3D_MSC_VER=%LP3D_MSCARM64_VER%
+    SET LP3D_VCSDKVER=%LP3D_VCARM64SDKVER%
+    SET LP3D_VCTOOLSET=%LP3D_VCARM64TOOLSET%
+    SET LP3D_VCVARSALL_VER=%LP3D_VCARM64VARSALL_VER%
+  ) ELSE (
+    SET LP3D_MSC_VER=%LP3D_MSC32_VER%
+    SET LP3D_VCSDKVER=%LP3D_VC32SDKVER%
+    SET LP3D_VCTOOLSET=%LP3D_VC32TOOLSET%
+    SET LP3D_VCVARSALL_VER=%LP3D_VC32VARSALL_VER%
+  )
 )
 ECHO.
 ECHO   PLATFORM_ARCH..........[%1]
@@ -361,6 +416,12 @@ EXIT /b
 :CONFIGURE_BUILD_ENV
 ECHO.
 ECHO -Configure %PACKAGE% %PLATFORM_ARCH% build environment...
+IF %PLATFORM_ARCH% EQU x86_64 (
+  SET VCVARS_BAT=vcvars64.bat
+)
+IF %PLATFORM_ARCH% EQU ARM64 (
+  SET VCVARS_BAT=vcvarsamd64_arm64.bat
+)
 rem Set vcvars for AppVeyor or local build environments
 IF "%PATH_PREPENDED%" NEQ "True" (
   IF "%LP3D_CONDA_BUILD%" EQU "True" (
@@ -376,10 +437,10 @@ IF "%PATH_PREPENDED%" NEQ "True" (
       )
     ) ELSE (
       ECHO.
-      IF EXIST "%LP3D_VCVARSALL_DIR%\vcvars64.bat" (
-        CALL "%LP3D_VCVARSALL_DIR%\vcvars64.bat" %LP3D_VCVARSALL_VER%
+      IF EXIST "%LP3D_VCVARSALL_DIR%\%VCVARS_BAT%" (
+        CALL "%LP3D_VCVARSALL_DIR%\%VCVARS_BAT%" %LP3D_VCVARSALL_VER%
       ) ELSE (
-        ECHO -ERROR: vcvars64.bat not found.
+        ECHO -ERROR: %LP3D_VCVARS% not found.
         GOTO :ERROR_END
       )
     )
@@ -441,26 +502,30 @@ EXIT /b
 ECHO.
 ECHO -Perform build check for %CONFIGURATION% Configuration, %1 Platform using Ini file %INI_POV_FILE%......
 CALL :CHECK_LDRAW_DIR
-IF %1==Win32 SET PL=
-IF %1==x64 SET PL=64
 SET INI_FILE=%INI_POV_FILE%
 SET IN_FILE=8464.mpd
 SET OUT_FILE=8464.TestResult.%1.png
 SET ALT_LDCONFIG_FILE=%LDRAW_DIR%\LDCfgalt.ldr
 SET ARGS=-SaveWidth=1024 -SaveHeight=1024 -SaveActualSize=0 -HaveStdOut=1 -v
-SET PACKAGE_PATH=Build\%CONFIGURATION%%PL%\%PACKAGE%%PL%.exe
+IF %1==Win32 (SET PACKAGE_EXECUTABLE=Build\%CONFIGURATION%\%PACKAGE%%d%.exe)
+IF %1==x64 (SET PACKAGE_EXECUTABLE=Build\%CONFIGURATION%64\%PACKAGE%64%d%.exe)
+IF %1==ARM64 (SET PACKAGE_EXECUTABLE=Build\%CONFIGURATION%ARM64\%PACKAGE%64%d%.exe)
 SET COMMAND_LINE_ARGS= "%IN_FILE%" -LDrawDir="%LDRAW_DIR%" -SaveSnapshot="%OUT_FILE%" -IniFile="%INI_FILE%" %ARGS% -LDConfig="%ALT_LDCONFIG_FILE%"
-SET COMMAND=%PACKAGE_PATH% %COMMAND_LINE_ARGS%
+SET COMMAND=%PACKAGE_EXECUTABLE% %COMMAND_LINE_ARGS%
 IF %CHECK%==1 (
   ECHO.
   ECHO   PACKAGE................[%PACKAGE%]
-  ECHO   PACKAGE_PATH...........[%PACKAGE_PATH%]
+  ECHO   PACKAGE_EXECUTABLE.....[%PACKAGE_EXECUTABLE%]
   ECHO   ARGUMENTS..............[%ARGS%]
   ECHO   INI_FILE...............[%INI_FILE%]
   ECHO   OUT_FILE...............[%OUT_FILE%]
   ECHO   IN_FILE................[%IN_FILE%]
   ECHO   LDRAW_DIRECTORY........[%LDRAW_DIR%]
   ECHO   COMMAND................[%COMMAND%]
+  IF %LP3D_AMD64_ARM64_CROSS%==1 (
+    ECHO -%PACKAGE% %1 Build Check skipped on ARM64 cross compilation.
+    EXIT /b
+  )
   IF EXIST "%OUT_FILE%" (
     DEL /Q "%OUT_FILE%"
   )
@@ -471,10 +536,10 @@ IF %CHECK%==1 (
   )
   IF EXIST "%OUT_FILE%" (
     ECHO.
-    ECHO -Build Check, create %OUT_FILE% from %IN_FILE% - Test successful!
+    ECHO -%PACKAGE% %1 Build Check, create %OUT_FILE% from %IN_FILE% - Test successful!
   )
 ) ELSE (
-  ECHO -Check is not possible
+  ECHO -%PACKAGE% %1 Check is not possible
 )
 EXIT /b
 
@@ -484,6 +549,8 @@ ECHO -Installing distribution files...
 SET COPY_CMD=COPY /V /Y
 SET DIST_INSTALL_PATH=%DIST_DIR%\%PACKAGE%-%VERSION%\bin\i386
 SET LIBS_INSTALL_PATH=%DIST_DIR%\%PACKAGE%-%VERSION%\lib\i386
+SET LIBS_3RDPARTY=gl2ps,tinyxml,minizip
+SET LIBS_LDVIEW=LDLib,LDExporter,LDLoader,TRE,TCFoundation
 IF %INSTALL_32BIT% == 1 (
   ECHO.
   ECHO -Installing %PACKAGE% 32bit exe to [%DIST_INSTALL_PATH%]...
@@ -497,10 +564,10 @@ IF %INSTALL_32BIT% == 1 (
   IF "%PROJECT:~-7%"=="vcxproj" (
     ECHO.
     ECHO -Installing %PACKAGE% 32bit libraries to [%LIBS_INSTALL_PATH%]...
-    FOR %%G IN (LDLib,LDExporter,LDLoader,TRE,TCFoundation) DO (
+    FOR %%G IN (%LIBS_LDVIEW%) DO (
       %COPY_CMD% "%%G\Build\Release\%%G.*" "%LIBS_INSTALL_PATH%\" /B
     )
-    FOR %%G IN (gl2ps,tinyxml,minizip) DO (
+    FOR %%G IN (%LIBS_3RDPARTY%) DO (
       %COPY_CMD% "3rdParty\%%G\Build\Release\%%G*" "%LIBS_INSTALL_PATH%\" /B
     )
   )
@@ -547,67 +614,80 @@ IF %INSTALL_32BIT% == 1 (
     )
   )
 )
-SET DIST_INSTALL_PATH=%DIST_DIR%\%PACKAGE%-%VERSION%\bin\x86_64
-SET LIBS_INSTALL_PATH=%DIST_DIR%\%PACKAGE%-%VERSION%\lib\x86_64
+IF "%PLATFORM_ARCH%"=="ARM64" (
+  SET INSTALL_ARCH=ARM64
+  SET INSTALL_SOLUTION=2022
+  SET INSTALL_LIB_DIR=ARM64
+  SET BUILD_CONFIG=%CONFIGURATION%ARM64
+  REM If building 3rdParty libraries versus using prebuilt libraries
+  REM SET LIBS_3RDPARTY=%LIBS_3RDPARTY%,lib3ds,libjpeg,libpng,unzip,zlib
+) ELSE (
+  SET INSTALL_ARCH=x86_64
+  SET INSTALL_SOLUTION=2019
+  SET INSTALL_LIB_DIR=x64
+  SET BUILD_CONFIG=%CONFIGURATION%64
+)
+SET DIST_INSTALL_PATH=%DIST_DIR%\%PACKAGE%-%VERSION%\bin\%INSTALL_ARCH%
+SET LIBS_INSTALL_PATH=%DIST_DIR%\%PACKAGE%-%VERSION%\lib\%INSTALL_ARCH%
 IF %INSTALL_64BIT% EQU 1 (
   ECHO.
-  ECHO -Installing %PACKAGE% 64bit exe to [%DIST_INSTALL_PATH%]...
+  ECHO -Installing %INSTALL_ARCH% %PACKAGE% 64bit exe to [%DIST_INSTALL_PATH%]...
   IF NOT EXIST "%DIST_INSTALL_PATH%\" (
     MKDIR "%DIST_INSTALL_PATH%\"
   )
   IF NOT EXIST "%LIBS_INSTALL_PATH%\" (
     MKDIR "%LIBS_INSTALL_PATH%\"
   )
-  %COPY_CMD% "Build\Release64\%PACKAGE%64.*" "%DIST_INSTALL_PATH%\" /B
+  %COPY_CMD% "Build\%BUILD_CONFIG%\%PACKAGE%64.*" "%DIST_INSTALL_PATH%\" /B
   IF "%PROJECT:~-7%"=="vcxproj" (
     ECHO.
     ECHO -Installing %PACKAGE% 64bit libraries to [%LIBS_INSTALL_PATH%]..
-    FOR %%G IN (LDLib,LDExporter,LDLoader,TRE,TCFoundation) DO (
-      %COPY_CMD% "%%G\Build\Release64\%%G.*" "%LIBS_INSTALL_PATH%\" /B
+    FOR %%G IN (%LIBS_LDVIEW%) DO (
+      %COPY_CMD% "%%G\Build\%BUILD_CONFIG%\%%G.*" "%LIBS_INSTALL_PATH%\" /B
     )
-    FOR %%G IN (gl2ps,tinyxml,minizip) DO (
-      %COPY_CMD% "3rdParty\%%G\Build\Release64\%%G*" "%LIBS_INSTALL_PATH%\" /B
+    FOR %%G IN (%LIBS_3RDPARTY%) DO (
+      %COPY_CMD% "3rdParty\%%G\Build\%BUILD_CONFIG%\%%G*" "%LIBS_INSTALL_PATH%\" /B
     )
   )
   IF "%PROJECT:~-3%"=="sln" (
-    IF EXIST "Build\Release64" (
+    IF EXIST "Build\%BUILD_CONFIG%" (
       ECHO.
-      ECHO -Installing %PACKAGE% 32bit libraries to [%LIBS_INSTALL_PATH%]...
-      %COPY_CMD% "Build\Release64\*.lib" "%LIBS_INSTALL_PATH%\" /B
-      %COPY_CMD% "Build\Release64\*.pdb" "%LIBS_INSTALL_PATH%\" /B
+      ECHO -Installing %PACKAGE% 64bit libraries to [%LIBS_INSTALL_PATH%]...
+      %COPY_CMD% "Build\%BUILD_CONFIG%\*.lib" "%LIBS_INSTALL_PATH%\" /B
+      %COPY_CMD% "Build\%BUILD_CONFIG%\*.pdb" "%LIBS_INSTALL_PATH%\" /B
     )
   )
   IF %LP3D_VSVERSION% GEQ 2019 (
-    %COPY_CMD% "lib\x64\*-vs2019.lib" "%LIBS_INSTALL_PATH%\" /B
+    %COPY_CMD% "lib\%INSTALL_LIB_DIR%\*-vs%INSTALL_SOLUTION%.lib" "%LIBS_INSTALL_PATH%\" /B
   ) ELSE (
     %COPY_CMD% "lib\x64\*-vs2015.lib" "%LIBS_INSTALL_PATH%\" /B
   )
   IF "%CONFIGURATION%" == "Debug" (
-    IF EXIST "Build\Debug64\LDView64.exe" (
+    IF EXIST "Build\%BUILD_CONFIG%\LDView64.exe" (
       ECHO.
-      ECHO -Installing %PACKAGE% 64bit Debug libraries to [%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64]...
-      IF NOT EXIST "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" (
-        MKDIR "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\"
+      ECHO -Installing %PACKAGE% 64bit Debug libraries to [%DIST_DIR%\%PACKAGE%-%VERSION%\Build\%BUILD_CONFIG%]...
+      IF NOT EXIST "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\%BUILD_CONFIG%\" (
+        MKDIR "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\%BUILD_CONFIG%\"
       )
       IF "%PROJECT:~-7%"=="vcxproj" (
-        FOR %%G IN (LDLib,LDExporter,LDLoader,TRE,TCFoundation) DO (
-          %COPY_CMD% "%%G\Build\Debug64\%%G.*" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
+        FOR %%G IN (%LIBS_LDVIEW%) DO (
+          %COPY_CMD% "%%G\Build\%BUILD_CONFIG%\%%G.*" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\%BUILD_CONFIG%\" /B
         )
-        FOR %%G IN (gl2ps,tinyxml,minizip) DO (
-          %COPY_CMD% "3rdParty\%%G\Build\Debug64\%%G*" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
+        FOR %%G IN (%LIBS_3RDPARTY%) DO (
+          %COPY_CMD% "3rdParty\%%G\Build\%BUILD_CONFIG%\%%G*" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\%BUILD_CONFIG%\" /B
         )
       )
       IF "%PROJECT:~-3%"=="sln" (
-        IF EXIST "Build\Debug64" (
-          ECHO -Installing %PACKAGE% 32bit Debug64 libraries to [%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64...
-          %COPY_CMD% "Build\Debug64\*.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
-          %COPY_CMD% "Build\Debug64\*.pdb" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
+        IF EXIST "Build\%BUILD_CONFIG%" (
+          ECHO -Installing %PACKAGE% 64bit %BUILD_CONFIG% libraries to [%DIST_DIR%\%PACKAGE%-%VERSION%\Build\%BUILD_CONFIG%...
+          %COPY_CMD% "Build\%BUILD_CONFIG%\*.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\%BUILD_CONFIG%\" /B
+          %COPY_CMD% "Build\%BUILD_CONFIG%\*.pdb" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\%BUILD_CONFIG%\" /B
         )
       )
       IF %LP3D_VSVERSION% GEQ 2019 (
-        %COPY_CMD% "lib\x64\*-vs2019.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
+        %COPY_CMD% "lib\%INSTALL_LIB_DIR%\*-vs%INSTALL_SOLUTION%.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\%BUILD_CONFIG%\" /B
       ) ELSE (
-        %COPY_CMD% "lib\x64\*-vs2015.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\Debug64\" /B
+        %COPY_CMD% "lib\x64\*-vs2015.lib" "%DIST_DIR%\%PACKAGE%-%VERSION%\Build\%BUILD_CONFIG%\" /B
       )
     )
   )
@@ -701,42 +781,26 @@ EXIT /b
 :CHECK_LDRAW_DIR
 ECHO.
 ECHO -%PACKAGE% - Check for LDraw library...
-IF %LP3D_VALID_7ZIP% == 0 (
-  "%LP3D_7ZIP_WIN64%" > %TEMP%\output.tmp 2>&1
-  FOR /f "usebackq eol= delims=" %%a IN (%TEMP%\output.tmp) DO (
-    ECHO.%%a | findstr /C:"7-Zip">NUL && (
-      SET LP3D_VALID_7ZIP=1
-      ECHO.
-      ECHO -7zip exectutable found at "%LP3D_7ZIP_WIN64%"
-    ) || (
-      ECHO.
-      ECHO [WARNING] Could not find 7zip executable at %LP3D_7ZIP_WIN64%.
-    )
-    GOTO :END_7ZIP_LOOP
-  )
-)
-:END_7ZIP_LOOP
 IF NOT EXIST "%LDRAW_DIR%\parts" (
   REM SET CHECK=0
   IF NOT EXIST "%LDRAW_DOWNLOAD_DIR%\%OfficialCONTENT%" (
     ECHO.
     ECHO -LDraw directory %LDRAW_DIR% does not exist - Downloading...
-
     CALL :DOWNLOAD_LDRAW_LIBS
   )
   IF EXIST "%LDRAW_DOWNLOAD_DIR%\%OfficialCONTENT%" (
-    IF %LP3D_VALID_7ZIP% == 1 (
+    IF %LP3D_VALID_TAR% == 1 (
       ECHO.
       ECHO -Extracting %OfficialCONTENT%...
-      ECHO.
-      "%LP3D_7ZIP_WIN64%" x -o"%LDRAW_DOWNLOAD_DIR%\" "%LDRAW_DOWNLOAD_DIR%\%OfficialCONTENT%" | findstr /i /r /c:"^Extracting\>" /c:"^Everything\>"
+      PUSHD "%LDRAW_DOWNLOAD_DIR%"
+      "%LP3D_WIN_TAR%" -xf "%OfficialCONTENT%"
+      POPD
       IF EXIST "%LDRAW_DIR%\parts" (
         ECHO.
         ECHO -LDraw directory %LDRAW_DIR% extracted.
         ECHO.
         ECHO -Cleanup %OfficialCONTENT%...
-        DEL /Q "%LDRAW_INSTALL_ROOT%\%OfficialCONTENT%"
-        ECHO.
+        DEL /Q "%LDRAW_DOWNLOAD_DIR%\%OfficialCONTENT%"
       )
     )
   ) ELSE (
@@ -748,7 +812,6 @@ IF NOT EXIST "%LDRAW_DIR%\parts" (
   ECHO.
   ECHO -LDraw directory exist at %LDRAW_DIR%.
 )
-:END_7ZIP_LOOP
 EXIT /b
 
 :DOWNLOAD_LDRAW_LIBS
@@ -853,7 +916,7 @@ EXIT /b
 ECHO.
 CALL :USAGE
 ECHO.
-ECHO -01. (FLAG ERROR) Platform or usage flag is invalid. Use x86, x86_64 or -build_all [%~nx0 %*].
+ECHO -01. (PLATFORM_ERROR) Platform or usage flag is invalid. Use x86, x86_64, arm64 or -all_amd [%~nx0 %*].
 ECHO      For usage help use -help.
 GOTO :ERROR_END
 
@@ -861,7 +924,7 @@ GOTO :ERROR_END
 ECHO.
 CALL :USAGE
 ECHO.
-ECHO -02. (FLAG ERROR) Configuration flag is invalid [%~nx0 %*].
+ECHO -02. (CONFIGURATION_ERROR) Configuration flag is invalid [%~nx0 %*].
 ECHO      Use -rel (release), or -3rd (3rd party install).
 GOTO :ERROR_END
 
@@ -869,7 +932,7 @@ GOTO :ERROR_END
 ECHO.
 CALL :USAGE
 ECHO.
-ECHO -03. (COMMAND ERROR) Invalid command string [%~nx0 %*].
+ECHO -03. (COMMAND_ERROR) Invalid command string [%~nx0 %*].
 ECHO      See Usage.
 GOTO :ERROR_END
 
@@ -882,14 +945,14 @@ ECHO.
 ECHO ----------------------------------------------------------------
 ECHO Usage:
 ECHO  build [ -help]
-ECHO  build [ x86 ^| x86_64 ^| -all_amd ] [ -ins ^| -chk ] [ -chk ]
+ECHO  build [ x86 ^| x86_64 ^| arm64 ^| -all_amd ] [ -ins ^| -chk ] [ -chk ]
 ECHO.
 ECHO ----------------------------------------------------------------
 ECHO Build AMD 64bit, Release and perform build check
 ECHO build x86_64 -chk
 ECHO.
 ECHO Build AMD 32bit, Release and perform build check
-ECHO build x86 -chk
+ECHO build arm64 -ins -chk
 ECHO.
 ECHO Build AMD 32bit, Release and perform build check, output only build errors
 ECHO build x86 -chk -minlog
@@ -910,6 +973,7 @@ ECHO ----------------------------------------------------------------
 ECHO  -help......1......Useage flag         [Default=Off] Display useage.
 ECHO  x86........1......Platform flag       [Default=Off] Build AMD 32bit architecture.
 ECHO  x86_64.....1......Platform flag       [Default=Off] Build AMD 64bit architecture.
+ECHO  arm64......1......Platform flag       [Default=Off] Build ARM 64bit architecture.
 ECHO  -all_amd...1......Configuraiton flag  [Default=On ] Build both AMD 32bit and 64bit architectures
 ECHO  -ins.......2......Project flag        [Default=Off] Install distribution as LPub3D 3rd party installation
 ECHO  -chk.......2,3....Project flag        [Default=On ] Perform a quick image redering check using command line ini file
