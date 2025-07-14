@@ -1,6 +1,6 @@
 # Build, check and LDView
 # Trevor SANDY <trevor.sandy@gmail.com>
-# Last Update: June 29, 2025
+# Last Update: July 14, 2025
 # Copyright (C) 2022 - 2025 by Trevor SANDY
 #
 name: Build LDView
@@ -11,7 +11,7 @@ on:
 jobs:
   build-linux:
     # if: ${{ false }} # uncomment to disable
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -54,7 +54,7 @@ jobs:
 
   build-windows:
     # if: ${{ false }} # uncomment to disable
-    runs-on: windows-2022
+    runs-on: windows-2025
     steps:
       - name: Checkout
         uses: actions/checkout@v4
