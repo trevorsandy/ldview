@@ -45,6 +45,12 @@ win32 {
     QMAKE_LFLAGS += -NODEFAULTLIB:LIBCMT
     QMAKE_LFLAGS += /ignore:4099
     }
+    !msys:greaterThan(QMAKE_MSC_VER, 1943) {
+        # Visual Studio 2022 (17.14) / Visual C++ 19.29 and up
+        MSVC_VER          = 17.14
+        MSVC_TOOLSET_VER  = 144
+        DEFINES          += QMAKE_MSC_VER=$$QMAKE_MSC_VER
+    }
     message("~~~ $${TARGET} $$upper($$QT_ARCH) MSVC LIBRARY VERSION: $$VSVER ~~~")
 }
 

@@ -50,6 +50,15 @@ win32 {
     QMAKE_LFLAGS += -NODEFAULTLIB:LIBCMT
     QMAKE_LFLAGS_WINDOWS += /IGNORE:4099
     }
+    !msys:greaterThan(QMAKE_MSC_VER, 1943) {
+    # Visual Studio 2022 (17.14) / Visual C++ 19.29 and up
+    MSVC_VER          = 17.14
+    MSVC_TOOLSET_VER  = 144
+    DEFINES          += QMAKE_MSC_VER=$$QMAKE_MSC_VER
+    }
+    win32-msvc* {
+    LIBS += -luser32 -ladvapi32
+    }
 }
 
 INCLUDEPATH    += . .. $${LIBS_INC}
@@ -63,7 +72,7 @@ LIBDIRS        += -L../TCFoundation/$$DESTDIR
 LDLIBS          = -lTCFoundation$${POSTFIX} -l$${LIB_PNG} -l$${LIB_JPEG}
 
 LIBS           += $${LIBDIRS} $${LDLIBS} -l$${LIB_Z}
-
+message("~~~ DEBUG LIBS: $$LIBS ~~~")
 PRE_TARGETDEPS += \
                ../TCFoundation/$$DESTDIR/$${LIB_TCFOUNDATION}
 
