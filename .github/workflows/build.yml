@@ -50,7 +50,7 @@ jobs:
         run: |
           if [ ! -d "${LDV_DIST_DIR_CREATE}" ]; then mkdir -p "${LDV_DIST_DIR_CREATE}" && echo "${LDV_DIST_DIR_CREATE} created."; fi
           qmake -v; $(cd QT ; sed -e 's/linguist-qt6, //g' -e 's/qt6-l10n-tools, //g' -i debian/control)
-          qmake CONFIG+=3RD_PARTY_INSTALL=../${LDV_DIST_DIR} CONFIG+=release CONFIG+=BUILD_CUI_ONLY CONFIG+=USE_SYSTEM_LIBS CONFIG+=BUILD_CHECK LDView.pro
+          qmake CONFIG+=3RD_PARTY_INSTALL=../${LDV_DIST_DIR} CONFIG+=release CONFIG+=BUILD_CUI_ONLY CONFIG+=NO_HEADERS_INSTALL CONFIG+=USE_SYSTEM_LIBS CONFIG+=BUILD_CHECK LDView.pro
           make && make install
 
   build-windows:
@@ -178,5 +178,5 @@ jobs:
         run: |
           if [ ! -d "${LDV_DIST_DIR_CREATE}" ]; then mkdir -p "${LDV_DIST_DIR_CREATE}" && echo "${LDV_DIST_DIR_CREATE} created."; fi
           qmake -v
-          qmake CONFIG+=3RD_PARTY_INSTALL=../${LDV_DIST_DIR} CONFIG+=release CONFIG+=BUILD_CUI_ONLY CONFIG+=USE_SYSTEM_LIBS CONFIG+=BUILD_CHECK CONFIG+=sdk_no_version_check
+          qmake CONFIG+=3RD_PARTY_INSTALL=../${LDV_DIST_DIR} CONFIG+=release CONFIG+=BUILD_CUI_ONLY CONFIG+=NO_HEADERS_INSTALL CONFIG+=USE_SYSTEM_LIBS CONFIG+=BUILD_CHECK CONFIG+=sdk_no_version_check
           make && make install

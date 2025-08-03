@@ -64,66 +64,71 @@ unix|msys:!macx: TARGET = $$lower($${TARGET})
     isEmpty(3RD_LIBDIR):3RD_LIBDIR           = $$absolute_path($$3RD_PREFIX/$$3RD_PACKAGE_VER/lib/$$QT_ARCH)
     isEmpty(3RD_DOCDIR):3RD_DOCDIR           = $$absolute_path($$3RD_PREFIX/$$3RD_PACKAGE_VER/docs)
     isEmpty(3RD_RESOURCES):3RD_RESOURCES     = $$absolute_path($$3RD_PREFIX/$$3RD_PACKAGE_VER/resources)
-    isEmpty(3RD_HEADERS):3RD_HEADERS         = $$absolute_path($$3RD_PREFIX/$$3RD_PACKAGE_VER/include)
 
-    HEADER_CHECK_MSG = Project MESSAGE: ~~~ $$upper( $$TARGET ) HEADERS COPIED TO $${3RD_HEADERS} ~~~
+    NO_HEADERS_INSTALL {
+        message("~~~ $$upper( $${TARGET} ) HEADERS WILL NOT BE INSTALLED ~~~")
+    } ELSE {
+        isEmpty(3RD_HEADERS):3RD_HEADERS     = $$absolute_path($$3RD_PREFIX/$$3RD_PACKAGE_VER/include)
 
-    if (mingw:ide_qtcreator)|win32-msvc* {
-        DELETE_HEADER_FOLDERS_CMD = IF EXIST \"$$shell_path($${3RD_HEADERS})\" \( RD /S /Q $$shell_path($${3RD_HEADERS}) \)
-        CREATE_HEADER_FOLDERS_CMD = MD
-        COPY_CMD = COPY /V /Y
-        HEADER_CHECK_CMD = IF EXIST \"$$shell_path($${3RD_HEADERS}/TCFoundation/TCObject.h)\" \( ECHO $${HEADER_CHECK_MSG} \)
-    } else {
-        DELETE_HEADER_FOLDERS_CMD = if test -e $$shell_path($${3RD_HEADERS}); then rm -rf $$shell_path($${3RD_HEADERS}); fi;
-        CREATE_HEADER_FOLDERS_CMD = mkdir -p
-        COPY_CMD = cp -f
-        HEADER_CHECK_CMD = if test -f $$shell_path($${3RD_HEADERS}/TCFoundation/TCObject.h); then echo $${HEADER_CHECK_MSG}; fi
+        HEADER_CHECK_MSG = Project MESSAGE: ~~~ $$upper( $$TARGET ) HEADERS COPIED TO $${3RD_HEADERS} ~~~
+
+        if (mingw:ide_qtcreator)|win32-msvc* {
+            DELETE_HEADER_FOLDERS_CMD = IF EXIST \"$$shell_path($${3RD_HEADERS})\" \( RD /S /Q $$shell_path($${3RD_HEADERS}) \)
+            CREATE_HEADER_FOLDERS_CMD = MD
+            COPY_CMD = COPY /V /Y
+            HEADER_CHECK_CMD = IF EXIST \"$$shell_path($${3RD_HEADERS}/TCFoundation/TCObject.h)\" \( ECHO $${HEADER_CHECK_MSG} \)
+        } else {
+            DELETE_HEADER_FOLDERS_CMD = if test -e $$shell_path($${3RD_HEADERS}); then rm -rf $$shell_path($${3RD_HEADERS}); fi;
+            CREATE_HEADER_FOLDERS_CMD = mkdir -p
+            COPY_CMD = cp -f
+            HEADER_CHECK_CMD = if test -f $$shell_path($${3RD_HEADERS}/TCFoundation/TCObject.h); then echo $${HEADER_CHECK_MSG}; fi
+        }
+        #message("~~~ DEBUG_DELETE_HEADER_FOLDERS_CMD: $$DELETE_HEADER_FOLDERS_CMD ~~~")
+
+        CREATE_HEADER_FOLDERS_CMD += \
+            $$shell_path($${3RD_HEADERS}/LDExporter) \
+            $$shell_path($${3RD_HEADERS}/LDLib) \
+            $$shell_path($${3RD_HEADERS}/LDLoader) \
+            $$shell_path($${3RD_HEADERS}/TRE) \
+            $$shell_path($${3RD_HEADERS}/TCFoundation) \
+            $$shell_path($${3RD_HEADERS}/GL)
+        msys: \
+        CREATE_HEADER_FOLDERS_CMD += \
+            $$shell_path($${3RD_HEADERS}/3rdParty) 2> $$NULL_DEVICE
+        else: \
+        CREATE_HEADER_FOLDERS_CMD += \
+            $$shell_path($${3RD_HEADERS}/3rdParty/minizip) 2> $$NULL_DEVICE
+        #message("~~~ DEBUG_CREATE_HEADER_FOLDERS_CMD: $$CREATE_HEADER_FOLDERS_CMD ~~~")
+
+        COPY_HEADERS_CMD = $${COPY_CMD} $$shell_path($$absolute_path(../TCFoundation/*.h)) $$shell_path($${3RD_HEADERS}/TCFoundation/) \
+            $$escape_expand(\n\t)$${COPY_CMD} $$shell_path($$absolute_path(../LDExporter/*.h)) $$shell_path($${3RD_HEADERS}/LDExporter/) \
+            $$escape_expand(\n\t)$${COPY_CMD} $$shell_path($$absolute_path(../LDLoader/*.h)) $$shell_path($${3RD_HEADERS}/LDLoader/) \
+            $$escape_expand(\n\t)$${COPY_CMD} $$shell_path($$absolute_path(../LDLib/*.h)) $$shell_path($${3RD_HEADERS}/LDLib/) \
+            $$escape_expand(\n\t)$${COPY_CMD} $$shell_path($$absolute_path(../TRE/*.h)) $$shell_path($${3RD_HEADERS}/TRE/) \
+            $$escape_expand(\n\t)$${COPY_CMD} $$shell_path($$absolute_path(../include/*.h)) $$shell_path($${3RD_HEADERS}/3rdParty/) \
+            $$escape_expand(\n\t)$${COPY_CMD} $$shell_path($$absolute_path(../include/GL/*.h)) $$shell_path($${3RD_HEADERS}/GL/)
+        !msys: \
+        COPY_HEADERS_CMD += \
+            $$escape_expand(\n\t)$${COPY_CMD} $$shell_path($$absolute_path(../3rdParty/minizip/*.h)) $$shell_path($${3RD_HEADERS}/3rdParty/minizip/)
+
+        delete_header_folders.target = DeleteHeaderFolders
+        delete_header_folders.commands = $${DELETE_HEADER_FOLDERS_CMD}
+
+        create_header_folders.target = CreateHeaderFolders
+        create_header_folders.depends = DeleteHeaderFolders
+        create_header_folders.commands = $${CREATE_HEADER_FOLDERS_CMD}
+
+        copy_headers.target = CopyHeaders
+        copy_headers.depends = CreateHeaderFolders
+        copy_headers.commands = $${COPY_HEADERS_CMD}
+
+        copy_headers_check.target = HeadersCheck
+        copy_headers_check.depends = CopyHeaders
+        copy_headers_check.commands = $${HEADER_CHECK_CMD}
+
+        QMAKE_EXTRA_TARGETS += delete_header_folders create_header_folders copy_headers copy_headers_check
+        PRE_TARGETDEPS += CopyHeaders HeadersCheck
     }
-    #message("~~~ DEBUG_DELETE_HEADER_FOLDERS_CMD: $$DELETE_HEADER_FOLDERS_CMD ~~~")
-
-    CREATE_HEADER_FOLDERS_CMD += \
-        $$shell_path($${3RD_HEADERS}/LDExporter) \
-        $$shell_path($${3RD_HEADERS}/LDLib) \
-        $$shell_path($${3RD_HEADERS}/LDLoader) \
-        $$shell_path($${3RD_HEADERS}/TRE) \
-        $$shell_path($${3RD_HEADERS}/TCFoundation) \
-        $$shell_path($${3RD_HEADERS}/GL)
-    msys: \
-    CREATE_HEADER_FOLDERS_CMD += \
-        $$shell_path($${3RD_HEADERS}/3rdParty) 2> $$NULL_DEVICE
-    else: \
-    CREATE_HEADER_FOLDERS_CMD += \
-        $$shell_path($${3RD_HEADERS}/3rdParty/minizip) 2> $$NULL_DEVICE
-    #message("~~~ DEBUG_CREATE_HEADER_FOLDERS_CMD: $$CREATE_HEADER_FOLDERS_CMD ~~~")
-
-    COPY_HEADERS_CMD = $${COPY_CMD} $$shell_path($$absolute_path(../TCFoundation/*.h)) $$shell_path($${3RD_HEADERS}/TCFoundation/) \
-        $$escape_expand(\n\t)$${COPY_CMD} $$shell_path($$absolute_path(../LDExporter/*.h)) $$shell_path($${3RD_HEADERS}/LDExporter/) \
-        $$escape_expand(\n\t)$${COPY_CMD} $$shell_path($$absolute_path(../LDLoader/*.h)) $$shell_path($${3RD_HEADERS}/LDLoader/) \
-        $$escape_expand(\n\t)$${COPY_CMD} $$shell_path($$absolute_path(../LDLib/*.h)) $$shell_path($${3RD_HEADERS}/LDLib/) \
-        $$escape_expand(\n\t)$${COPY_CMD} $$shell_path($$absolute_path(../TRE/*.h)) $$shell_path($${3RD_HEADERS}/TRE/) \
-        $$escape_expand(\n\t)$${COPY_CMD} $$shell_path($$absolute_path(../include/*.h)) $$shell_path($${3RD_HEADERS}/3rdParty/) \
-        $$escape_expand(\n\t)$${COPY_CMD} $$shell_path($$absolute_path(../include/GL/*.h)) $$shell_path($${3RD_HEADERS}/GL/)
-    !msys: \
-    COPY_HEADERS_CMD += \
-        $$escape_expand(\n\t)$${COPY_CMD} $$shell_path($$absolute_path(../3rdParty/minizip/*.h)) $$shell_path($${3RD_HEADERS}/3rdParty/minizip/)
-
-    delete_header_folders.target = DeleteHeaderFolders
-    delete_header_folders.commands = $${DELETE_HEADER_FOLDERS_CMD}
-
-    create_header_folders.target = CreateHeaderFolders
-    create_header_folders.depends = DeleteHeaderFolders
-    create_header_folders.commands = $${CREATE_HEADER_FOLDERS_CMD}
-
-    copy_headers.target = CopyHeaders
-    copy_headers.depends = CreateHeaderFolders
-    copy_headers.commands = $${COPY_HEADERS_CMD}
-
-    copy_headers_check.target = HeadersCheck
-    copy_headers_check.depends = CopyHeaders
-    copy_headers_check.commands = $${HEADER_CHECK_CMD}
-
-    QMAKE_EXTRA_TARGETS += delete_header_folders create_header_folders copy_headers copy_headers_check
-    PRE_TARGETDEPS += CopyHeaders HeadersCheck
 
     target.path              = $${3RD_BINDIR}
     documentation.path       = $${3RD_DOCDIR}

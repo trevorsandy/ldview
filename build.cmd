@@ -148,6 +148,7 @@ IF "%CONFIGURATION%" == "" SET CONFIGURATION=Release
 IF %CONFIGURATION% EQU Debug SET d=d
 
 SET MINIMUM_LOGGING=unknown
+SET NO_HEADERS_INSTALL=unknown
 SET THIRD_INSTALL=unknown
 SET INSTALL_32BIT=unknown
 SET INSTALL_64BIT=unknown
@@ -209,7 +210,9 @@ IF /I "%PLATFORM_ARCH%" == "ARM64" (
 rem Verify 2nd input flag options
 IF NOT [%2]==[] (
   IF /I NOT "%2"=="-ins" (
-    IF /I NOT "%2"=="-chk" GOTO :CONFIGURATION_ERROR
+    IF /I NOT "%2"=="-ins_libs" (
+      IF /I NOT "%2"=="-chk" GOTO :CONFIGURATION_ERROR
+	)
   )
 )
 
@@ -233,6 +236,12 @@ IF [%2]==[] (
 
 IF /I "%2"=="-ins" (
   SET THIRD_INSTALL=1
+  GOTO :BUILD
+)
+
+IF /I "%2"=="-ins_libs" (
+  SET THIRD_INSTALL=1
+  SET NO_HEADERS_INSTALL=1
   GOTO :BUILD
 )
 
@@ -692,41 +701,47 @@ IF %INSTALL_64BIT% EQU 1 (
     )
   )
 )
-SET DIST_INSTALL_PATH=%DIST_DIR%\%PACKAGE%-%VERSION%\include
-ECHO.
-ECHO -Installing %PACKAGE% Headers to [%DIST_INSTALL_PATH%]...
-IF NOT EXIST "%DIST_INSTALL_PATH%\LDExporter\" (
-  MKDIR "%DIST_INSTALL_PATH%\LDExporter\"
+
+IF %NO_HEADERS_INSTALL% == 1 (
+  ECHO.
+  ECHO -%PACKAGE% headers will not be installed.
+) ELSE (
+  SET DIST_INSTALL_PATH=%DIST_DIR%\%PACKAGE%-%VERSION%\include
+  ECHO.
+  ECHO -Installing %PACKAGE% Headers to [%DIST_INSTALL_PATH%]...
+  IF NOT EXIST "%DIST_INSTALL_PATH%\LDExporter\" (
+    MKDIR "%DIST_INSTALL_PATH%\LDExporter\"
+  )
+  IF NOT EXIST "%DIST_INSTALL_PATH%\LDLib\" (
+    MKDIR "%DIST_INSTALL_PATH%\LDLib\"
+  )
+  IF NOT EXIST "%DIST_INSTALL_PATH%\LDLoader\" (
+    MKDIR "%DIST_INSTALL_PATH%\LDLoader\"
+  )
+  IF NOT EXIST "%DIST_INSTALL_PATH%\TRE\" (
+    MKDIR "%DIST_INSTALL_PATH%\TRE"
+  )
+  IF NOT EXIST "%DIST_INSTALL_PATH%\TCFoundation\" (
+    MKDIR "%DIST_INSTALL_PATH%\TCFoundation\"
+  )
+  IF NOT EXIST "%DIST_INSTALL_PATH%\3rdParty\" (
+    MKDIR "%DIST_INSTALL_PATH%\3rdParty\"
+  )
+  IF NOT EXIST "%DIST_INSTALL_PATH%\3rdParty\minizip\" (
+    MKDIR "%DIST_INSTALL_PATH%\3rdParty\minizip\"
+  )
+  IF NOT EXIST "%DIST_INSTALL_PATH%\GL\" (
+    MKDIR "%DIST_INSTALL_PATH%\GL\"
+  )
+  %COPY_CMD% "LDLib\*.h" "%DIST_INSTALL_PATH%\LDLib\" /A
+  %COPY_CMD% "LDExporter\*.h" "%DIST_INSTALL_PATH%\LDExporter\" /A
+  %COPY_CMD% "LDLoader\*.h" "%DIST_INSTALL_PATH%\LDLoader\" /A
+  %COPY_CMD% "TRE\*.h" "%DIST_INSTALL_PATH%\TRE\" /A
+  %COPY_CMD% "TCFoundation\*.h" "%DIST_INSTALL_PATH%\TCFoundation\" /A
+  %COPY_CMD% "3rdParty\minizip\*.h" "%DIST_INSTALL_PATH%\3rdParty\minizip\" /A
+  %COPY_CMD% "include\*.h" "%DIST_INSTALL_PATH%\3rdParty\" /A
+  %COPY_CMD% "include\GL\*.h" "%DIST_INSTALL_PATH%\GL\" /A
 )
-IF NOT EXIST "%DIST_INSTALL_PATH%\LDLib\" (
-  MKDIR "%DIST_INSTALL_PATH%\LDLib\"
-)
-IF NOT EXIST "%DIST_INSTALL_PATH%\LDLoader\" (
-  MKDIR "%DIST_INSTALL_PATH%\LDLoader\"
-)
-IF NOT EXIST "%DIST_INSTALL_PATH%\TRE\" (
-  MKDIR "%DIST_INSTALL_PATH%\TRE"
-)
-IF NOT EXIST "%DIST_INSTALL_PATH%\TCFoundation\" (
-  MKDIR "%DIST_INSTALL_PATH%\TCFoundation\"
-)
-IF NOT EXIST "%DIST_INSTALL_PATH%\3rdParty\" (
-  MKDIR "%DIST_INSTALL_PATH%\3rdParty\"
-)
-IF NOT EXIST "%DIST_INSTALL_PATH%\3rdParty\minizip\" (
-  MKDIR "%DIST_INSTALL_PATH%\3rdParty\minizip\"
-)
-IF NOT EXIST "%DIST_INSTALL_PATH%\GL\" (
-  MKDIR "%DIST_INSTALL_PATH%\GL\"
-)
-%COPY_CMD% "LDLib\*.h" "%DIST_INSTALL_PATH%\LDLib\" /A
-%COPY_CMD% "LDExporter\*.h" "%DIST_INSTALL_PATH%\LDExporter\" /A
-%COPY_CMD% "LDLoader\*.h" "%DIST_INSTALL_PATH%\LDLoader\" /A
-%COPY_CMD% "TRE\*.h" "%DIST_INSTALL_PATH%\TRE\" /A
-%COPY_CMD% "TCFoundation\*.h" "%DIST_INSTALL_PATH%\TCFoundation\" /A
-%COPY_CMD% "3rdParty\minizip\*.h" "%DIST_INSTALL_PATH%\3rdParty\minizip\" /A
-%COPY_CMD% "include\*.h" "%DIST_INSTALL_PATH%\3rdParty\" /A
-%COPY_CMD% "include\GL\*.h" "%DIST_INSTALL_PATH%\GL\" /A
 ECHO.
 ECHO -Installing %PACKAGE% Documentaton to [%DIST_DIR%\%PACKAGE%-%VERSION%\docs]...
 IF NOT EXIST "%DIST_DIR%\%PACKAGE%-%VERSION%\docs\" (
@@ -945,25 +960,28 @@ ECHO.
 ECHO ----------------------------------------------------------------
 ECHO Usage:
 ECHO  build [ -help]
-ECHO  build [ x86 ^| x86_64 ^| arm64 ^| -all_amd ] [ -ins ^| -chk ] [ -chk ]
+ECHO  build [ x86 ^| x86_64 ^| arm64 ^| -all_amd ] [ -ins ^| -ins_libs ^| -chk ] [ -chk ]
 ECHO.
 ECHO ----------------------------------------------------------------
-ECHO Build AMD 64bit, Release and perform build check
+ECHO Build AMD 64bit Release and perform build check
 ECHO build x86_64 -chk
 ECHO.
-ECHO Build AMD 32bit, Release and perform build check
+ECHO Build AMD 32bit Release and perform build check
 ECHO build arm64 -ins -chk
 ECHO.
-ECHO Build AMD 32bit, Release and perform build check, output only build errors
+ECHO Build AMD 32bit Release and perform build check, output only build errors
 ECHO build x86 -chk -minlog
 ECHO.
-ECHO Build AMD 64bit and32bit, Release and perform build check
+ECHO Build AMD 64bit and 32bit Release and perform build check
 ECHO build -all_amd -chk
 ECHO.
-ECHO Build AMD 64bit and32bit, Release, perform install and build check
+ECHO Build AMD 64bit and 32bit Release, perform install and build check
 ECHO build -all_amd -ins -chk
 ECHO.
-ECHO Build AMD 64bit and32bit, Release, perform install and build check, output only build errors
+ECHO Build AMD 64bit and 32bit Release, perform install except library headers and build check
+ECHO build -all_amd -ins_libs -chk
+ECHO.
+ECHO Build AMD 64bit and32bit Release, perform install and build check, output only build errors
 ECHO build -all_amd -ins -chk -minlog
 ECHO.
 ECHO Flags:
@@ -976,6 +994,7 @@ ECHO  x86_64.....1......Platform flag       [Default=Off] Build AMD 64bit archit
 ECHO  arm64......1......Platform flag       [Default=Off] Build ARM 64bit architecture.
 ECHO  -all_amd...1......Configuraiton flag  [Default=On ] Build both AMD 32bit and 64bit architectures
 ECHO  -ins.......2......Project flag        [Default=Off] Install distribution as LPub3D 3rd party installation
+ECHO  -ins_libs..2......Project flag        [Default=Off] Install distribution as LPub3D 3rd party installation except library headers
 ECHO  -chk.......2,3....Project flag        [Default=On ] Perform a quick image redering check using command line ini file
 ECHO  -minlog....4,3....Project flag        [Default=Off] Minimum build logging - only display build errors
 ECHO.

@@ -9,6 +9,7 @@
 # CONFIG+=USE_3RD_PARTY_PREBUILT_3DS     # override USE_3RD_PARTY_3DS to use static pre-built lib3ds.a
 # CONFIG+=USE_3RD_PARTY_PREBUILT_MINIZIP # override USE_3RD_PARTY_MINIZIP to use static pre-built libminizip.a
 # CONFIG+=USE_SYSTEM_LIBS
+# CONFIG+=NO_HEADERS_INSTALL # do not install library headers
 # CONFIG+=BUILD_PNG          # override USE_SYSTEM_LIBS for libpng
 # CONFIG+=BUILD_GL2P         # override USE_SYSTEM_LIBS for libgl2ps
 # CONFIG+=BUILD_TINYXML      # override USE_SYSTEM_LIBS for libtinyxml
