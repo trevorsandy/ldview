@@ -325,7 +325,7 @@ int setupDefaults(char *argv[])
 	return retValue;
 }
 
-void assertOpenGLError(const std::string& msg)
+void assertOpenGLError(const std::string& msg, bool throwErr = false)
 {
 	GLenum error = glGetError();
 
@@ -333,12 +333,15 @@ void assertOpenGLError(const std::string& msg)
 	{
 		std::stringstream ss;
 		ss << "OpenGL error - 0x" << std::hex << error << " at " << msg;
-		throw std::runtime_error(ss.str());
+		if (throwErr)
+			throw std::runtime_error(ss.str());
+		else
+			printf("%s", ss.str());
 	}
 }
 
 #ifdef EGL
-void assertEGLError(const std::string& msg)
+void assertEGLError(const std::string& msg, bool throwErr = false)
 {
 	EGLint error = eglGetError();
 
@@ -363,7 +366,11 @@ void assertEGLError(const std::string& msg)
 		case EGL_NON_CONFORMANT_CONFIG : ss << " (EGL_NON_CONFORMANT_CONFIG)"; break;
 		case EGL_NOT_INITIALIZED       : ss << " (EGL_NOT_INITIALIZED)"; break;
 		}
-		throw std::runtime_error(ss.str());
+
+		if (throwErr)
+			throw std::runtime_error(ss.str());
+		else
+			printf("%s", ss.str());
 	}
 }
 
@@ -395,7 +402,7 @@ bool setupEGL(EGLDisplay& display, EGLContext& context, EGLSurface& surface, EGL
 	};
 
 	eglBindAPI(EGL_OPENGL_ES_API);
-	assertEGLError("eglBindAPI");
+	assertEGLError("eglBindAPI", true);
 
 	display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 	assertEGLError("eglGetDisplay");
@@ -495,7 +502,7 @@ void *setupOSMesaContext(OSMesaContext &ctx)
 	{
 		GLint viewport[4] = {0};
 		glGetIntegerv(GL_VIEWPORT, viewport);
-		assertOpenGLError("glGetIntegerv");
+		assertOpenGLError("glGetIntegerv", true);
 		if (viewport[2] != width || viewport[3] != height)
 		{
 			printf("OSMesa not working! GL_VIEWPORT: %d, %d, %d, %d\n",
