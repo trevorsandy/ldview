@@ -336,7 +336,7 @@ void assertOpenGLError(const std::string& msg, bool throwErr = false)
 		if (throwErr)
 			throw std::runtime_error(ss.str());
 		else
-			printf("%s", ss.str());
+			printf("%s", ss.str().c_str());
 	}
 }
 
@@ -370,7 +370,7 @@ void assertEGLError(const std::string& msg, bool throwErr = false)
 		if (throwErr)
 			throw std::runtime_error(ss.str());
 		else
-			printf("%s", ss.str());
+			printf("%s", ss.str().c_str());
 	}
 }
 
