@@ -336,7 +336,7 @@ void assertOpenGLError(const std::string& msg, bool throwErr = false)
 		if (throwErr)
 			throw std::runtime_error(ss.str());
 		else
-			printf("%s", ss.str().c_str());
+			printf("%s\n", ss.str().c_str());
 	}
 }
 
@@ -370,7 +370,7 @@ void assertEGLError(const std::string& msg, bool throwErr = false)
 		if (throwErr)
 			throw std::runtime_error(ss.str());
 		else
-			printf("%s", ss.str().c_str());
+			printf("%s\n", ss.str().c_str());
 	}
 }
 
@@ -408,7 +408,7 @@ bool setupEGL(EGLDisplay& display, EGLContext& context, EGLSurface& surface, EGL
 	assertEGLError("eglGetDisplay");
 	if (display == EGL_NO_DISPLAY)
 	{
-		printf("EGL error - create a default display failed.");
+		printf("EGL error - create a default display failed.\n");
 		return false;
 	}
 
@@ -416,7 +416,7 @@ bool setupEGL(EGLDisplay& display, EGLContext& context, EGLSurface& surface, EGL
 	assertEGLError("eglInitialize");
 	if (!result)
 	{
-		printf("EGL error - initialize the default display failed.");
+		printf("EGL error - initialize the default display failed.\n");
 		return false;
 	}
 	//printf("Debug: EGL Version: v%d.%d\n", eglMajor, eglMinor);
@@ -431,7 +431,7 @@ bool setupEGL(EGLDisplay& display, EGLContext& context, EGLSurface& surface, EGL
 	assertEGLError("eglChooseConfig");
 	if (!result)
 	{
-		printf("EGL error - get a config for specified attributes failed.");
+		printf("EGL error - get a config for specified attributes failed.\n");
 		return false;
 	}
 	//printf("Debug: EGL chosen configuration %d\n", configNum);
@@ -440,7 +440,7 @@ bool setupEGL(EGLDisplay& display, EGLContext& context, EGLSurface& surface, EGL
 	assertEGLError("eglCreatePbufferSurface");
 	if (surface == EGL_NO_SURFACE)
 	{
-		printf("EGL error - create a pixel buffer surface failed.");
+		printf("EGL error - create a pixel buffer surface failed.\n");
 		return false;
 	}
 
@@ -448,7 +448,7 @@ bool setupEGL(EGLDisplay& display, EGLContext& context, EGLSurface& surface, EGL
 	assertEGLError("eglCreateContext");
 	if (context == EGL_NO_CONTEXT)
 	{
-		printf("EGL error - create a display context failed.");
+		printf("EGL error - create a display context failed.\n");
 		return false;
 	}
 
@@ -456,7 +456,7 @@ bool setupEGL(EGLDisplay& display, EGLContext& context, EGLSurface& surface, EGL
 	assertEGLError("eglMakeCurrent");
 	if (!result)
 	{
-		printf("EGL error - make display, surface and context current failed.");
+		printf("EGL error - make display, surface and context current failed.\n");
 		return false;
 	}
 	else
@@ -469,7 +469,7 @@ bool setupEGL(EGLDisplay& display, EGLContext& context, EGLSurface& surface, EGL
 		assertOpenGLError("glGetIntegerv");
 		if (viewport[2] != width || viewport[3] != height)
 		{
-			printf("EGL error - GL_VIEWPORT: %d, %d, %d, %d - initialize GL Viewport failed.",
+			printf("EGL error - GL_VIEWPORT: %d, %d, %d, %d - initialize GL Viewport failed.\n",
 				  (int)viewport[0], (int)viewport[1], (int)viewport[2], (int)viewport[3]);
 			return false;
 		}
@@ -564,20 +564,20 @@ int main(int argc, char *argv[])
 
 #ifdef EGL
 	bool ignoreEGL = TCUserDefaults::boolForKey(IGNORE_EGL_KEY, false, false);
-	try
+	if (!ignoreEGL)
 	{
-		if (!ignoreEGL)
+		try
 		{
 			useEGL = setupEGL(display, context, surface, config);
 		}
-	}
-	catch (std::runtime_error const& e)
-	{
-		if (TCUserDefaults::boolForKey("Info"))
-			printf("%s\n", e.what());
-	}
-	catch (...)
-	{
+		catch (std::runtime_error const& e)
+		{
+			if (TCUserDefaults::boolForKey("Info"))
+				printf("%s\n", e.what());
+		}
+		catch (...)
+		{
+		}
 	}
 #endif
 
