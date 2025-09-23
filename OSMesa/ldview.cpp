@@ -313,7 +313,7 @@ int setupDefaults(char *argv[])
 		if(iniFileSet)
 		{
 			retValue = 0;
-			if (TCUserDefaults::boolForKey("Info"))
+			if (TCUserDefaults::boolForKey(CUI_INFO_KEY, false, false))
 				printf("Using IniFile %s\n", rcFilename);
 		}
 	}
@@ -552,7 +552,7 @@ int main(int argc, char *argv[])
 	if (setupDefaults(argv) != 0)
 	{
 		retValue = 1;
-		if (TCUserDefaults::boolForKey("Info") || TCUserDefaults::boolForKey("Arguments"))
+		if (TCUserDefaults::boolForKey(CUI_INFO_KEY, false, false) || TCUserDefaults::boolForKey(CUI_ARGUMENTS_KEY, false, false))
 		{
 			defaultsOK = false;
 		}
@@ -572,7 +572,7 @@ int main(int argc, char *argv[])
 		}
 		catch (std::runtime_error const& e)
 		{
-			if (TCUserDefaults::boolForKey("Info"))
+			if (TCUserDefaults::boolForKey(CUI_INFO_KEY, false, false))
 				printf("%s\n", e.what());
 		}
 		catch (...)
@@ -590,8 +590,8 @@ int main(int argc, char *argv[])
 	{
 		//ProgressHandler *progressHandler = new ProgressHandler;
 		// LPub3D Mod - print Arguments and/or OpenGL Info
-		bool printInfo = TCUserDefaults::boolForKey("Info");
-		bool printArguments = TCUserDefaults::boolForKey("Arguments");
+		bool printInfo = TCUserDefaults::boolForKey(CUI_INFO_KEY, false, false);
+		bool printArguments = TCUserDefaults::boolForKey(CUI_ARGUMENTS_KEY, false, false);
 		if (printInfo || printArguments)
 		{
 			printf("Arguments = ");

@@ -598,7 +598,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE /*hPrevInstance
 #endif // _DEBUG
 	setupLocalStrings();
 	// LPub3D Mod - print arguments
-	if (haveConsole() && TCUserDefaults::boolForKey("Info", false, false))
+	if (haveConsole() && TCUserDefaults::boolForKey(CUI_INFO_KEY, false, false))
 	{
 		ucstring message = _UC("Command Line:\n");
 
