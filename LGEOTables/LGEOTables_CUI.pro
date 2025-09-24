@@ -71,9 +71,10 @@ LIBDIRS        += $${MINIZIP_LIBDIR}
 
 LDLIBS          = -lLDLoader$${POSTFIX} -lTCFoundation$${POSTFIX} -l$${LIB_TINYXML}
 
+LDLIBS         += -l$${LIB_PNG} -l$${LIB_JPEG} -l$${LIB_MINIZIP}
+
 win32: \
-LDLIBS         += -l$${LIB_PNG} -l$${LIB_JPEG} -l$${LIB_MINIZIP} \
-                  -ladvapi32 -luser32 -lgdi32 -lws2_32
+LDLIBS         += -ladvapi32 -luser32 -lgdi32 -lws2_32
 
 msys: \
 LDLIBS         +=  -lbz2
