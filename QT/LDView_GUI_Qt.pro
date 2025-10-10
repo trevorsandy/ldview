@@ -405,9 +405,6 @@ unix {
             exists(/usr/lib/libboost_thread-mt.a){
                 BOOSTLIB = /usr/lib/libboost_thread-mt.a
             }
-            exists(../boost/lib/libboost_thread.a){
-                BOOSTLIB = ../boost/lib/libboost_thread.a
-            }
         }
     }
 }

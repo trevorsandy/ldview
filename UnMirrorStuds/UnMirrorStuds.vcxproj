@@ -159,7 +159,7 @@
     <Link>
       <AdditionalDependencies>odbc32.lib;odbccp32.lib;libjpeg-vs2017.lib;libpng16-vs2017.lib;zlib-vs2017.lib;ws2_32.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>.\Debug/UnMirrorStuds.exe</OutputFile>
-      <AdditionalLibraryDirectories>..\lib;.\boost\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>libcmt.lib;libc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -199,7 +199,7 @@
     <Link>
       <AdditionalDependencies>odbc32.lib;odbccp32.lib;libjpeg-vs2017.lib;libpng16-vs2017.lib;zlib-vs2017.lib;ws2_32.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>.\Release/UnMirrorStuds.exe</OutputFile>
-      <AdditionalLibraryDirectories>..\lib;..\boost\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <ProgramDatabaseFile>.\Release/UnMirrorStuds.pdb</ProgramDatabaseFile>
       <SubSystem>Console</SubSystem>
@@ -239,7 +239,7 @@
     <Link>
       <AdditionalDependencies>odbc32.lib;odbccp32.lib;libjpeg-vs2019.lib;libpng16-vs2019.lib;zlib-vs2019.lib;ws2_32.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>.\Debug/UnMirrorStuds.exe</OutputFile>
-      <AdditionalLibraryDirectories>..\lib\x64;..\boost\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>.\Debug/UnMirrorStuds.pdb</ProgramDatabaseFile>
@@ -280,7 +280,7 @@
     <Link>
       <AdditionalDependencies>odbc32.lib;odbccp32.lib;libjpeg-vs2022.lib;libpng16-vs2022.lib;zlib-vs2022.lib;ws2_32.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>.\Debug/UnMirrorStuds.exe</OutputFile>
-	  <AdditionalLibraryDirectories>..\lib\ARM64;..\boost\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+	  <AdditionalLibraryDirectories>..\lib\ARM64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>.\Debug/UnMirrorStuds.pdb</ProgramDatabaseFile>
@@ -320,7 +320,7 @@
     <Link>
       <AdditionalDependencies>odbc32.lib;odbccp32.lib;libjpeg-vs2019.lib;libpng16-vs2019.lib;zlib-vs2019.lib;ws2_32.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>.\Release/UnMirrorStuds.exe</OutputFile>
-      <AdditionalLibraryDirectories>..\lib\x64;..\boost\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <ProgramDatabaseFile>.\Release/UnMirrorStuds.pdb</ProgramDatabaseFile>
       <SubSystem>Console</SubSystem>
@@ -360,7 +360,7 @@
     <Link>
       <AdditionalDependencies>odbc32.lib;odbccp32.lib;libjpeg-vs2022.lib;libpng16-vs2022.lib;zlib-vs2022.lib;ws2_32.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>.\Release/UnMirrorStuds.exe</OutputFile>
-	  <AdditionalLibraryDirectories>..\lib\ARM64;..\boost\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+	  <AdditionalLibraryDirectories>..\lib\ARM64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <ProgramDatabaseFile>.\Release/UnMirrorStuds.pdb</ProgramDatabaseFile>
       <SubSystem>Console</SubSystem>

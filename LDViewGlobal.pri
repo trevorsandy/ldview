@@ -834,8 +834,7 @@ else:  NULL_DEVICE = /dev/null
 !contains(CONFIG, USE_BOOST): {
     DEFINES     += _NO_BOOST
 } else:!msys {
-    INCLUDEPATH += $$_PRO_FILE_PWD_/../boost/include
-    LIBS        += -L$$_PRO_FILE_PWD_/../boost/lib
+    message("~~~ USE_BOOST specified but no Boost include or lib specified ~~~")
 }
 
 # dirs

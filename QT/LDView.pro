@@ -242,7 +242,7 @@ unix:!macx {
   kdeserv.files    = $${DESKTOPFILE}
   INSTALLS += documentation target man metainfo mimeinfo mimepack appreg \
               apps thumbnailer icon1 icon2 icon3 icon4 script kdeserv
-  LIBS += -L../TCFoundation -L../LDLib -L../LDLoader -L../TRE -L../boost/lib \
+  LIBS += -L../TCFoundation -L../LDLib -L../LDLoader -L../TRE \
           -lLDraw$$POSTFIX -L../LDExporter -lX11
   contains(DEFINES,USE_CPP11){
   contains(QT_VERSION, ^6\\..*) {
@@ -440,9 +440,6 @@ unix {
 # /usr/lib.
 	exists(/usr/lib/libboost_thread-mt.a){
 		BOOSTLIB = /usr/lib/libboost_thread-mt.a
-	}
-	exists(../boost/lib/libboost_thread.a){
-		BOOSTLIB = ../boost/lib/libboost_thread.a
 	}
 	linux-g++-64{
 		contains(DEFINES,EXPORT_3DS) {
