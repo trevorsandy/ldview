@@ -1,0 +1,78 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="lib3ds_atmosphere.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lib3ds_background.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lib3ds_camera.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lib3ds_chunk.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lib3ds_chunktable.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lib3ds_file.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lib3ds_io.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lib3ds_light.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lib3ds_material.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lib3ds_math.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lib3ds_matrix.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lib3ds_mesh.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lib3ds_node.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lib3ds_quat.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lib3ds_shadow.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lib3ds_track.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lib3ds_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lib3ds_vector.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lib3ds_viewport.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="lib3ds.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lib3ds_impl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{05746ea9-d81e-4681-81e4-7f5afdd15bf1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{3bd12cb6-ab86-4ddd-9bc7-a9a2086ee07a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
