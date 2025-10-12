@@ -107,7 +107,7 @@ unix|win32 {
             PRE_TARGETDEPS      += LDViewDefaultIni LDViewCustomIni
 
             # Test
-            #./ldview ../8464.mpd -SaveSnapshot=/tmp/8464i.png -IniFile=/home/trevor/projects/ldview/OSMesa/LDViewCustomIni -SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0 -IgnoreEGL=1
+            #./ldview ../8464.mpd -SaveSnapshot=/tmp/8464i.png -IniFile=/home/trevor/projects/ldview/OSMesa/LDViewCustomIni -SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0
             # Set CONFIG+=USE_SOFTPIPE to test LLVM softpipe driver
             contains(USE_SYSTEM_OSMESA_LIB, YES): CONFIG+=USE_SWRAST
         }   # Standard Test
@@ -145,8 +145,8 @@ unix|win32 {
     }
 
     contains(LDV_TEST_TYPE, Standard) {
-        # Linux  ./ldview ../8464.mpd -SaveSnapshot=/tmp/8464i.png -IniFile=/home/trevor/projects/ldview/OSMesa/LDViewCustomIni -Info=1 -SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0 -IgnoreEGL=1
-        # MacOS  ./ldview ../8464.mpd -SaveSnapshot=/tmp/8464i.png -IniFile=/Users/trevorsandy/Projects/ldview/OSMesa/LDViewCustomIni -Info=1 -SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0 -IgnoreEGL=1
+        # Linux  ./ldview ../8464.mpd -SaveSnapshot=/tmp/8464i.png -IniFile=/home/trevor/projects/ldview/OSMesa/LDViewCustomIni -Info=1 -SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0
+        # MacOS  ./ldview ../8464.mpd -SaveSnapshot=/tmp/8464i.png -IniFile=/Users/trevorsandy/Projects/ldview/OSMesa/LDViewCustomIni -Info=1 -SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0
         QMAKE_POST_LINK += $$escape_expand(\n\t)                                                                             \
                                 @echo "Project MESSAGE: ~~~ Using custom IniFile: $${LDV_CUSTOM_INI} ~~~"                    \
                            $$escape_expand(\n\t)                                                                             \
@@ -156,14 +156,14 @@ unix|win32 {
                            $$escape_expand(\n\t)                                                                             \
                                 @cd $${OUT_PWD}/$${DESTDIR} && $${LDVIEW_EXE} $${LDV_MPD_FILE}                               \
                                 -SaveSnapshot=$${LDV_IMAGE_FILE} -IniFile=$${LDV_CUSTOM_INI} -Info=1                         \
-                                -SaveWidth=1024 -SaveHeight=1024 -ShowErrors=0 -SaveActualSize=0 -IgnoreEGL=1                  \
+                                -SaveWidth=1024 -SaveHeight=1024 -ShowErrors=0 -SaveActualSize=0                             \
                                 -LDConfig=$${LDRAW_PATH}/LDCfgalt.ldr                                                        \
                            $$escape_expand(\n\t)                                                                             \
                                 @$${LDV_IMAGE_INFO_CMD}                                                                      \
                            $$escape_expand(\n\t)                                                                             \
                                 @$${LDV_ECHO_NL} "Project MESSAGE: ~~~ Command line custom IniFile test completed. ~~~"
 
-        #./ldview ../8464.mpd -SaveSnapshot=/tmp/8464.png -Arguments=1 -SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0 -IgnoreEGL=1
+        #./ldview ../8464.mpd -SaveSnapshot=/tmp/8464.png -Arguments=1 -SaveWidth=128 -SaveHeight=128 -ShowErrors=0 -SaveActualSize=0
         QMAKE_POST_LINK += $$escape_expand(\n\t)                                                                             \
                                 @echo "Project MESSAGE: ~~~ Using default IniFile: $${LDV_DEFAULT_INI} ~~~"
         macx:                                                                                                                \
@@ -201,7 +201,7 @@ unix|win32 {
                            $$escape_expand(\n\t)                                                                             \
                                 @cd $${OUT_PWD}/$${DESTDIR} && $${LDVIEW_EXE} $${LDV_MPD_FILE}                               \
                                 -SaveSnapshot=$${LDV_IMAGE_FILE} -IniFile=$${LDV_DEFAULT_INI} -Arguments=1                   \
-                                -SaveWidth=1024 -SaveHeight=1024 -ShowErrors=0 -SaveActualSize=0 -IgnoreEGL=1                  \
+                                -SaveWidth=1024 -SaveHeight=1024 -ShowErrors=0 -SaveActualSize=0                             \
                            $$escape_expand(\n\t)                                                                             \
                                 @$${LDV_IMAGE_INFO_CMD}                                                                      \
                            $$escape_expand(\n\t)                                                                             \
@@ -223,7 +223,7 @@ unix|win32 {
         QMAKE_POST_LINK += $$escape_expand(\n\t)                                                                             \
                                 @echo "Project MESSAGE: ~~~ Display $${TARGET} Info ~~~"                                     \
                            $$escape_expand(\n\t)                                                                             \
-                                @cd $${OUT_PWD}/$${DESTDIR} && $${LDVIEW_EXE} -IgnoreEGL=1 -Info=1                             \
+                                @cd $${OUT_PWD}/$${DESTDIR} && $${LDVIEW_EXE} -IgnoreEGL=1 -Info=1                           \
                            $$escape_expand(\n\t)                                                                             \
                                 @$${LDV_ECHO_LL}
     }
