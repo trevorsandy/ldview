@@ -43,7 +43,7 @@ unix|win32 {
     LDV_STANDARD_INI         = $$shell_path($${LDV_RC_DIR}/$${LDVIEW_INI})
     LDV_DEFAULT_INI          = $$shell_path($${LDV_INI_DIR}/$${LDV_RC_FILE})
     LDV_INI_CFG_RC           = $$shell_path($${LDV_INI_DIR}/.config/LDView/ldviewrc)
-
+    
     LDRAWDIR                 = $$(LDRAWDIR)
     exists($${LDRAWDIR}/parts) {
         LDRAW_PATH           = $$shell_path($$absolute_path($${LDRAWDIR}))
@@ -56,34 +56,40 @@ unix|win32 {
         }
 
         contains(LDV_TEST_TYPE, Standard) {
-            LDRAW_DIR_LN     = 12
-            LDRAW_ZIP_LN     = 13
-            LGEO_DIR_LN      = 64
-
+            msys|win32-arm64-msvc|win32-msvc* {
+                LDRAW_DIR_LN             = 18
+                LDRAW_ZIP_LN             = 19
+            } else {
+                LDRAW_DIR_LN             = 10
+                LDRAW_ZIP_LN             = 11
+            }
             default_ini_message.target   = DefaultIniMessage
             default_ini_message.commands = @echo "Project MESSAGE: ~~~ Updating LDViewDefaultIni with entry $${LDRAW_DIR} at line $${LDRAW_DIR_LN} ~~~"
             default_ini.target           = LDViewDefaultIni
             default_ini.depends          = default_ini_message
             !macx: default_ini.commands  = @sed -i      \'$${LDRAW_DIR_LN}s%.*%$${LDRAW_DIR}%\' $${LDV_STANDARD_INI}
             else:  default_ini.commands  = @sed -i \'\' \'$${LDRAW_DIR_LN}s%.*%$${LDRAW_DIR}%\' $${LDV_STANDARD_INI}
+            exists($${LDRAW_ZIP_FILE}) {
+                !macx: default_ini.commands  += ; sed -i      \'$${LDRAW_ZIP_LN}s%.*%$${LDRAW_ZIP}%\' $${LDV_STANDARD_INI}
+                else:  default_ini.commands  += ; sed -i \'\' \'$${LDRAW_ZIP_LN}s%.*%$${LDRAW_ZIP}%\' $${LDV_STANDARD_INI}
+                default_ini_message.commands += ; echo "Project MESSAGE: ~~~ Updating LDViewDefaultIni with entry $${LDRAW_ZIP} at line $${LDRAW_ZIP_LN} ~~~"
+            }
 
+            LDRAW_DIR_LN                 = 13
+            LDRAW_ZIP_LN                 = 14
             custom_ini_message.target    = CustomIniMessage
             custom_ini_message.commands  = @echo "Project MESSAGE: ~~~ Updating LDViewCustomIni with entry $${LDRAW_DIR} at line $${LDRAW_DIR_LN} ~~~"
             custom_ini.target            = LDViewCustomIni
             custom_ini.depends           = custom_ini_message
             !macx: custom_ini.commands   = @sed -i      \'$${LDRAW_DIR_LN}s%.*%$${LDRAW_DIR}%\' $${LDV_CUSTOM_INI}
             else:  custom_ini.commands   = @sed -i \'\' \'$${LDRAW_DIR_LN}s%.*%$${LDRAW_DIR}%\' $${LDV_CUSTOM_INI}
-
             exists($${LDRAW_ZIP_FILE}) {
-                !macx: default_ini.commands  += ; sed -i      \'$${LDRAW_ZIP_LN}s%.*%$${LDRAW_ZIP}%\' $${LDV_STANDARD_INI}
-                else:  default_ini.commands  += ; sed -i \'\' \'$${LDRAW_ZIP_LN}s%.*%$${LDRAW_ZIP}%\' $${LDV_STANDARD_INI}
-                default_ini_message.commands += ; echo "Project MESSAGE: ~~~ Updating LDViewDefaultIni with entry $${LDRAW_ZIP} at line $${LDRAW_ZIP_LN} ~~~"
-
                 !macx: custom_ini.commands   += ; sed -i      \'$${LDRAW_ZIP_LN}s%.*%$${LDRAW_ZIP}%\' $${LDV_CUSTOM_INI}
                 else:  custom_ini.commands   += ; sed -i \'\' \'$${LDRAW_ZIP_LN}s%.*%$${LDRAW_ZIP}%\' $${LDV_CUSTOM_INI}
                 custom_ini_message.commands  += ; echo "Project MESSAGE: ~~~ Updating LDViewCustomIni with entry $${LDRAW_ZIP} at line $${LDRAW_ZIP_LN} ~~~"
             }
 
+            LGEO_DIR_LN  = 65
             exists($${LDRAW_PATH}/lgeo/LGEO.xml) {
                 LGEO_DIR = XmlMapPath=$${LDRAW_PATH}/lgeo
                 message("~~~ LGEO LIBRARY $${LGEO_DIR} ~~~")

@@ -5,6 +5,7 @@ ExamineMode=0
 FullscreenDepth=20
 FullscreenHeight=0
 FullscreenWidth=0
+IgnoreEGL=1
 IgnorePBuffer=0
 JPGProgressive=0
 JPGQuality=55
