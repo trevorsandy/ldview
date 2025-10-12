@@ -161,7 +161,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.LDRAWDIR }}
-          key: ldraw-lib-${{ matrix.runner-version }}
+          key: ldraw-lib-macos-${{ matrix.runner-version }}
       - name: LDraw Library
         run: |
           if [ ! -d ${LDRAWDIR}/parts ]; then
