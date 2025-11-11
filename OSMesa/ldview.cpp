@@ -529,6 +529,32 @@ int main(int argc, char *argv[])
 	bool defaultsOK = true;
 	int retValue = 0;
 	// LPub3D Mod End
+	// LPub3D Mod - attach debugger
+	char *debugger_env;
+	debugger_env = getenv("ATTACH_LDVIEW_DEBUGGER");
+	if (debugger_env != NULL)
+	{
+		long ms_sleep = strtol(debugger_env, NULL, 10);
+		if (ms_sleep)
+		{
+			printf("Sleeping for [%ld] milliseconds. Attach debugger now...\n", ms_sleep);
+#ifdef _WIN32
+			Sleep(ms_sleep);                // uses #include <Windows.h> on Windows
+#else
+			struct timespec rem;            // uses #include <time.h> on Unix
+			struct timespec req= {
+				(int)(ms_sleep / 1000),     // secs (must be non-negative)
+				(ms_sleep % 1000) * 1000000 // nano (must be in range of 0 to 999999999)
+			};
+			nanosleep(&req, &rem);
+#endif
+		} 
+		else
+		{
+			printf("Failed to initiate sleep for [%s] milliseconds.\n",debugger_env);
+		}
+	}
+	// LPub3D Mod end
 	void *osmesaBuffer = NULL;
 #ifndef __USE_EGL
 	OSMesaContext ctx;

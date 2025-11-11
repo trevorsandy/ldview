@@ -419,7 +419,7 @@ std::string iniFileStatus(const char *iniPath )
 #endif
   }
   // we should never get here, but if we do ...
-  return NULL;
+  return "";
 }
 // LPub3D Mod end
 
@@ -580,6 +580,15 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE /*hPrevInstance
 #ifdef _DEBUG
 //	MessageBox(NULL, _UC("Attach a debugger now..."), _UC("Debug"), MB_OK);
 #endif
+	// LPub3D Mod - attach debugger
+	char* debugger_env;
+	debugger_env = getenv("ATTACH_LDVIEW_DEBUGGER");
+	if (debugger_env != NULL)
+	{
+		MessageBox(NULL, _UC("Attach a debugger now..."), _UC("LDView Debug"), MB_OK);
+	}
+	// LPub3D Mod end
+
 	ModelLoader* modelLoader;
 	bool screenSaver = isScreenSaver();
 	int retValue;
